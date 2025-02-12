@@ -53,11 +53,11 @@
 
 * Create a virtualenv: `python3 -m venv ~/virtualenvs/cn24dev` 
 * Activate virtualenv: `source ~/virtualenvs/cn24dev/bin/activate`
-* Install PyQt6: `pip install pyqt6`
+* Install build dependencies: `pip install setuptools wheel pyqt6`
 * Clone repo: `git clone git@github.com:douglaslab/cadnano2.git`
 * Change directory: `cd cadnano2`
 * Make desired code edits
-* Build and install: `python setup.py install`
+* Build and install: `pip install -e .`
 * Test: `cadnano2`
 * Repeat previous 3 steps as needed
 
@@ -66,11 +66,11 @@
 * Install venv: `pip install virtualenv`
 * Create a virtualenv: `python -m venv virtualenvs\cn24dev` (e.g. in %homepath%)
 * Activate virtualenv: `virtualenvs\cn24dev\Scripts\activate`
-* Install PyQt6: `pip install pyqt6`
+* Install build dependencies: `pip install setuptools wheel pyqt6`
 * Clone repo: `git clone git@github.com:douglaslab/cadnano2.git`
 * Change directory: `cd cadnano2`
 * Make desired code edits
-* Build and install: `python setup.py install`
+* Build and install: `pip install -e .`
 * Test: `cadnano2`
 * Repeat previous 3 steps as needed
 
