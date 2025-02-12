@@ -7,6 +7,8 @@
 
 
 from PyQt6 import QtCore, QtGui, QtWidgets
+from importlib.metadata import version
+version = version("cadnano2")
 
 
 class Ui_About(object):
@@ -56,7 +58,7 @@ class Ui_About(object):
         _translate = QtCore.QCoreApplication.translate
         About.setWindowTitle(_translate("About", "About Cadnano2"))
         self.appname.setText(_translate("About", "Cadnano2"))
-        self.version.setText(_translate("About", "version 2.4"))
+        self.version.setText(_translate("About", "version " + version))
         self.info.setText(_translate("About", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"

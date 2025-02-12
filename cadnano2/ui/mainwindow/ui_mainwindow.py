@@ -9,10 +9,12 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from os import fspath
 from pathlib import Path
+from importlib.metadata import version
 
 import cadnano2.util as util
 
 CURRENT_DIRECTORY = Path(__file__).resolve().parent
+version = version("cadnano2")
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -338,7 +340,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "cadnano"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Cadnano "+version))
         self.topToolBar.setWindowTitle(_translate("MainWindow", "Main Toolbar"))
         self.rightToolBar.setWindowTitle(_translate("MainWindow", "Path Tools"))
         self.leftToolBar.setWindowTitle(_translate("MainWindow", "Slice Tools"))

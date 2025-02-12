@@ -83,7 +83,7 @@ class DocumentController():
         import sip
         ptr = OpenMayaUI.MQtUtil.mainWindow()
         mayaWin = sip.wrapinstance(int(ptr), QMainWindow)
-        self.windock = QDockWidget("cadnano")
+        self.windock = QDockWidget("Cadnano2")
         self.windock.setFeatures(QDockWidget.DockWidgetMovable
                                  | QDockWidget.DockWidgetFloatable)
         self.windock.setAllowedAreas(Qt.LeftDockWidgetArea
