@@ -3,6 +3,8 @@ cadnanoqt
 Created by Jonathan deWerd on 2012-01-11.
 """
 import sys, os
+from importlib.resources import files
+
 from . import cadnano, util
 from code import interact
 util.qtWrapImport('QtWidgets', globals(), ['QApplication'])
@@ -29,7 +31,10 @@ class CadnanoQt(QObject):
         super(CadnanoQt, self).__init__()
         from .views.preferences import Preferences
         self.prefs = Preferences()
-        self.qApp.setWindowIcon(QIcon('ui/mainwindow/images/cadnano2-app-icon.png'))
+        self.qApp.setApplicationName("Cadnano2")  # Sets app name
+        icon_path = files('cadnano2').joinpath('ui/mainwindow/images/cadnano2-app-icon.png')
+        self.qApp.setWindowIcon(QIcon(str(icon_path)))
+        # self.qApp.setWindowIcon(QIcon('ui/mainwindow/images/cadnano2-app-icon.png'))
         self.documentControllers = set()  # Open documents
         self.activeDocument = None
         self.vh = {}  # Newly created VirtualHelix register here by idnum.
