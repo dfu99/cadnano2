@@ -135,7 +135,7 @@ class Oligo(QObject):
             return False
         if self.length() < 18:
             return True
-        if self.length() > 50:
+        if self.length() > 60:
             return True
         return False
     # end def
