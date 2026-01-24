@@ -103,7 +103,7 @@ class DocumentController():
         """Initialize the agent dialog overlay and backend."""
         # Create agent components
         self._agentDialog = AgentDialog(self.win)
-        self._agentBackend = AgentBackend(self)
+        self._agentBackend = AgentBackend(self.win)
         self._agentMethods = AgentMethods(self)
 
         # Connect agent signals
