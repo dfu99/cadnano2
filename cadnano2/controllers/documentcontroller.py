@@ -11,6 +11,7 @@ util.qtWrapImport('QtCore', globals(), ['QDir', 'QFileInfo', 'QRect',
                                         'QSettings',
                                         'QSize', 'Qt'])
 util.qtWrapImport('QtGui', globals(), [
+                                       'QAction',
                                        'QIcon',
                                        'QKeySequence',
                                        'QPainter'
@@ -22,8 +23,7 @@ util.qtWrapImport('QtWidgets', globals(), ['QApplication',
                                            'QGraphicsItem',
                                            'QMainWindow',
                                            'QMessageBox',
-                                           'QStyleOptionGraphicsItem',
-                                           'QAction'])
+                                           'QStyleOptionGraphicsItem'])
 util.qtWrapImport('QtSvg', globals(), ['QSvgGenerator'])
 
 from ..views.agent.agentdialog import AgentDialog
