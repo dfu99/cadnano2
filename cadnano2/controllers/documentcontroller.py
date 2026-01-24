@@ -22,8 +22,13 @@ util.qtWrapImport('QtWidgets', globals(), ['QApplication',
                                            'QGraphicsItem',
                                            'QMainWindow',
                                            'QMessageBox',
-                                           'QStyleOptionGraphicsItem'])
+                                           'QStyleOptionGraphicsItem',
+                                           'QAction'])
 util.qtWrapImport('QtSvg', globals(), ['QSvgGenerator'])
+
+from ..views.agent.agentdialog import AgentDialog
+from ..views.agent.agentbackend import AgentBackend
+from ..views.agent.agentmethods import AgentMethods
 
 
 class DocumentController():
@@ -64,6 +69,7 @@ class DocumentController():
         self.win.setWindowIcon(QIcon('icons:cadnano2-app-icon.png'))
         app().documentWindowWasCreatedSignal.emit(self._document, self.win)
         self._connectWindowSignalsToSelf()
+        self._initAgentDialog()
         self.win.show()
 
     def _initMaya(self):
@@ -92,6 +98,43 @@ class DocumentController():
         mayaWin.addDockWidget(Qt.DockWidgetArea(Qt.LeftDockWidgetArea),
                                 self.windock)
         self.windock.setVisible(True)
+
+    def _initAgentDialog(self):
+        """Initialize the agent dialog overlay and backend."""
+        # Create agent components
+        self._agentDialog = AgentDialog(self.win)
+        self._agentBackend = AgentBackend(self)
+        self._agentMethods = AgentMethods(self)
+
+        # Connect agent signals
+        self._agentDialog.commandSubmitted.connect(self._onAgentCommand)
+        self._agentBackend.responseReceived.connect(self._onAgentResponse)
+        self._agentBackend.processingStarted.connect(
+            lambda: self._agentDialog.setStatus("Processing...")
+        )
+
+        # Create keyboard shortcut (Ctrl+I / Cmd+I)
+        self._agentAction = QAction("Toggle Agent Dialog", self.win)
+        self._agentAction.setShortcut(QKeySequence("Ctrl+I"))
+        self._agentAction.triggered.connect(self._toggleAgentDialog)
+        self.win.addAction(self._agentAction)
+
+    def _toggleAgentDialog(self):
+        """Show or hide the agent dialog."""
+        if self._agentDialog.isVisible():
+            self._agentDialog.hideDialog()
+        else:
+            self._agentDialog.positionRelativeToParent()
+            self._agentDialog.showDialog()
+
+    def _onAgentCommand(self, command):
+        """Forward command to the agent backend."""
+        mode = self._agentDialog.mode()
+        self._agentBackend.processCommand(command, mode)
+
+    def _onAgentResponse(self, response):
+        """Display response in the agent dialog."""
+        self._agentDialog.setStatus(response)
 
     def destroyDC(self):
         self.disconnectSignalsToSelf()
@@ -127,6 +170,13 @@ class DocumentController():
             win.actionFilterScaf.triggered.disconnect(self.actionFilterScafSlot)
             win.actionFilterStap.triggered.disconnect(self.actionFilterStapSlot)
             win.actionRenumber.triggered.disconnect(self.actionRenumberSlot)
+        # Disconnect agent signals
+        if hasattr(self, '_agentDialog') and self._agentDialog is not None:
+            self._agentDialog.commandSubmitted.disconnect(self._onAgentCommand)
+        if hasattr(self, '_agentBackend') and self._agentBackend is not None:
+            self._agentBackend.responseReceived.disconnect(self._onAgentResponse)
+        if hasattr(self, '_agentAction') and self._agentAction is not None:
+            self._agentAction.triggered.disconnect(self._toggleAgentDialog)
     # end def
 
     def _connectWindowSignalsToSelf(self):
