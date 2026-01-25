@@ -140,10 +140,17 @@ class DocumentController():
     def _onAgentMethodCall(self, methodName, params):
         """Execute a method requested by the agent."""
         success, result = self._agentMethods.executeMethod(methodName, params)
+
+        # Format result message
         if success:
-            self._agentDialog.setStatus(f"Success: {result}")
+            result_msg = str(result)
+            self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
         else:
-            self._agentDialog.setStatus(f"Failed: {result}")
+            result_msg = f"Error: {result}"
+            self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
+
+        # Feed result back to agent for multi-turn loop
+        self._agentBackend.feedbackToAgent(result_msg)
 
     def destroyDC(self):
         self.disconnectSignalsToSelf()

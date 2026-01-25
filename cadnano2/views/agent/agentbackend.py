@@ -2,6 +2,7 @@
 agentbackend.py
 
 Backend for agent processing with Ollama integration.
+Supports multi-turn agentic conversations.
 """
 
 import json
@@ -18,25 +19,21 @@ class OllamaWorker(QThread):
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
 
-    def __init__(self, endpoint, model, prompt, system_prompt=None):
+    def __init__(self, endpoint, model, messages):
         super().__init__()
         self._endpoint = endpoint
         self._model = model
-        self._prompt = prompt
-        self._system_prompt = system_prompt
+        self._messages = messages
 
     def run(self):
         try:
-            url = f"{self._endpoint}/api/generate"
+            url = f"{self._endpoint}/api/chat"
 
             payload = {
                 "model": self._model,
-                "prompt": self._prompt,
+                "messages": self._messages,
                 "stream": False
             }
-
-            if self._system_prompt:
-                payload["system"] = self._system_prompt
 
             data = json.dumps(payload).encode('utf-8')
             req = urllib.request.Request(
@@ -45,9 +42,10 @@ class OllamaWorker(QThread):
                 headers={'Content-Type': 'application/json'}
             )
 
-            with urllib.request.urlopen(req, timeout=60) as response:
+            with urllib.request.urlopen(req, timeout=120) as response:
                 result = json.loads(response.read().decode('utf-8'))
-                self.finished.emit(result.get('response', ''))
+                message = result.get('message', {})
+                self.finished.emit(message.get('content', ''))
 
         except urllib.error.HTTPError as e:
             body = e.read().decode('utf-8') if e.fp else ''
@@ -61,6 +59,7 @@ class OllamaWorker(QThread):
 class AgentBackend(QObject):
     """
     Backend for processing agent commands with Ollama.
+    Supports multi-turn agentic conversations.
 
     Signals:
         responseReceived(str): Emitted when a response is ready
@@ -68,6 +67,7 @@ class AgentBackend(QObject):
         processingStarted(): Emitted when processing begins
         processingFinished(): Emitted when processing completes
         methodCallRequested(str, dict): Emitted when agent wants to call a method
+        agentThinking(str): Emitted when agent is reasoning (for display)
     """
 
     responseReceived = pyqtSignal(str)
@@ -75,27 +75,65 @@ class AgentBackend(QObject):
     processingStarted = pyqtSignal()
     processingFinished = pyqtSignal()
     methodCallRequested = pyqtSignal(str, dict)
+    agentThinking = pyqtSignal(str)
 
-    SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant. You help users modify DNA origami designs.
+    SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant. You help users create and modify DNA origami designs through iterative method calls.
 
-Available methods you can call:
-- createScaffoldStrand(helix_num, start_idx, length): Create a scaffold strand on the specified helix
+Available methods:
 
-When the user asks to create or modify the design, respond with a JSON object containing:
-{
-    "method": "method_name",
-    "params": {"param1": value1, "param2": value2}
-}
+GEOMETRY & INTROSPECTION:
+- getActivePartInfo(): Get info about the current design (helix count, max base index)
+- getHelixInfo(helix_num): Get detailed info about a specific helix
+- getHoneycombPositions(num_helices): Get (row, col) positions for a honeycomb bundle
+- getPotentialCrossovers(helix_num, strand_type): Get crossover positions ("scaffold" or "staple")
 
-If you need clarification, ask the user directly.
-If the request doesn't require a method call, respond conversationally.
+HELIX MANAGEMENT:
+- createHelix(row, col): Create a virtual helix at grid position
+- listHelices(): List all helices with their numbers and positions
 
-Examples:
-- "Create a scaffold strand of length 100 on helix 0 starting at index 5"
-  Response: {"method": "createScaffoldStrand", "params": {"helix_num": 0, "start_idx": 5, "length": 100}}
+STRAND MANAGEMENT:
+- createScaffoldStrand(helix_num, start_idx, length): Create scaffold strand
+- createStapleStrand(helix_num, start_idx, length): Create staple strand
 
-- "What methods are available?"
-  Response: Available methods: createScaffoldStrand(helix_num, start_idx, length) - creates a scaffold strand on the specified helix.
+CROSSOVER MANAGEMENT:
+- createCrossover(helix1, idx1, helix2, idx2, strand_type): Connect two helices
+- findCrossoversWithSpacing(strand_type, min_spacing): Find crossovers with minimum bp spacing
+
+INSERTIONS/DELETIONS:
+- addInsertion(helix_num, idx, length): Add insertion (length>0) or deletion (length=-1)
+- removeInsertion(helix_num, idx): Remove an insertion/deletion
+
+WORKFLOW:
+You work iteratively. After each method call, you'll see the result and decide the next step.
+
+To call a method, respond with ONLY a JSON object:
+{"method": "methodName", "params": {"param1": value1}}
+
+To finish the task, respond with:
+{"done": true, "message": "Summary of what was accomplished"}
+
+To ask a clarifying question, just respond with plain text.
+
+HONEYCOMB LATTICE GEOMETRY:
+- For a 6-helix bundle, use positions like: (20,20), (20,21), (21,20), (21,21), (22,20), (22,21)
+- Even parity: row%2 == col%2, scaffold goes left-to-right (5'→3')
+- Odd parity: row%2 != col%2, scaffold goes right-to-left (5'→3')
+- Step size is 21 bases
+- Scaffold crossovers align at specific positions within each 21-base step
+- Staple crossovers are at different positions than scaffold
+
+CROSSOVER POSITIONS (per 21-base step, modulo 21):
+Scaffold crossovers between neighbors depend on neighbor direction (p0, p1, p2).
+Staple crossovers are at positions 0, 6, 7, 13, 14, 20 (varies by neighbor).
+
+Example workflow for "Create a 6-helix bundle":
+1. getHoneycombPositions(6) → get positions
+2. createHelix(row, col) for each position
+3. createScaffoldStrand on each helix (full length)
+4. createStapleStrand on each helix (full length)
+5. getPotentialCrossovers to find crossover positions
+6. createCrossover to connect helices
+7. {"done": true, "message": "Created 6-helix bundle with crossovers"}
 """
 
     def __init__(self, parent=None):
@@ -103,6 +141,8 @@ Examples:
         self._endpoint = "http://localhost:11434"
         self._model = "qwen3:4b"
         self._worker = None
+        self._conversation = []  # Multi-turn conversation history
+        self._isAgentLoop = False  # Whether we're in an agent loop
 
     @property
     def endpoint(self):
@@ -131,45 +171,100 @@ Examples:
         self.processingStarted.emit()
 
         if mode == "developer":
-            # In developer mode, try to parse as direct JSON method call
-            # Format: {"method": "methodName", "params": {...}}
-            # Or shorthand: methodName(param1=value1, param2=value2)
             self._handleDeveloperCommand(command)
             return
 
-        # Create worker thread for Ollama call
+        # Start new conversation with user command
+        self._conversation = [
+            {"role": "system", "content": self.SYSTEM_PROMPT},
+            {"role": "user", "content": command}
+        ]
+        self._isAgentLoop = True
+        self._continueAgentLoop()
+
+    def _continueAgentLoop(self):
+        """Continue the agent loop with the current conversation."""
         self._worker = OllamaWorker(
             self._endpoint,
             self._model,
-            command,
-            self.SYSTEM_PROMPT
+            self._conversation
         )
-        self._worker.finished.connect(self._handleResponse)
+        self._worker.finished.connect(self._handleAgentResponse)
         self._worker.error.connect(self._handleError)
         self._worker.start()
 
-    def _handleResponse(self, response):
-        """Handle response from Ollama."""
-        # Try to parse as JSON method call
-        try:
-            # Look for JSON in the response
-            response_stripped = response.strip()
-            if response_stripped.startswith('{'):
-                data = json.loads(response_stripped)
-                if 'method' in data and 'params' in data:
-                    # methodCallRequested handler will set the status
-                    self.methodCallRequested.emit(data['method'], data['params'])
+    def feedbackToAgent(self, result):
+        """
+        Feed the result of a method call back to the agent.
+
+        Args:
+            result (str): The result message from method execution
+        """
+        if not self._isAgentLoop:
+            return
+
+        # Add the result as an assistant message observation
+        self._conversation.append({
+            "role": "user",
+            "content": f"Result: {result}\n\nWhat's the next step?"
+        })
+        self._continueAgentLoop()
+
+    def _handleAgentResponse(self, response):
+        """Handle response from Ollama in agent loop."""
+        # Add assistant response to conversation
+        self._conversation.append({
+            "role": "assistant",
+            "content": response
+        })
+
+        # Try to parse as JSON
+        response_stripped = response.strip()
+
+        # Handle /think tags from qwen3 - extract content after </think>
+        if '/think>' in response_stripped:
+            # Find the thinking part and the actual response
+            think_end = response_stripped.rfind('</think>')
+            if think_end != -1:
+                thinking = response_stripped[:think_end]
+                response_stripped = response_stripped[think_end + 8:].strip()
+                # Emit thinking for display (optional)
+                self.agentThinking.emit(thinking)
+
+        # Try to find JSON in response
+        json_start = response_stripped.find('{')
+        json_end = response_stripped.rfind('}') + 1
+
+        if json_start != -1 and json_end > json_start:
+            try:
+                json_str = response_stripped[json_start:json_end]
+                data = json.loads(json_str)
+
+                # Check if agent is done
+                if data.get('done'):
+                    self._isAgentLoop = False
+                    self.responseReceived.emit(f"Done: {data.get('message', 'Task complete')}")
                     self.processingFinished.emit()
                     return
-        except json.JSONDecodeError:
-            pass
 
-        # Regular text response
-        self.responseReceived.emit(response)
+                # Check if it's a method call
+                if 'method' in data:
+                    params = data.get('params', {})
+                    self.methodCallRequested.emit(data['method'], params)
+                    # Don't emit processingFinished - wait for feedback
+                    return
+
+            except json.JSONDecodeError:
+                pass
+
+        # Plain text response (question or explanation)
+        self._isAgentLoop = False
+        self.responseReceived.emit(response_stripped if response_stripped else response)
         self.processingFinished.emit()
 
     def _handleError(self, error_msg):
         """Handle error from Ollama."""
+        self._isAgentLoop = False
         self.errorOccurred.emit(error_msg)
         self.responseReceived.emit(f"Error: {error_msg}")
         self.processingFinished.emit()
@@ -188,14 +283,32 @@ Examples:
         # Help command
         if command.lower() in ('help', '?'):
             help_text = """Available methods:
-- createScaffoldStrand(helix_num, start_idx, length)
-- createStapleStrand(helix_num, start_idx, length)
-- getActivePartInfo()
-- getPartInfo()
+
+GEOMETRY & INTROSPECTION:
+  getActivePartInfo()
+  getHelixInfo(helix_num)
+  getHoneycombPositions(num_helices)
+  getPotentialCrossovers(helix_num, strand_type)
+
+HELIX MANAGEMENT:
+  createHelix(row, col)
+  listHelices()
+
+STRAND MANAGEMENT:
+  createScaffoldStrand(helix_num, start_idx, length)
+  createStapleStrand(helix_num, start_idx, length)
+
+CROSSOVER MANAGEMENT:
+  createCrossover(helix1, idx1, helix2, idx2, strand_type)
+
+INSERTIONS/DELETIONS:
+  addInsertion(helix_num, idx, length)
+  removeInsertion(helix_num, idx)
 
 Examples:
-  createScaffoldStrand(helix_num=0, start_idx=10, length=50)
-  {"method": "createScaffoldStrand", "params": {"helix_num": 0, "start_idx": 10, "length": 50}}"""
+  createHelix(row=20, col=20)
+  createScaffoldStrand(helix_num=0, start_idx=0, length=84)
+  {"method": "createHelix", "params": {"row": 20, "col": 20}}"""
             self.responseReceived.emit(help_text)
             self.processingFinished.emit()
             return
@@ -204,9 +317,9 @@ Examples:
         if command.startswith('{'):
             try:
                 data = json.loads(command)
-                if 'method' in data and 'params' in data:
-                    # methodCallRequested handler will set the status
-                    self.methodCallRequested.emit(data['method'], data['params'])
+                if 'method' in data:
+                    params = data.get('params', {})
+                    self.methodCallRequested.emit(data['method'], params)
                     self.processingFinished.emit()
                     return
             except json.JSONDecodeError as e:
@@ -243,13 +356,19 @@ Examples:
                                 value = value[1:-1]
                         params[key] = value
 
-            # methodCallRequested handler will set the status
             self.methodCallRequested.emit(method_name, params)
             self.processingFinished.emit()
             return
 
         # Unknown format
-        self.responseReceived.emit(f"Unknown command format. Type 'help' for usage.")
+        self.responseReceived.emit("Unknown command format. Type 'help' for usage.")
+        self.processingFinished.emit()
+
+    def stopAgentLoop(self):
+        """Stop the current agent loop."""
+        self._isAgentLoop = False
+        if self._worker and self._worker.isRunning():
+            self._worker.terminate()
         self.processingFinished.emit()
 
     def testConnection(self):
