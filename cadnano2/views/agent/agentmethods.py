@@ -33,6 +33,29 @@ class AgentMethods:
         """Get the active part, if any."""
         return self._documentController.activePart()
 
+    def executeMethod(self, methodName, params):
+        """
+        Execute a method by name with given parameters.
+
+        Args:
+            methodName (str): Name of the method to call
+            params (dict): Parameters to pass to the method
+
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        method = getattr(self, methodName, None)
+        if method is None:
+            return False, f"Unknown method: {methodName}"
+
+        try:
+            result = method(**params)
+            return True, result
+        except TypeError as e:
+            return False, f"Invalid parameters: {e}"
+        except Exception as e:
+            return False, f"Error executing {methodName}: {e}"
+
     # Document introspection methods
 
     def getPartCount(self):
@@ -44,9 +67,11 @@ class AgentMethods:
         parts = self.document.parts()
         info = []
         for part in parts:
+            vhs = part.getVirtualHelices()
             info.append({
                 'type': part.__class__.__name__,
-                'virtualHelixCount': len(part.getVirtualHelices()) if hasattr(part, 'getVirtualHelices') else 0
+                'virtualHelixCount': len(vhs),
+                'helixNumbers': [vh.number() for vh in vhs]
             })
         return info
 
@@ -55,10 +80,110 @@ class AgentMethods:
         part = self.activePart
         if part is None:
             return None
+        vhs = part.getVirtualHelices()
         return {
             'type': part.__class__.__name__,
-            'virtualHelixCount': len(part.getVirtualHelices()) if hasattr(part, 'getVirtualHelices') else 0
+            'virtualHelixCount': len(vhs),
+            'helixNumbers': [vh.number() for vh in vhs],
+            'maxBaseIdx': part.maxBaseIdx()
         }
+
+    # Strand creation methods
+
+    def createScaffoldStrand(self, helix_num, start_idx, length):
+        """
+        Create a scaffold strand on the specified helix.
+
+        Args:
+            helix_num (int): The virtual helix number
+            start_idx (int): Starting base index
+            length (int): Length of the strand in bases
+
+        Returns:
+            str: Success message or error description
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part in document"
+
+        # Get the virtual helix by number
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Virtual helix {helix_num} not found"
+
+        # Get the scaffold strand set
+        scafStrandSet = vh.scaffoldStrandSet()
+
+        # Calculate end index
+        end_idx = start_idx + length - 1
+
+        # Validate indices
+        maxBaseIdx = part.maxBaseIdx()
+        if start_idx < 0 or end_idx > maxBaseIdx:
+            return f"Error: Index out of range. Valid range: 0-{maxBaseIdx}"
+
+        if start_idx > end_idx:
+            return f"Error: Invalid range: start_idx ({start_idx}) > end_idx ({end_idx})"
+
+        # Check if the region is empty
+        boundsLow, boundsHigh = scafStrandSet.getBoundsOfEmptyRegionContaining(start_idx)
+        if boundsLow is None or boundsHigh is None:
+            return f"Error: Position {start_idx} is not in an empty region"
+
+        if end_idx > boundsHigh:
+            return f"Error: Strand would overlap existing strand. Empty region: {boundsLow}-{boundsHigh}"
+
+        # Create the strand
+        result = scafStrandSet.createStrand(start_idx, end_idx, useUndoStack=True)
+
+        if result >= 0:
+            return f"Created scaffold strand on helix {helix_num} from index {start_idx} to {end_idx}"
+        else:
+            return f"Error: Could not create strand (region may not be empty)"
+
+    def createStapleStrand(self, helix_num, start_idx, length):
+        """
+        Create a staple strand on the specified helix.
+
+        Args:
+            helix_num (int): The virtual helix number
+            start_idx (int): Starting base index
+            length (int): Length of the strand in bases
+
+        Returns:
+            str: Success message or error description
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part in document"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Virtual helix {helix_num} not found"
+
+        stapStrandSet = vh.stapleStrandSet()
+        end_idx = start_idx + length - 1
+
+        maxBaseIdx = part.maxBaseIdx()
+        if start_idx < 0 or end_idx > maxBaseIdx:
+            return f"Error: Index out of range. Valid range: 0-{maxBaseIdx}"
+
+        if start_idx > end_idx:
+            return f"Error: Invalid range: start_idx ({start_idx}) > end_idx ({end_idx})"
+
+        boundsLow, boundsHigh = stapStrandSet.getBoundsOfEmptyRegionContaining(start_idx)
+        if boundsLow is None or boundsHigh is None:
+            return f"Error: Position {start_idx} is not in an empty region"
+
+        if end_idx > boundsHigh:
+            return f"Error: Strand would overlap existing strand. Empty region: {boundsLow}-{boundsHigh}"
+
+        result = stapStrandSet.createStrand(start_idx, end_idx, useUndoStack=True)
+
+        if result >= 0:
+            return f"Created staple strand on helix {helix_num} from index {start_idx} to {end_idx}"
+        else:
+            return f"Error: Could not create strand (region may not be empty)"
 
     # Placeholder methods for future functionality
 
@@ -74,12 +199,11 @@ class AgentMethods:
             isScaffold: True for scaffold, False for staple
 
         Returns:
-            bool: Success status
+            str: Success message or error description
 
         Note: This is a placeholder - implementation pending.
         """
-        # TODO: Implement crossover addition
-        return False
+        return "Error: addCrossover not yet implemented"
 
     def addRegularCrossovers(self, startVh, endVh, startIdx, endIdx, spacing, isScaffold=True):
         """
@@ -94,37 +218,8 @@ class AgentMethods:
             isScaffold: True for scaffold, False for staple
 
         Returns:
-            int: Number of crossovers added
+            str: Success message or error description
 
         Note: This is a placeholder - implementation pending.
         """
-        # TODO: Implement regular crossover addition
-        return 0
-
-    def copySelection(self):
-        """
-        Copy the current selection to a buffer.
-
-        Returns:
-            bool: Success status
-
-        Note: This is a placeholder - implementation pending.
-        """
-        # TODO: Implement copy functionality
-        return False
-
-    def pasteSelection(self, targetVh, targetIdx):
-        """
-        Paste the buffered selection at a target location.
-
-        Args:
-            targetVh: Target virtual helix number
-            targetIdx: Target index
-
-        Returns:
-            bool: Success status
-
-        Note: This is a placeholder - implementation pending.
-        """
-        # TODO: Implement paste functionality
-        return False
+        return "Error: addRegularCrossovers not yet implemented"

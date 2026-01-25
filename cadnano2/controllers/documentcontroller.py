@@ -109,6 +109,7 @@ class DocumentController():
         # Connect agent signals
         self._agentDialog.commandSubmitted.connect(self._onAgentCommand)
         self._agentBackend.responseReceived.connect(self._onAgentResponse)
+        self._agentBackend.methodCallRequested.connect(self._onAgentMethodCall)
         self._agentBackend.processingStarted.connect(
             lambda: self._agentDialog.setStatus("Processing...")
         )
@@ -135,6 +136,14 @@ class DocumentController():
     def _onAgentResponse(self, response):
         """Display response in the agent dialog."""
         self._agentDialog.setStatus(response)
+
+    def _onAgentMethodCall(self, methodName, params):
+        """Execute a method requested by the agent."""
+        success, result = self._agentMethods.executeMethod(methodName, params)
+        if success:
+            self._agentDialog.setStatus(f"Success: {result}")
+        else:
+            self._agentDialog.setStatus(f"Failed: {result}")
 
     def destroyDC(self):
         self.disconnectSignalsToSelf()
@@ -175,6 +184,7 @@ class DocumentController():
             self._agentDialog.commandSubmitted.disconnect(self._onAgentCommand)
         if hasattr(self, '_agentBackend') and self._agentBackend is not None:
             self._agentBackend.responseReceived.disconnect(self._onAgentResponse)
+            self._agentBackend.methodCallRequested.disconnect(self._onAgentMethodCall)
         if hasattr(self, '_agentAction') and self._agentAction is not None:
             self._agentAction.triggered.disconnect(self._toggleAgentDialog)
     # end def
