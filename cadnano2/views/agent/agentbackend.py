@@ -154,8 +154,8 @@ Examples:
             if response_stripped.startswith('{'):
                 data = json.loads(response_stripped)
                 if 'method' in data and 'params' in data:
+                    # methodCallRequested handler will set the status
                     self.methodCallRequested.emit(data['method'], data['params'])
-                    self.responseReceived.emit(f"Executing: {data['method']}({data['params']})")
                     self.processingFinished.emit()
                     return
         except json.JSONDecodeError:
@@ -202,8 +202,8 @@ Examples:
             try:
                 data = json.loads(command)
                 if 'method' in data and 'params' in data:
+                    # methodCallRequested handler will set the status
                     self.methodCallRequested.emit(data['method'], data['params'])
-                    self.responseReceived.emit(f"Executing: {data['method']}")
                     self.processingFinished.emit()
                     return
             except json.JSONDecodeError as e:
@@ -240,8 +240,8 @@ Examples:
                                 value = value[1:-1]
                         params[key] = value
 
+            # methodCallRequested handler will set the status
             self.methodCallRequested.emit(method_name, params)
-            self.responseReceived.emit(f"Executing: {method_name}({params})")
             self.processingFinished.emit()
             return
 
