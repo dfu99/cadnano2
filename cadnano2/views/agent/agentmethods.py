@@ -6,6 +6,7 @@ Provides constrained, atomic operations on cadnano documents.
 """
 
 from cadnano2.model.enum import StrandType
+from .agentverifier import DesignVerifier
 
 
 class AgentMethods:
@@ -554,3 +555,135 @@ class AgentMethods:
             return self.createScaffoldStrand(helix_num, start_idx, length)
         else:
             return self.createStapleStrand(helix_num, start_idx, length)
+
+    # ==================== VERIFICATION METHODS ====================
+
+    def verifyDesign(self):
+        """
+        Verify the current design and get feedback.
+
+        Returns:
+            str: Verification results with score and issues
+        """
+        verifier = DesignVerifier(self._documentController)
+        result = verifier.verifyDesign()
+
+        output = [f"Design Score: {result['score']:.2f}/1.00"]
+
+        if result['valid']:
+            output.append("Status: VALID")
+        else:
+            output.append("Status: INVALID")
+
+        if result.get('issues'):
+            output.append("Issues:")
+            for issue in result['issues']:
+                output.append(f"  - {issue}")
+
+        if result.get('warnings'):
+            output.append("Warnings:")
+            for warning in result['warnings']:
+                output.append(f"  - {warning}")
+
+        metrics = result.get('metrics', {})
+        if metrics:
+            output.append(f"Metrics: helices={metrics.get('helix_count', 0)}, " +
+                         f"scaffold_oligos={metrics.get('scaffold_oligo_count', 0)}, " +
+                         f"staple_oligos={metrics.get('staple_oligo_count', 0)}")
+
+        return '\n'.join(output)
+
+    def verify6HelixBundle(self):
+        """
+        Verify the design as a 6-helix bundle.
+
+        Returns:
+            str: Detailed verification results
+        """
+        verifier = DesignVerifier(self._documentController)
+        result = verifier.verify6HelixBundle()
+
+        output = [f"6-Helix Bundle Score: {result['score']:.2f}/1.00"]
+
+        if result['valid']:
+            output.append("Status: VALID 6-HELIX BUNDLE")
+        else:
+            output.append("Status: INVALID")
+
+        if result.get('issues'):
+            output.append("Issues:")
+            for issue in result['issues']:
+                output.append(f"  - {issue}")
+
+        if result.get('warnings'):
+            output.append("Warnings:")
+            for warning in result['warnings']:
+                output.append(f"  - {warning}")
+
+        metrics = result.get('metrics', {})
+        output.append(f"Helices: {metrics.get('helix_count', 0)}/6")
+        output.append(f"Helices with scaffold: {metrics.get('helices_with_scaffold', 0)}/6")
+        output.append(f"Scaffold crossover pairs: {metrics.get('scaffold_crossover_pairs', 0)}/5 minimum")
+        output.append(f"Scaffold oligos: {metrics.get('scaffold_oligo_count', 0)} (should be 1)")
+
+        return '\n'.join(output)
+
+    def getValidCrossoverPositions(self, helix1, helix2, strand_type):
+        """
+        Get valid crossover positions between two helices.
+
+        Args:
+            helix1 (int): First helix number
+            helix2 (int): Second helix number
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: List of valid crossover indices
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+
+        if vh1 is None:
+            return f"Error: Helix {helix1} not found"
+        if vh2 is None:
+            return f"Error: Helix {helix2} not found"
+
+        # Check if they're neighbors and get direction
+        neighbors = part.getVirtualHelixNeighbors(vh1)
+        if vh2 not in neighbors:
+            return f"Error: Helix {helix2} is not a neighbor of helix {helix1}"
+
+        neighbor_idx = neighbors.index(vh2)
+        direction = f'p{neighbor_idx}'
+
+        # Get valid positions from verifier
+        STEP = 21
+        if strand_type.lower() == 'scaffold':
+            positions_mod = {
+                'p0': [1, 2, 11, 12],
+                'p1': [8, 9, 18, 19],
+                'p2': [4, 5, 15, 16],
+            }
+        else:
+            positions_mod = {
+                'p0': [6, 7],
+                'p1': [13, 14],
+                'p2': [0, 20],
+            }
+
+        valid_mod = positions_mod.get(direction, [])
+        max_idx = part.maxBaseIdx()
+
+        # Generate actual indices
+        valid_indices = []
+        for base in range(0, max_idx + 1, STEP):
+            for mod in valid_mod:
+                idx = base + mod
+                if idx <= max_idx:
+                    valid_indices.append(idx)
+
+        return f"Valid {strand_type} crossover indices between helix {helix1} and {helix2}: {valid_indices[:20]}... (showing first 20)"

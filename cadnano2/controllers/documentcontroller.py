@@ -29,6 +29,7 @@ util.qtWrapImport('QtSvg', globals(), ['QSvgGenerator'])
 from ..views.agent.agentdialog import AgentDialog
 from ..views.agent.agentbackend import AgentBackend
 from ..views.agent.agentmethods import AgentMethods
+from ..views.agent.agentverifier import DesignVerifier
 
 
 class DocumentController():
@@ -105,6 +106,7 @@ class DocumentController():
         self._agentDialog = AgentDialog(self.win)
         self._agentBackend = AgentBackend(self.win)
         self._agentMethods = AgentMethods(self)
+        self._agentVerifier = DesignVerifier(self)
 
         # Connect agent signals
         self._agentDialog.commandSubmitted.connect(self._onAgentCommand)
@@ -138,16 +140,32 @@ class DocumentController():
         self._agentDialog.setStatus(response)
 
     def _onAgentMethodCall(self, methodName, params):
-        """Execute a method requested by the agent."""
+        """Execute a method requested by the agent with validation."""
+        # Pre-execution validation
+        is_valid, validation_msg, suggestions = self._agentVerifier.validateAction(methodName, params)
+
+        if not is_valid:
+            # Action would fail - provide feedback without executing
+            result_msg = f"Validation failed: {validation_msg}"
+            if suggestions:
+                result_msg += f" Suggestions: {suggestions}"
+            self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
+            self._agentBackend.feedbackToAgent(result_msg)
+            return
+
+        # Execute the method
         success, result = self._agentMethods.executeMethod(methodName, params)
 
         # Format result message
         if success:
             result_msg = str(result)
-            self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
+            # Add validation warnings if any
+            if validation_msg and "Warning" in validation_msg:
+                result_msg += f" ({validation_msg})"
         else:
             result_msg = f"Error: {result}"
-            self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
+
+        self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
 
         # Feed result back to agent for multi-turn loop
         self._agentBackend.feedbackToAgent(result_msg)
