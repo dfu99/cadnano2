@@ -49,10 +49,13 @@ class OllamaWorker(QThread):
                 result = json.loads(response.read().decode('utf-8'))
                 self.finished.emit(result.get('response', ''))
 
+        except urllib.error.HTTPError as e:
+            body = e.read().decode('utf-8') if e.fp else ''
+            self.error.emit(f"HTTP {e.code}: {e.reason}. {body}")
         except urllib.error.URLError as e:
-            self.error.emit(f"Connection error: {e.reason}")
+            self.error.emit(f"Connection error: {e.reason}. Is Ollama running?")
         except Exception as e:
-            self.error.emit(f"Error: {str(e)}")
+            self.error.emit(f"Error: {type(e).__name__}: {str(e)}")
 
 
 class AgentBackend(QObject):
@@ -98,7 +101,7 @@ Examples:
     def __init__(self, parent=None):
         super().__init__(parent)
         self._endpoint = "http://localhost:11434"
-        self._model = "qwen2:1.5b"
+        self._model = "qwen3:4b"
         self._worker = None
 
     @property
