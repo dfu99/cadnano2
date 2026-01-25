@@ -130,6 +130,7 @@ class AgentDialog(QWidget):
                 padding: 8px;
                 font-size: 13px;
                 background-color: #fafafa;
+                color: black;
             }
             QLineEdit:focus {
                 border-color: #0078d4;
