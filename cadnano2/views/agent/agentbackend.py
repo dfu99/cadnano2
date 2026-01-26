@@ -183,6 +183,8 @@ Step N: Verify the result
 Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffold strands, and crossovers. Score: X.XX"}
 """
 
+    MAX_ITERATIONS = 50  # Safety limit for agent loop
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._endpoint = "http://localhost:11434"
@@ -190,6 +192,7 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
         self._worker = None
         self._conversation = []  # Multi-turn conversation history
         self._isAgentLoop = False  # Whether we're in an agent loop
+        self._iterationCount = 0  # Track iterations for safety
 
     @property
     def endpoint(self):
@@ -227,10 +230,20 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
             {"role": "user", "content": command}
         ]
         self._isAgentLoop = True
+        self._iterationCount = 0
         self._continueAgentLoop()
 
     def _continueAgentLoop(self):
         """Continue the agent loop with the current conversation."""
+        self._iterationCount += 1
+
+        # Safety check for maximum iterations
+        if self._iterationCount > self.MAX_ITERATIONS:
+            self._isAgentLoop = False
+            self.responseReceived.emit(f"Agent stopped: exceeded maximum iterations ({self.MAX_ITERATIONS})")
+            self.processingFinished.emit()
+            return
+
         self._worker = OllamaWorker(
             self._endpoint,
             self._model,
@@ -304,10 +317,27 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
             except json.JSONDecodeError:
                 pass
 
-        # Plain text response (question or explanation)
-        self._isAgentLoop = False
-        self.responseReceived.emit(response_stripped if response_stripped else response)
-        self.processingFinished.emit()
+        # Plain text response (explanation or question)
+        # Check if it looks like the agent is asking a question (needs user input)
+        response_lower = response_stripped.lower() if response_stripped else response.lower()
+        needs_user_input = any(q in response_lower for q in [
+            '?', 'would you like', 'do you want', 'should i', 'please confirm',
+            'which option', 'what would you prefer', 'let me know'
+        ])
+
+        if needs_user_input:
+            # Agent is asking a question - stop and wait for user
+            self._isAgentLoop = False
+            self.responseReceived.emit(response_stripped if response_stripped else response)
+            self.processingFinished.emit()
+        else:
+            # Agent is explaining/thinking - prompt it to continue
+            self.responseReceived.emit(response_stripped if response_stripped else response)
+            self._conversation.append({
+                "role": "user",
+                "content": "Continue with the next action. Respond with a JSON method call or {\"done\": true, \"message\": \"...\"} if finished."
+            })
+            self._continueAgentLoop()
 
     def _handleError(self, error_msg):
         """Handle error from Ollama."""
