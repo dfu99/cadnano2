@@ -30,6 +30,7 @@ from ..views.agent.agentdialog import AgentDialog
 from ..views.agent.agentbackend import AgentBackend
 from ..views.agent.agentmethods import AgentMethods
 from ..views.agent.agentverifier import DesignVerifier
+from ..views.agent.trajectorylogger import TrajectoryLogger
 
 
 class DocumentController():
@@ -107,6 +108,7 @@ class DocumentController():
         self._agentBackend = AgentBackend(self.win)
         self._agentMethods = AgentMethods(self)
         self._agentVerifier = DesignVerifier(self)
+        self._trajectoryLogger = TrajectoryLogger(parent=self.win)
 
         # Connect agent signals
         self._agentDialog.commandSubmitted.connect(self._onAgentCommand)
@@ -115,6 +117,8 @@ class DocumentController():
         self._agentBackend.processingStarted.connect(
             lambda: self._agentDialog.setStatus("Processing...")
         )
+        self._agentBackend.processingFinished.connect(self._onAgentFinished)
+        self._agentBackend.errorOccurred.connect(self._onAgentError)
 
         # Create keyboard shortcut (Ctrl+I / Cmd+I)
         self._agentAction = QAction("Toggle Agent Dialog", self.win)
@@ -133,11 +137,25 @@ class DocumentController():
     def _onAgentCommand(self, command):
         """Forward command to the agent backend."""
         mode = self._agentDialog.mode()
+
+        # Start trajectory logging for Edit mode
+        if mode == "edit":
+            self._trajectoryLogger.startTrajectory(
+                task=command,
+                model=self._agentBackend.model,
+                mode=mode
+            )
+            self._trajectoryLogger.logConversation("user", command)
+
         self._agentBackend.processCommand(command, mode)
 
     def _onAgentResponse(self, response):
         """Display response in the agent dialog."""
         self._agentDialog.setStatus(response)
+
+        # Log assistant response
+        if self._trajectoryLogger.isRecording():
+            self._trajectoryLogger.logConversation("assistant", response)
 
     def _onAgentMethodCall(self, methodName, params):
         """Execute a method requested by the agent with validation."""
@@ -150,6 +168,17 @@ class DocumentController():
             if suggestions:
                 result_msg += f" Suggestions: {suggestions}"
             self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
+
+            # Log failed action
+            if self._trajectoryLogger.isRecording():
+                self._trajectoryLogger.logAction(
+                    method_name=methodName,
+                    params=params,
+                    result=result_msg,
+                    success=False,
+                    validation_msg=validation_msg
+                )
+
             self._agentBackend.feedbackToAgent(result_msg)
             return
 
@@ -167,8 +196,57 @@ class DocumentController():
 
         self._agentDialog.setStatus(f"[{methodName}] {result_msg}")
 
+        # Log the action
+        if self._trajectoryLogger.isRecording():
+            self._trajectoryLogger.logAction(
+                method_name=methodName,
+                params=params,
+                result=result_msg,
+                success=success,
+                validation_msg=validation_msg if validation_msg else None
+            )
+
+            # If this was a verification method, log verification result
+            if methodName in ('verifyDesign', 'verify6HelixBundle') and success:
+                # Parse verification result from the method result
+                verification = self._agentVerifier.getRewardSignal(
+                    structure_type='6-helix' if '6' in methodName else None
+                )
+                self._trajectoryLogger.logVerification(
+                    score=verification['reward'],
+                    valid=verification['valid'],
+                    metrics=verification['breakdown']['metrics']
+                )
+
         # Feed result back to agent for multi-turn loop
         self._agentBackend.feedbackToAgent(result_msg)
+
+    def _onAgentFinished(self):
+        """Handle agent processing completion."""
+        if self._trajectoryLogger.isRecording():
+            # Get final verification score
+            verification = self._agentVerifier.getRewardSignal()
+            self._trajectoryLogger.logVerification(
+                score=verification['reward'],
+                valid=verification['valid'],
+                metrics=verification['breakdown']['metrics']
+            )
+
+            # End and save trajectory
+            trajectory = self._trajectoryLogger.endTrajectory(success=True)
+            if trajectory:
+                score = trajectory.get('final_score', 0) or 0
+                action_count = len(trajectory.get('actions', []))
+                print(f"Trajectory completed: {action_count} actions, score: {score:.2f}")
+
+    def _onAgentError(self, error_msg):
+        """Handle agent error."""
+        if self._trajectoryLogger.isRecording():
+            # Log error and end trajectory
+            self._trajectoryLogger.logConversation("system", f"Error: {error_msg}")
+            trajectory = self._trajectoryLogger.endTrajectory(success=False, error=error_msg)
+            if trajectory:
+                print(f"Trajectory ended with error: {error_msg}")
 
     def destroyDC(self):
         self.disconnectSignalsToSelf()
@@ -210,8 +288,13 @@ class DocumentController():
         if hasattr(self, '_agentBackend') and self._agentBackend is not None:
             self._agentBackend.responseReceived.disconnect(self._onAgentResponse)
             self._agentBackend.methodCallRequested.disconnect(self._onAgentMethodCall)
+            self._agentBackend.processingFinished.disconnect(self._onAgentFinished)
+            self._agentBackend.errorOccurred.disconnect(self._onAgentError)
         if hasattr(self, '_agentAction') and self._agentAction is not None:
             self._agentAction.triggered.disconnect(self._toggleAgentDialog)
+        if hasattr(self, '_trajectoryLogger') and self._trajectoryLogger is not None:
+            # Cancel any in-progress trajectory
+            self._trajectoryLogger.cancelTrajectory()
     # end def
 
     def _connectWindowSignalsToSelf(self):

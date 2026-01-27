@@ -74,3 +74,52 @@ The agent should:
 2. Parse natural language into structured method calls
 3. Handle ambiguous requests by asking clarifying questions
 4. Provide feedback on operation results
+
+## Implementation Progress
+
+### Completed Components
+
+#### Agent Dialog (`cadnano2/views/agent/agentdialog.py`)
+- VS Code-style overlay triggered by Ctrl+I (Cmd+I on Mac)
+- Text input with mode toggle (Edit/Developer)
+- Fade animations, drop shadow, escape to close
+- Mode persistence via QSettings
+
+#### Agent Backend (`cadnano2/views/agent/agentbackend.py`)
+- Ollama integration with multi-turn conversation support
+- System prompt with DNA nanostructure design rules
+- Handles qwen3 `</think>` tags
+- Auto-continues on explanations, stops on questions
+- MAX_ITERATIONS (50) safety limit
+
+#### Agent Methods (`cadnano2/views/agent/agentmethods.py`)
+Primitive methods for DNA design manipulation:
+- **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHoneycombPositions`, `listHelices`
+- **Helix**: `createHelix(row, col)`
+- **Strands**: `createScaffoldStrand`, `createStapleStrand`, `createFullLengthStrands`
+- **Crossovers**: `createCrossover`, `getPotentialCrossovers`, `getValidCrossoverPositions`
+- **Insertions**: `addInsertion`, `removeInsertion`
+- **Verification**: `verifyDesign`, `verify6HelixBundle`
+
+#### Design Verifier (`cadnano2/views/agent/agentverifier.py`)
+- Pre-execution validation (checks params before execution)
+- Validates helix positions, strand bounds, crossover alignment (mod 21 rules)
+- Post-execution verification with reward scores (0-1)
+- Honeycomb lattice crossover position rules encoded
+
+#### Trajectory Logger (`cadnano2/views/agent/trajectorylogger.py`)
+- Records agent sessions: task, actions, results, verification scores
+- Saves to `~/.cadnano2/trajectories/{success|partial|failed}/`
+- `exportForVerlTool()` for RLVR training data export
+- Statistics and listing methods
+
+### Integration Points
+
+The DocumentController (`cadnano2/controllers/documentcontroller.py`) integrates all components:
+- Creates agent components in `_initAgentDialog()`
+- Handles command flow: user → backend → methods → feedback loop
+- Pre-validates actions before execution
+- Logs trajectories for Edit mode sessions
+
+### Known Issues
+- Timeout errors may occur with slow model responses (current timeout: 120s)
