@@ -378,3 +378,50 @@ class TrajectoryLogger(QObject):
             stats["avg_duration"] = sum(all_durations) / len(all_durations)
 
         return stats
+
+    def getReplayActions(self, trajectory_id):
+        """
+        Get the list of actions from a trajectory for replay.
+
+        Args:
+            trajectory_id (str): The trajectory ID
+
+        Returns:
+            list: List of (method_name, params) tuples, or None if not found
+        """
+        traj = self.loadTrajectory(trajectory_id)
+        if traj is None:
+            return None
+
+        actions = []
+        for action in traj.get("actions", []):
+            method = action.get("method")
+            params = action.get("params", {})
+            if method:
+                actions.append((method, params))
+
+        return actions
+
+    def getTrajectoryInfo(self, trajectory_id):
+        """
+        Get summary info about a trajectory.
+
+        Args:
+            trajectory_id (str): The trajectory ID
+
+        Returns:
+            dict: Trajectory summary or None if not found
+        """
+        traj = self.loadTrajectory(trajectory_id)
+        if traj is None:
+            return None
+
+        return {
+            "id": traj.get("id"),
+            "task": traj.get("task"),
+            "model": traj.get("model"),
+            "action_count": len(traj.get("actions", [])),
+            "final_score": traj.get("final_score"),
+            "success": traj.get("success"),
+            "duration": traj.get("duration_seconds")
+        }

@@ -84,6 +84,29 @@ class DesignVerifier:
 
         return True, "Valid helix position", []
 
+    def _validate_extendPartSize(self, params):
+        """Validate part size extension."""
+        min_length = params.get('min_length_needed')
+
+        if min_length is None:
+            return False, "Missing min_length_needed parameter", []
+
+        if not isinstance(min_length, int) or min_length <= 0:
+            return False, "min_length_needed must be a positive integer", []
+
+        part = self.activePart
+        if part is None:
+            return False, "No active part - create a Honeycomb part first", []
+
+        if min_length > 10000:
+            return False, f"Requested length {min_length} exceeds maximum (10000)", []
+
+        current_max = part.maxBaseIdx()
+        if min_length <= current_max + 1:
+            return True, f"Part already large enough (current: 0-{current_max})", []
+
+        return True, "Valid extension request", []
+
     def _validate_createScaffoldStrand(self, params):
         """Validate scaffold strand creation."""
         return self._validateStrandCreation(params, 'scaffold')
@@ -113,8 +136,8 @@ class DesignVerifier:
         max_idx = part.maxBaseIdx()
 
         if start_idx < 0 or end_idx > max_idx:
-            return False, f"Strand extends beyond valid range (0-{max_idx})", [
-                f"Suggested: start_idx=0, length={max_idx+1}"
+            return False, f"Strand extends beyond valid range (0-{max_idx}). Use extendPartSize({length}) first.", [
+                f"Call extendPartSize with min_length_needed={length} to extend the part"
             ]
 
         # Check alignment to step size for typical designs

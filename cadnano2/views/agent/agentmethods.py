@@ -225,6 +225,379 @@ class AgentMethods:
 
         return f"Potential {strand_type} crossovers for helix {helix_num}: {result}"
 
+    # ==================== PART SIZE MANAGEMENT ====================
+
+    def extendPartSize(self, min_length_needed):
+        """
+        Extend the part size to accommodate the desired strand length.
+        Use this when strand creation fails due to index out of range.
+
+        Args:
+            min_length_needed (int): Minimum number of bases needed (e.g., 84 for 84bp strands)
+
+        Returns:
+            str: Success message with new range, or error
+        """
+        from math import ceil
+
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        current_max = part.maxBaseIdx()
+        step = part.stepSize()
+
+        # Need max index to be at least min_length_needed - 1 (since indices are 0-based)
+        needed_max_idx = min_length_needed - 1
+
+        if needed_max_idx <= current_max:
+            return f"Part already has sufficient size. Current range: 0-{current_max}"
+
+        # Calculate how much to extend (must be multiple of step size)
+        delta_needed = needed_max_idx - current_max
+        # Round up to next multiple of step size
+        delta = int(ceil(delta_needed / step)) * step
+
+        try:
+            part.resizeVirtualHelices(0, delta, useUndoStack=True)
+            new_max = part.maxBaseIdx()
+            return f"Extended part size. New range: 0-{new_max} (added {delta} bases)"
+        except Exception as e:
+            return f"Error extending part: {e}"
+
+    def getPartSize(self):
+        """
+        Get the current part size information.
+
+        Returns:
+            str: Part size info including valid index range
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        min_idx = part.minBaseIdx()
+        max_idx = part.maxBaseIdx()
+        step = part.stepSize()
+
+        return f"Part size: indices {min_idx}-{max_idx} (step size: {step}bp). Max strand length: {max_idx - min_idx + 1}bp"
+
+    # ==================== SELECTION MANAGEMENT ====================
+
+    def getSelectedStrands(self):
+        """
+        Get information about currently selected strands in the GUI.
+
+        Returns:
+            str: List of selected strands with their endpoints, or message if none selected
+        """
+        doc = self.document
+        if doc is None:
+            return "Error: No document"
+
+        selectionDict = doc.selectionDict()
+        if not selectionDict:
+            return "No strands currently selected. Use the GUI to select strands first."
+
+        selected = []
+        for strandSet, strandDict in selectionDict.items():
+            for strand, endpoints in strandDict.items():
+                vh = strand.virtualHelix()
+                idxL, idxH = strand.idxs()
+                strand_type = "scaffold" if strand.isScaffold() else "staple"
+                # endpoints is (lowSelected, highSelected)
+                low_sel, high_sel = endpoints
+                selected.append({
+                    'helix': vh.number(),
+                    'type': strand_type,
+                    'low_idx': idxL,
+                    'high_idx': idxH,
+                    'low_selected': low_sel,
+                    'high_selected': high_sel,
+                    'has_low_connection': strand.connectionLow() is not None,
+                    'has_high_connection': strand.connectionHigh() is not None
+                })
+
+        if not selected:
+            return "No strands currently selected."
+
+        return f"Selected strands: {selected}"
+
+    def moveSelection(self, delta):
+        """
+        Move selected strand endpoints by delta base pairs.
+        This maintains crossover connections through snap-to behavior.
+
+        Args:
+            delta (int): Number of base pairs to move (positive = right, negative = left)
+
+        Returns:
+            str: Success message or error
+        """
+        doc = self.document
+        if doc is None:
+            return "Error: No document"
+
+        selectionDict = doc.selectionDict()
+        if not selectionDict:
+            return "Error: No strands selected. Select strands in the GUI first."
+
+        try:
+            doc.resizeSelection(delta, useUndoStack=True)
+            return f"Moved selection by {delta} base pairs"
+        except Exception as e:
+            return f"Error moving selection: {e}"
+
+    def clearSelection(self):
+        """
+        Clear all strand selections.
+
+        Returns:
+            str: Success message
+        """
+        doc = self.document
+        if doc is None:
+            return "Error: No document"
+
+        doc.clearAllSelections()
+        return "Selection cleared"
+
+    def selectStrand(self, helix_num, idx, strand_type, select_low=True, select_high=True):
+        """
+        Programmatically select a strand or part of a strand.
+
+        Args:
+            helix_num (int): Virtual helix number
+            idx (int): Any index within the strand
+            strand_type (str): "scaffold" or "staple"
+            select_low (bool): Select the low endpoint
+            select_high (bool): Select the high endpoint
+
+        Returns:
+            str: Success message or error
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        if strand_type.lower() == "scaffold":
+            strandSet = vh.scaffoldStrandSet()
+        else:
+            strandSet = vh.stapleStrandSet()
+
+        strand = strandSet.getStrand(idx)
+        if strand is None:
+            return f"Error: No {strand_type} strand at helix {helix_num} index {idx}"
+
+        doc = self.document
+        doc.addStrandToSelection(strand, (select_low, select_high))
+        doc.updateSelection()
+
+        idxL, idxH = strand.idxs()
+        return f"Selected {strand_type} strand on helix {helix_num} [{idxL}-{idxH}]"
+
+    # ==================== STRAND PRIMITIVES ====================
+
+    def listStrands(self, helix_num=None, strand_type=None):
+        """
+        List all strands in the design with their properties.
+        This is a key primitive for iterating over strands.
+
+        Args:
+            helix_num (int, optional): Filter to specific helix
+            strand_type (str, optional): Filter to "scaffold" or "staple"
+
+        Returns:
+            str: JSON-formatted list of all strands with properties
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        strands = []
+        vhs = [part.virtualHelix(helix_num)] if helix_num is not None else part.getVirtualHelices()
+
+        for vh in vhs:
+            if vh is None:
+                continue
+            helix = vh.number()
+            row, col = vh.coord()
+            parity = "even" if row % 2 == col % 2 else "odd"
+
+            strand_sets = []
+            if strand_type is None or strand_type.lower() == "scaffold":
+                strand_sets.append(("scaffold", vh.scaffoldStrandSet()))
+            if strand_type is None or strand_type.lower() == "staple":
+                strand_sets.append(("staple", vh.stapleStrandSet()))
+
+            for stype, ss in strand_sets:
+                for strand in ss:
+                    lo, hi = strand.idxs()
+                    strands.append({
+                        "helix": helix,
+                        "type": stype,
+                        "low_idx": lo,
+                        "high_idx": hi,
+                        "length": hi - lo + 1,
+                        "parity": parity,
+                        "has_xover_low": strand.connectionLow() is not None,
+                        "has_xover_high": strand.connectionHigh() is not None
+                    })
+
+        return f"Strands ({len(strands)} total): {strands}"
+
+    def getStrandAt(self, helix_num, idx, strand_type):
+        """
+        Get information about the strand at a specific location.
+
+        Args:
+            helix_num (int): Virtual helix number
+            idx (int): Base index (any index within the strand)
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: Strand info or error if not found
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        if strand_type.lower() == "scaffold":
+            ss = vh.scaffoldStrandSet()
+        else:
+            ss = vh.stapleStrandSet()
+
+        strand = ss.getStrand(idx)
+        if strand is None:
+            return f"No {strand_type} strand at helix {helix_num} index {idx}"
+
+        lo, hi = strand.idxs()
+        row, col = vh.coord()
+        parity = "even" if row % 2 == col % 2 else "odd"
+
+        info = {
+            "helix": helix_num,
+            "type": strand_type,
+            "low_idx": lo,
+            "high_idx": hi,
+            "length": hi - lo + 1,
+            "parity": parity,
+            "has_xover_low": strand.connectionLow() is not None,
+            "has_xover_high": strand.connectionHigh() is not None
+        }
+
+        # Add connection details if present
+        if strand.connectionLow():
+            conn = strand.connectionLow()
+            info["xover_low_to"] = {
+                "helix": conn.virtualHelix().number(),
+                "idx": conn.idx5Prime() if conn.isDrawn5to3() else conn.idx3Prime()
+            }
+        if strand.connectionHigh():
+            conn = strand.connectionHigh()
+            info["xover_high_to"] = {
+                "helix": conn.virtualHelix().number(),
+                "idx": conn.idx5Prime() if conn.isDrawn5to3() else conn.idx3Prime()
+            }
+
+        return f"Strand: {info}"
+
+    def resizeStrand(self, helix_num, idx, strand_type, new_low, new_high):
+        """
+        Resize a strand by setting new endpoint indices.
+        This is the primitive for moving/extending/shortening strands.
+
+        Args:
+            helix_num (int): Virtual helix number
+            idx (int): Any index within the strand to identify it
+            strand_type (str): "scaffold" or "staple"
+            new_low (int): New low index
+            new_high (int): New high index
+
+        Returns:
+            str: Success message or error
+        """
+        from cadnano2.model.strand import Strand
+
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        if strand_type.lower() == "scaffold":
+            ss = vh.scaffoldStrandSet()
+        else:
+            ss = vh.stapleStrandSet()
+
+        strand = ss.getStrand(idx)
+        if strand is None:
+            return f"Error: No {strand_type} strand at helix {helix_num} index {idx}"
+
+        old_lo, old_hi = strand.idxs()
+
+        if new_low > new_high:
+            return f"Error: new_low ({new_low}) cannot be greater than new_high ({new_high})"
+
+        try:
+            Strand.resize(strand, (new_low, new_high), useUndoStack=True)
+            return f"Resized {strand_type} strand on helix {helix_num} from [{old_lo}-{old_hi}] to [{new_low}-{new_high}]"
+        except Exception as e:
+            return f"Error resizing strand: {e}"
+
+    def deleteStrand(self, helix_num, idx, strand_type):
+        """
+        Delete a strand segment.
+
+        Args:
+            helix_num (int): Virtual helix number
+            idx (int): Any index within the strand to identify it
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: Success message or error
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        if strand_type.lower() == "scaffold":
+            ss = vh.scaffoldStrandSet()
+        else:
+            ss = vh.stapleStrandSet()
+
+        strand = ss.getStrand(idx)
+        if strand is None:
+            return f"Error: No {strand_type} strand at helix {helix_num} index {idx}"
+
+        lo, hi = strand.idxs()
+
+        try:
+            # Remove connections first
+            if strand.connectionLow():
+                strand.connectionLow().remove(useUndoStack=True)
+            if strand.connectionHigh():
+                strand.connectionHigh().remove(useUndoStack=True)
+            # Delete the strand
+            ss.removeStrand(strand, useUndoStack=True)
+            return f"Deleted {strand_type} strand on helix {helix_num} [{lo}-{hi}]"
+        except Exception as e:
+            return f"Error deleting strand: {e}"
+
     # ==================== HELIX MANAGEMENT ====================
 
     def createHelix(self, row, col):
@@ -255,6 +628,32 @@ class AgentMethods:
             return f"Created helix at ({row}, {col})"
         except Exception as e:
             return f"Error creating helix: {e}"
+
+    def deleteHelix(self, helix_num):
+        """
+        Delete a virtual helix and all its strands.
+
+        Args:
+            helix_num (int): The virtual helix number to delete
+
+        Returns:
+            str: Success message or error
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        row, col = vh.coord()
+
+        try:
+            part.removeVirtualHelix(vh, useUndoStack=True)
+            return f"Deleted helix {helix_num} at ({row}, {col})"
+        except Exception as e:
+            return f"Error deleting helix: {e}"
 
     # ==================== STRAND MANAGEMENT ====================
 
@@ -394,6 +793,61 @@ class AgentMethods:
             return f"Created {strand_type} crossover: helix {helix1}[{idx1}] <-> helix {helix2}[{idx2}]"
         except Exception as e:
             return f"Error creating crossover: {e}"
+
+    def removeCrossover(self, helix_num, idx, strand_type):
+        """
+        Remove a crossover at the specified location.
+
+        Args:
+            helix_num (int): Helix number where the crossover is
+            idx (int): Index of the crossover
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: Success message or error
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        if strand_type.lower() == "scaffold":
+            ss = vh.scaffoldStrandSet()
+        else:
+            ss = vh.stapleStrandSet()
+
+        strand = ss.getStrand(idx)
+        if strand is None:
+            return f"Error: No {strand_type} strand at helix {helix_num} index {idx}"
+
+        lo, hi = strand.idxs()
+
+        # Check which end has the crossover
+        removed = False
+        if idx == lo and strand.connectionLow():
+            conn = strand.connectionLow()
+            other_vh = conn.virtualHelix().number()
+            try:
+                strand.connectionLow().remove(useUndoStack=True)
+                removed = True
+                return f"Removed crossover at helix {helix_num}[{idx}] (was connected to helix {other_vh})"
+            except Exception as e:
+                return f"Error removing crossover: {e}"
+        elif idx == hi and strand.connectionHigh():
+            conn = strand.connectionHigh()
+            other_vh = conn.virtualHelix().number()
+            try:
+                strand.connectionHigh().remove(useUndoStack=True)
+                removed = True
+                return f"Removed crossover at helix {helix_num}[{idx}] (was connected to helix {other_vh})"
+            except Exception as e:
+                return f"Error removing crossover: {e}"
+
+        if not removed:
+            return f"No crossover found at helix {helix_num} index {idx}"
 
     def findCrossoversWithSpacing(self, strand_type, min_spacing=21):
         """

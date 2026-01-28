@@ -86,17 +86,20 @@ The agent should:
 - Mode persistence via QSettings
 
 #### Agent Backend (`cadnano2/views/agent/agentbackend.py`)
-- Ollama integration with multi-turn conversation support
+- **Dual backend support**: Ollama (local) and OpenAI API
+- Backend selection dropdown in dialog
 - System prompt with DNA nanostructure design rules
-- Handles qwen3 `</think>` tags
-- Auto-continues on explanations, stops on questions
+- Handles qwen3 `</think>` tags and GPT-style responses
+- Improved JSON extraction for method calls
 - MAX_ITERATIONS (50) safety limit
 
 #### Agent Methods (`cadnano2/views/agent/agentmethods.py`)
 Primitive methods for DNA design manipulation:
-- **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHoneycombPositions`, `listHelices`
+- **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHoneycombPositions`, `listHelices`, `getPartSize`
+- **Part Size**: `extendPartSize(min_length_needed)`
 - **Helix**: `createHelix(row, col)`
 - **Strands**: `createScaffoldStrand`, `createStapleStrand`, `createFullLengthStrands`
+- **Selection**: `getSelectedStrands`, `selectStrand`, `moveSelection`, `clearSelection`
 - **Crossovers**: `createCrossover`, `getPotentialCrossovers`, `getValidCrossoverPositions`
 - **Insertions**: `addInsertion`, `removeInsertion`
 - **Verification**: `verifyDesign`, `verify6HelixBundle`
@@ -111,6 +114,7 @@ Primitive methods for DNA design manipulation:
 - Records agent sessions: task, actions, results, verification scores
 - Saves to `~/.cadnano2/trajectories/{success|partial|failed}/`
 - `exportForVerlTool()` for RLVR training data export
+- **Replay support**: `getReplayActions()`, `getTrajectoryInfo()`
 - Statistics and listing methods
 
 ### Integration Points
@@ -120,6 +124,118 @@ The DocumentController (`cadnano2/controllers/documentcontroller.py`) integrates
 - Handles command flow: user → backend → methods → feedback loop
 - Pre-validates actions before execution
 - Logs trajectories for Edit mode sessions
+- **Trajectory replay**: `/replay <trajectory_id>` and `/list` commands
+- **Human-in-the-loop approval**: After modifying actions execute, shows approval buttons
+
+#### Approval Flow
+
+1. User issues command → agent processes → method executes
+2. For modifying actions (not queries), approval buttons appear:
+   - **Approve**: Logs positive signal, continues agent loop
+   - **Undo**: Reverts via undo stack, logs negative signal, agent retries
+   - **Correct**: Pauses for user to type clarification
+3. Query methods (listHelices, getStrandAt, etc.) auto-continue without approval
+
+### Special Commands
+
+In the agent dialog:
+- `/list` or `/trajectories` - List saved trajectories
+- `/replay <trajectory_id>` - Replay a saved trajectory step-by-step
 
 ### Known Issues
 - Timeout errors may occur with slow model responses (current timeout: 120s)
+- Verifier needs more test coverage with successful trajectories
+
+---
+
+## Training Roadmap
+
+### Current Challenge
+The local model (qwen3:1.7b) cannot reliably produce correct 6-helix bundles. Complex multi-step tasks like 6-helix bundles require many correct decisions in sequence. **New approach**: Start with simpler, single-action tasks that are easier to succeed at and verify.
+
+### Simpler Task Examples
+Instead of "create a 6-helix bundle", start with:
+- "Move the selected strand 3 bp to the right"
+- "Extend this helix by 21 bases"
+- "Add a crossover between helix 0 and helix 1 at position 11"
+- "Select the scaffold strand on helix 0"
+
+These simpler tasks:
+1. Have shorter trajectories (1-3 actions)
+2. Are easier to verify correct/incorrect
+3. Build toward complex operations compositionally
+
+### Phase 1: Expert Trajectory Collection (Complete)
+**Goal:** Validate pipeline and collect successful trajectories using a capable model.
+
+- [x] Implement Ollama backend for local models
+- [x] Add OpenAI API backend for stronger models (gpt-5, etc.)
+- [x] Add selection methods (`getSelectedStrands`, `moveSelection`, etc.)
+- [x] Add trajectory replay (`/replay`, `/list` commands)
+- [x] Add primitive-based composable operations (`listStrands`, `resizeStrand`, etc.)
+- [x] Validate methods layer works with simple tasks
+
+#### Using the OpenAI Backend
+
+1. Set your API key as an environment variable:
+   ```bash
+   export OPENAI_API_KEY="sk-..."
+   ```
+
+2. Launch cadnano and open the agent dialog (Ctrl+I)
+
+3. Use the dropdown in the dialog to select "OpenAI API"
+
+4. The backend will use `gpt-5` by default
+
+#### Replaying Trajectories
+
+1. `/list` - Show recent trajectories
+2. `/replay traj_20260128_...` - Replay a specific trajectory
+
+### Phase 2: Human-in-the-Loop Approval (Complete)
+**Goal:** Add human feedback loop to improve data quality and catch errors.
+
+**Approach:** Execute first, then let user approve/correct based on visual result in GUI.
+This is better than pre-approval because users can't easily map helix IDs to the GUI.
+
+- [x] Add post-execution approval UI to agent dialog
+  - After each action executes, show [Approve] / [Undo] / [Correct] buttons
+  - User sees result in GUI, then decides
+- [x] [Approve] continues the agent loop, logs positive signal
+- [x] [Undo] reverts the action using cadnano undo stack, logs negative signal, agent retries
+- [x] [Correct] pauses agent loop for user to type correction/clarification
+- [x] Log human decisions as training signals in trajectory
+- [ ] Track where the model makes mistakes (analysis tooling)
+
+### Phase 3: Recording Mode for Corrections
+**Goal:** When human corrects the agent, capture the correct action.
+
+- [ ] Implement "record mode" in the dialog
+- [ ] When human clicks [Correct], enter demonstration mode
+- [ ] Capture (context, wrong_action, correct_action) tuples
+- [ ] Save correction data for training
+
+### Phase 4: Distillation & Fine-tuning
+**Goal:** Train local model on expert + corrected trajectories.
+
+- [ ] Export successful trajectories in training format
+- [ ] Fine-tune qwen3 (or similar) using LoRA/QLoRA
+- [ ] Supervised learning on (state, action) pairs
+- [ ] Evaluate on held-out test tasks
+
+### Phase 5: RLVR Training
+**Goal:** Use verifier rewards to further improve the fine-tuned model.
+
+- [ ] Implement RLVR training loop
+- [ ] Use DesignVerifier scores as reward signal
+- [ ] Iterate: generate trajectories → score → update model
+- [ ] Curriculum: start with 2-helix, work up to 6-helix
+
+### Architecture Decision: Tiered Models
+Consider a hybrid approach for production:
+- **Tier 1 (Planning):** Cloud model for complex reasoning
+- **Tier 2 (Execution):** Local model for individual steps
+- **Tier 3 (Review):** Human approval for critical decisions
+
+This balances cost, latency, and quality.

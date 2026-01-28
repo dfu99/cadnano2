@@ -110,15 +110,31 @@ class DocumentController():
         self._agentVerifier = DesignVerifier(self)
         self._trajectoryLogger = TrajectoryLogger(parent=self.win)
 
+        # Approval mode state
+        self._awaitingApproval = False
+        self._lastActionMethod = None
+        self._lastActionParams = None
+        self._lastActionResult = None
+
         # Connect agent signals
         self._agentDialog.commandSubmitted.connect(self._onAgentCommand)
+        self._agentDialog.backendChanged.connect(self._onBackendChanged)
         self._agentBackend.responseReceived.connect(self._onAgentResponse)
         self._agentBackend.methodCallRequested.connect(self._onAgentMethodCall)
+        print("[Agent] Signal connections established")
         self._agentBackend.processingStarted.connect(
             lambda: self._agentDialog.setStatus("Processing...")
         )
         self._agentBackend.processingFinished.connect(self._onAgentFinished)
         self._agentBackend.errorOccurred.connect(self._onAgentError)
+
+        # Connect approval signals
+        self._agentDialog.actionApproved.connect(self._onActionApproved)
+        self._agentDialog.actionUndoRequested.connect(self._onActionUndo)
+        self._agentDialog.actionCorrectionRequested.connect(self._onActionCorrect)
+
+        # Initialize backend from saved dialog setting
+        self._onBackendChanged(self._agentDialog.backend())
 
         # Create keyboard shortcut (Ctrl+I / Cmd+I)
         self._agentAction = QAction("Toggle Agent Dialog", self.win)
@@ -134,9 +150,114 @@ class DocumentController():
             self._agentDialog.positionRelativeToParent()
             self._agentDialog.showDialog()
 
+    def _onBackendChanged(self, backend):
+        """Handle backend change from dialog."""
+        if backend == "openai":
+            self._agentBackend.setBackend("openai", model="gpt-5")
+        else:
+            self._agentBackend.setBackend("ollama", model="qwen3:1.7b")
+
+    def _listTrajectories(self):
+        """List available trajectories."""
+        trajectories = self._trajectoryLogger.listTrajectories()
+        if not trajectories:
+            self._agentDialog.setStatus("No trajectories found.")
+            return
+
+        lines = ["Available trajectories:", ""]
+        for traj in trajectories[:20]:  # Show latest 20
+            score = traj.get('score') or 0
+            actions = traj.get('action_count', 0)
+            task = traj.get('task', '')[:50]
+            lines.append(f"  {traj['id']} [{traj['category']}] score={score:.2f} actions={actions}")
+            lines.append(f"    Task: {task}...")
+            lines.append("")
+
+        lines.append("Use '/replay <trajectory_id>' to replay a trajectory.")
+        self._agentDialog.setStatus('\n'.join(lines))
+
+    def _replayTrajectory(self, trajectory_id):
+        """Replay a saved trajectory."""
+        info = self._trajectoryLogger.getTrajectoryInfo(trajectory_id)
+        if info is None:
+            self._agentDialog.setStatus(f"Trajectory not found: {trajectory_id}")
+            return
+
+        actions = self._trajectoryLogger.getReplayActions(trajectory_id)
+        if not actions:
+            self._agentDialog.setStatus(f"No actions in trajectory: {trajectory_id}")
+            return
+
+        # Show trajectory info
+        lines = [
+            f"Replaying trajectory: {trajectory_id}",
+            f"Task: {info.get('task', 'N/A')}",
+            f"Actions: {info.get('action_count', 0)}",
+            f"Original score: {info.get('final_score', 'N/A')}",
+            "",
+            "Executing actions...",
+            ""
+        ]
+        self._agentDialog.setStatus('\n'.join(lines))
+
+        # Execute each action with a small delay for visibility
+        from PyQt6.QtCore import QTimer
+
+        self._replayActions = actions
+        self._replayIndex = 0
+        self._replayLines = lines
+
+        # Start replay loop
+        QTimer.singleShot(500, self._executeNextReplayAction)
+
+    def _executeNextReplayAction(self):
+        """Execute the next action in replay sequence."""
+        from PyQt6.QtCore import QTimer
+
+        if self._replayIndex >= len(self._replayActions):
+            # Replay complete - run verification
+            self._replayLines.append("")
+            self._replayLines.append("Replay complete. Running verification...")
+            self._agentDialog.setStatus('\n'.join(self._replayLines))
+
+            # Verify the result
+            verification = self._agentVerifier.getRewardSignal()
+            self._replayLines.append(f"Final score: {verification['reward']:.2f}")
+            self._replayLines.append(f"Valid: {verification['valid']}")
+            if verification['breakdown'].get('issues'):
+                for issue in verification['breakdown']['issues']:
+                    self._replayLines.append(f"  Issue: {issue}")
+            self._agentDialog.setStatus('\n'.join(self._replayLines))
+            return
+
+        method_name, params = self._replayActions[self._replayIndex]
+        self._replayIndex += 1
+
+        # Execute the method
+        self._replayLines.append(f"[{self._replayIndex}] {method_name}({params})")
+        self._agentDialog.setStatus('\n'.join(self._replayLines))
+
+        success, result = self._agentMethods.executeMethod(method_name, params)
+        status = "OK" if success else "FAILED"
+        self._replayLines.append(f"    -> {status}: {result[:80]}...")
+
+        self._agentDialog.setStatus('\n'.join(self._replayLines))
+
+        # Schedule next action
+        QTimer.singleShot(300, self._executeNextReplayAction)
+
     def _onAgentCommand(self, command):
         """Forward command to the agent backend."""
         mode = self._agentDialog.mode()
+
+        # Check for special replay commands
+        if command.startswith("/replay "):
+            trajectory_id = command[8:].strip()
+            self._replayTrajectory(trajectory_id)
+            return
+        elif command == "/list" or command == "/trajectories":
+            self._listTrajectories()
+            return
 
         # Start trajectory logging for Edit mode
         if mode == "edit":
@@ -159,8 +280,11 @@ class DocumentController():
 
     def _onAgentMethodCall(self, methodName, params):
         """Execute a method requested by the agent with validation."""
+        print(f"[Agent] Method call received: {methodName}({params})")
+
         # Pre-execution validation
         is_valid, validation_msg, suggestions = self._agentVerifier.validateAction(methodName, params)
+        print(f"[Agent] Validation: valid={is_valid}, msg={validation_msg}")
 
         if not is_valid:
             # Action would fail - provide feedback without executing
@@ -184,6 +308,7 @@ class DocumentController():
 
         # Execute the method
         success, result = self._agentMethods.executeMethod(methodName, params)
+        print(f"[Agent] Execution: success={success}, result={result}")
 
         # Format result message
         if success:
@@ -218,7 +343,32 @@ class DocumentController():
                     metrics=verification['breakdown']['metrics']
                 )
 
-        # Feed result back to agent for multi-turn loop
+        # Check if this is a modifying action that needs approval
+        # Query methods don't need approval, only actions that change the design
+        query_methods = {
+            'listHelices', 'listStrands', 'getStrandAt', 'getActivePartInfo',
+            'getHelixInfo', 'getHoneycombPositions', 'getPotentialCrossovers',
+            'getValidCrossoverPositions', 'getSelectedStrands', 'verifyDesign',
+            'verify6HelixBundle'
+        }
+
+        if success and methodName not in query_methods:
+            # Store action info for approval flow
+            self._lastActionMethod = methodName
+            self._lastActionParams = params
+            self._lastActionResult = result_msg
+            self._awaitingApproval = True
+
+            # Show approval buttons - user will see result in GUI
+            action_desc = f"{methodName}({params})"
+            self._agentDialog.showApprovalButtons(action_desc)
+
+            # Pause the agent loop - don't feed back yet
+            # The approval handler will continue the loop
+            print("[Agent] Awaiting user approval...")
+            return
+
+        # For query methods or failed actions, continue the agent loop immediately
         self._agentBackend.feedbackToAgent(result_msg)
 
     def _onAgentFinished(self):
@@ -247,6 +397,84 @@ class DocumentController():
             trajectory = self._trajectoryLogger.endTrajectory(success=False, error=error_msg)
             if trajectory:
                 print(f"Trajectory ended with error: {error_msg}")
+
+    def _onActionApproved(self):
+        """Handle user approving an action."""
+        print("[Agent] Action approved by user")
+
+        # Log approval decision
+        if self._trajectoryLogger.isRecording():
+            self._trajectoryLogger.logConversation(
+                "user",
+                f"[APPROVED] {self._lastActionMethod}"
+            )
+
+        # Reset approval state
+        self._awaitingApproval = False
+
+        # Continue the agent loop with positive feedback
+        result_msg = f"{self._lastActionResult} [User approved]"
+        self._agentBackend.feedbackToAgent(result_msg)
+
+    def _onActionUndo(self):
+        """Handle user requesting undo of an action."""
+        print("[Agent] Action undo requested by user")
+
+        # Perform the undo using cadnano's undo stack
+        undo_stack = self.undoStack()
+        if undo_stack and undo_stack.canUndo():
+            undo_stack.undo()
+            undo_msg = "Action undone successfully."
+            self._agentDialog.appendStatus(f"\n[Undo] {undo_msg}")
+        else:
+            undo_msg = "Nothing to undo."
+            self._agentDialog.appendStatus(f"\n[Undo] {undo_msg}")
+
+        # Log undo decision
+        if self._trajectoryLogger.isRecording():
+            self._trajectoryLogger.logConversation(
+                "user",
+                f"[UNDONE] {self._lastActionMethod} - {undo_msg}"
+            )
+            # Mark the last action as unsuccessful in training data
+            self._trajectoryLogger.logAction(
+                method_name=self._lastActionMethod,
+                params=self._lastActionParams,
+                result="Undone by user",
+                success=False,
+                validation_msg="User rejected and undid this action"
+            )
+
+        # Reset approval state
+        self._awaitingApproval = False
+
+        # Continue the agent loop with negative feedback
+        self._agentBackend.feedbackToAgent(
+            f"User undid the action. The action was not acceptable. "
+            f"Try a different approach or ask for clarification."
+        )
+
+    def _onActionCorrect(self):
+        """Handle user wanting to correct/refine an action."""
+        print("[Agent] Action correction requested by user")
+
+        # Log correction request
+        if self._trajectoryLogger.isRecording():
+            self._trajectoryLogger.logConversation(
+                "user",
+                f"[CORRECTION REQUESTED] {self._lastActionMethod}"
+            )
+
+        # Reset approval state so user can type
+        self._awaitingApproval = False
+
+        # Show message prompting user for correction
+        self._agentDialog.appendStatus(
+            "\n[Correct] Enter your correction or clarification below:"
+        )
+
+        # The agent loop is paused - user will type a new command
+        # which will be processed as a follow-up to refine the action
 
     def destroyDC(self):
         self.disconnectSignalsToSelf()

@@ -11,7 +11,8 @@ util.qtWrapImport('QtCore', globals(), [
 ])
 util.qtWrapImport('QtWidgets', globals(), [
     'QWidget', 'QVBoxLayout', 'QHBoxLayout', 'QLineEdit',
-    'QLabel', 'QPushButton', 'QGraphicsDropShadowEffect'
+    'QLabel', 'QPushButton', 'QGraphicsDropShadowEffect',
+    'QScrollArea', 'QTextEdit', 'QSizeGrip', 'QComboBox'
 ])
 util.qtWrapImport('QtGui', globals(), ['QColor'])
 
@@ -23,16 +24,27 @@ class AgentDialog(QWidget):
     Signals:
         commandSubmitted(str): Emitted when user submits a command
         modeChanged(str): Emitted when mode is toggled ('edit' or 'developer')
+        backendChanged(str): Emitted when backend is changed ('ollama' or 'openai')
         dialogClosed(): Emitted when dialog is closed
+        actionApproved(): Emitted when user approves an action
+        actionUndoRequested(): Emitted when user wants to undo an action
+        actionCorrectionRequested(): Emitted when user wants to correct an action
     """
 
     commandSubmitted = pyqtSignal(str)
     modeChanged = pyqtSignal(str)
+    backendChanged = pyqtSignal(str)
     dialogClosed = pyqtSignal()
+    actionApproved = pyqtSignal()
+    actionUndoRequested = pyqtSignal()
+    actionCorrectionRequested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._mode = "edit"  # Default mode
+        self._backend = "ollama"  # Default backend
+        self._dragging = False
+        self._dragPosition = None
         self._loadSettings()
         self._setupUI()
         self._setupAnimations()
@@ -44,6 +56,9 @@ class AgentDialog(QWidget):
         savedMode = settings.value("mode", "edit")
         if savedMode in ("edit", "developer"):
             self._mode = savedMode
+        savedBackend = settings.value("backend", "ollama")
+        if savedBackend in ("ollama", "openai"):
+            self._backend = savedBackend
         settings.endGroup()
 
     def _saveSettings(self):
@@ -51,6 +66,7 @@ class AgentDialog(QWidget):
         settings = QSettings()
         settings.beginGroup("AgentDialog")
         settings.setValue("mode", self._mode)
+        settings.setValue("backend", self._backend)
         settings.endGroup()
 
     def _setupUI(self):
@@ -62,8 +78,10 @@ class AgentDialog(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        # Fixed width
-        self.setFixedWidth(600)
+        # Resizable dimensions
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(200)
+        self.resize(600, 300)
 
         # Main container with styling
         self._container = QWidget(self)
@@ -88,13 +106,46 @@ class AgentDialog(QWidget):
         containerLayout.setContentsMargins(12, 8, 12, 8)
         containerLayout.setSpacing(6)
 
-        # Top row: mode label and toggle button
-        topRow = QHBoxLayout()
-        topRow.setContentsMargins(0, 0, 0, 0)
+        # Title bar for dragging
+        self._titleBar = QWidget()
+        self._titleBar.setFixedHeight(24)
+        self._titleBar.setStyleSheet("background: transparent;")
+        titleBarLayout = QHBoxLayout(self._titleBar)
+        titleBarLayout.setContentsMargins(0, 0, 0, 0)
 
         self._modeLabel = QLabel()
         self._modeLabel.setStyleSheet("font-weight: bold; color: #333;")
         self._updateModeLabel()
+
+        # Backend selector
+        self._backendSelector = QComboBox()
+        self._backendSelector.addItem("Ollama (Local)", "ollama")
+        self._backendSelector.addItem("OpenAI API", "openai")
+        self._backendSelector.setStyleSheet("""
+            QComboBox {
+                background-color: #f0f0f0;
+                border: 1px solid #c0c0c0;
+                border-radius: 4px;
+                padding: 2px 6px;
+                font-size: 11px;
+                min-width: 100px;
+                color: #333;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox QAbstractItemView {
+                background-color: white;
+                color: #333;
+                selection-background-color: #0078d4;
+                selection-color: white;
+            }
+        """)
+        # Set current backend
+        idx = self._backendSelector.findData(self._backend)
+        if idx >= 0:
+            self._backendSelector.setCurrentIndex(idx)
+        self._backendSelector.currentIndexChanged.connect(self._onBackendChanged)
 
         self._toggleButton = QPushButton()
         self._toggleButton.setStyleSheet("""
@@ -115,10 +166,11 @@ class AgentDialog(QWidget):
         self._updateToggleButton()
         self._toggleButton.clicked.connect(self._onToggleMode)
 
-        topRow.addWidget(self._modeLabel)
-        topRow.addStretch()
-        topRow.addWidget(self._toggleButton)
-        containerLayout.addLayout(topRow)
+        titleBarLayout.addWidget(self._modeLabel)
+        titleBarLayout.addStretch()
+        titleBarLayout.addWidget(self._backendSelector)
+        titleBarLayout.addWidget(self._toggleButton)
+        containerLayout.addWidget(self._titleBar)
 
         # Input field
         self._inputField = QLineEdit()
@@ -140,18 +192,104 @@ class AgentDialog(QWidget):
         self._inputField.returnPressed.connect(self._onSubmit)
         containerLayout.addWidget(self._inputField)
 
-        # Status label
-        self._statusLabel = QLabel("")
-        self._statusLabel.setStyleSheet("color: #666; font-size: 11px;")
-        self._statusLabel.setWordWrap(True)
-        containerLayout.addWidget(self._statusLabel)
+        # Scrollable response area
+        self._responseArea = QTextEdit()
+        self._responseArea.setReadOnly(True)
+        self._responseArea.setStyleSheet("""
+            QTextEdit {
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 12px;
+                background-color: #fafafa;
+                color: #333;
+            }
+        """)
+        self._responseArea.setPlaceholderText("Agent responses will appear here...")
+        containerLayout.addWidget(self._responseArea, 1)  # stretch factor 1
+
+        # Approval buttons row (hidden by default)
+        self._approvalRow = QWidget()
+        approvalLayout = QHBoxLayout(self._approvalRow)
+        approvalLayout.setContentsMargins(0, 4, 0, 4)
+        approvalLayout.setSpacing(8)
+
+        self._approvalLabel = QLabel("Action executed. Review in GUI:")
+        self._approvalLabel.setStyleSheet("color: #666; font-size: 11px;")
+
+        buttonStyle = """
+            QPushButton {
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                opacity: 0.9;
+            }
+        """
+
+        self._approveButton = QPushButton("✓ Approve")
+        self._approveButton.setStyleSheet(buttonStyle + """
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+            }
+        """)
+        self._approveButton.clicked.connect(self._onApprove)
+
+        self._undoButton = QPushButton("↩ Undo")
+        self._undoButton.setStyleSheet(buttonStyle + """
+            QPushButton {
+                background-color: #dc3545;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #c82333;
+            }
+        """)
+        self._undoButton.clicked.connect(self._onUndo)
+
+        self._correctButton = QPushButton("✎ Correct")
+        self._correctButton.setStyleSheet(buttonStyle + """
+            QPushButton {
+                background-color: #007bff;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+        """)
+        self._correctButton.clicked.connect(self._onCorrect)
+
+        approvalLayout.addWidget(self._approvalLabel)
+        approvalLayout.addStretch()
+        approvalLayout.addWidget(self._approveButton)
+        approvalLayout.addWidget(self._undoButton)
+        approvalLayout.addWidget(self._correctButton)
+
+        self._approvalRow.hide()  # Hidden by default
+        containerLayout.addWidget(self._approvalRow)
+
+        # Bottom row with size grip
+        bottomRow = QHBoxLayout()
+        bottomRow.setContentsMargins(0, 0, 0, 0)
+        bottomRow.addStretch()
+        self._sizeGrip = QSizeGrip(self)
+        self._sizeGrip.setStyleSheet("background: transparent;")
+        bottomRow.addWidget(self._sizeGrip)
+        containerLayout.addLayout(bottomRow)
 
         # Main layout for this widget
         mainLayout = QVBoxLayout(self)
         mainLayout.setContentsMargins(10, 10, 10, 10)  # Margin for shadow
         mainLayout.addWidget(self._container)
-
-        self.adjustSize()
 
     def _setupAnimations(self):
         """Set up fade animations."""
@@ -184,6 +322,12 @@ class AgentDialog(QWidget):
         self._saveSettings()
         self.modeChanged.emit(self._mode)
 
+    def _onBackendChanged(self, index):
+        """Handle backend selection change."""
+        self._backend = self._backendSelector.itemData(index)
+        self._saveSettings()
+        self.backendChanged.emit(self._backend)
+
     def _onSubmit(self):
         """Handle command submission."""
         command = self._inputField.text().strip()
@@ -191,17 +335,60 @@ class AgentDialog(QWidget):
             self.commandSubmitted.emit(command)
             self._inputField.clear()
 
+    def _onApprove(self):
+        """Handle approve button click."""
+        self.hideApprovalButtons()
+        self.actionApproved.emit()
+
+    def _onUndo(self):
+        """Handle undo button click."""
+        self.hideApprovalButtons()
+        self.actionUndoRequested.emit()
+
+    def _onCorrect(self):
+        """Handle correct button click."""
+        self.hideApprovalButtons()
+        self.actionCorrectionRequested.emit()
+
+    def showApprovalButtons(self, action_description=None):
+        """Show the approval buttons after an action executes."""
+        if action_description:
+            self._approvalLabel.setText(f"Executed: {action_description[:50]}...")
+        else:
+            self._approvalLabel.setText("Action executed. Review in GUI:")
+        self._approvalRow.show()
+        self._inputField.setEnabled(False)
+
+    def hideApprovalButtons(self):
+        """Hide the approval buttons."""
+        self._approvalRow.hide()
+        self._inputField.setEnabled(True)
+
     def mode(self):
         """Return the current mode."""
         return self._mode
 
+    def backend(self):
+        """Return the current backend."""
+        return self._backend
+
     def setStatus(self, message):
-        """Set the status message."""
-        self._statusLabel.setText(message)
+        """Set the status message in the scrollable response area."""
+        self._responseArea.setPlainText(message)
+        # Auto-scroll to bottom
+        scrollBar = self._responseArea.verticalScrollBar()
+        scrollBar.setValue(scrollBar.maximum())
+
+    def appendStatus(self, message):
+        """Append a message to the response area."""
+        self._responseArea.append(message)
+        # Auto-scroll to bottom
+        scrollBar = self._responseArea.verticalScrollBar()
+        scrollBar.setValue(scrollBar.maximum())
 
     def clearStatus(self):
         """Clear the status message."""
-        self._statusLabel.setText("")
+        self._responseArea.clear()
 
     def showDialog(self):
         """Show the dialog with fade-in animation."""
@@ -246,3 +433,35 @@ class AgentDialog(QWidget):
             self.hideDialog()
         else:
             super().keyPressEvent(event)
+
+    def mousePressEvent(self, event):
+        """Handle mouse press for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            # Check if click is in the title bar area
+            titleBarRect = self._titleBar.geometry()
+            containerPos = self._container.pos()
+            # Adjust for container position within the main widget
+            adjustedRect = titleBarRect.translated(containerPos)
+            adjustedRect.translate(self.layout().contentsMargins().left(),
+                                   self.layout().contentsMargins().top())
+            if adjustedRect.contains(event.pos()):
+                self._dragging = True
+                self._dragPosition = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                event.accept()
+                return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Handle mouse move for dragging."""
+        if self._dragging and self._dragPosition is not None:
+            self.move(event.globalPosition().toPoint() - self._dragPosition)
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release to stop dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._dragging = False
+            self._dragPosition = None
+        super().mouseReleaseEvent(event)

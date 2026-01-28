@@ -1,11 +1,12 @@
 """
 agentbackend.py
 
-Backend for agent processing with Ollama integration.
+Backend for agent processing with Ollama and OpenAI integration.
 Supports multi-turn agentic conversations.
 """
 
 import json
+import os
 import urllib.request
 import urllib.error
 
@@ -56,6 +57,63 @@ class OllamaWorker(QThread):
             self.error.emit(f"Error: {type(e).__name__}: {str(e)}")
 
 
+class OpenAIWorker(QThread):
+    """Worker thread for OpenAI API calls."""
+
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, api_key, model, messages):
+        super().__init__()
+        self._api_key = api_key
+        self._model = model
+        self._messages = messages
+
+    def run(self):
+        try:
+            url = "https://api.openai.com/v1/chat/completions"
+
+            payload = {
+                "model": self._model,
+                "messages": self._messages,
+                "temperature": 1.0,
+                "max_completion_tokens": 2048
+            }
+
+            data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                url,
+                data=data,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {self._api_key}'
+                }
+            )
+
+            with urllib.request.urlopen(req, timeout=120) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                choices = result.get('choices', [])
+                if choices:
+                    message = choices[0].get('message', {})
+                    content = message.get('content', '')
+                    self.finished.emit(content)
+                else:
+                    self.error.emit("No response choices returned from OpenAI")
+
+        except urllib.error.HTTPError as e:
+            body = e.read().decode('utf-8') if e.fp else ''
+            try:
+                error_data = json.loads(body)
+                error_msg = error_data.get('error', {}).get('message', body)
+            except:
+                error_msg = body
+            self.error.emit(f"OpenAI API Error (HTTP {e.code}): {error_msg}")
+        except urllib.error.URLError as e:
+            self.error.emit(f"Connection error: {e.reason}")
+        except Exception as e:
+            self.error.emit(f"Error: {type(e).__name__}: {str(e)}")
+
+
 class AgentBackend(QObject):
     """
     Backend for processing agent commands with Ollama.
@@ -77,45 +135,58 @@ class AgentBackend(QObject):
     methodCallRequested = pyqtSignal(str, dict)
     agentThinking = pyqtSignal(str)
 
-    SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant. You help users create and modify DNA origami designs through iterative method calls.
+    SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant. You modify DNA origami designs using primitive operations.
 
-AVAILABLE METHODS:
+PRIMITIVE OPERATIONS:
 
-GEOMETRY & INTROSPECTION:
-- getActivePartInfo(): Get design info (helix count, max base index, step size)
-- getHelixInfo(helix_num): Get helix details (position, parity, strands)
-- getHoneycombPositions(num_helices): Get (row, col) positions for a bundle
-- listHelices(): List all helices with numbers and positions
+QUERY (use these to understand the current state):
+- listHelices(): List all helices with numbers, positions, parity
+- listStrands(helix_num?, strand_type?): List all strands with endpoints and properties
+- getStrandAt(helix_num, idx, strand_type): Get info about specific strand
+- getSelectedStrands(): Get currently selected strands from GUI
+- getPartSize(): Get valid index range
 
-HELIX MANAGEMENT:
-- createHelix(row, col): Create a virtual helix at grid position
+HELIX:
+- createHelix(row, col): Create helix at grid position
+- deleteHelix(helix_num): Remove a helix
 
-STRAND MANAGEMENT:
+STRAND (these are the core primitives):
 - createScaffoldStrand(helix_num, start_idx, length): Create scaffold strand
 - createStapleStrand(helix_num, start_idx, length): Create staple strand
+- resizeStrand(helix_num, idx, strand_type, new_low, new_high): Change strand endpoints
+- deleteStrand(helix_num, idx, strand_type): Remove a strand
 
-CROSSOVER MANAGEMENT:
-- getValidCrossoverPositions(helix1, helix2, strand_type): Get valid indices for crossovers
-- createCrossover(helix1, idx1, helix2, idx2, strand_type): Connect two helices
-- getPotentialCrossovers(helix_num, strand_type): Get all potential crossovers for a helix
+CROSSOVER:
+- createCrossover(helix1, idx1, helix2, idx2, strand_type): Connect strands
+- removeCrossover(helix_num, idx, strand_type): Disconnect strands
 
-VERIFICATION:
-- verifyDesign(): Check overall design quality and get score
-- verify6HelixBundle(): Verify design as a 6-helix bundle specifically
+SELECTION (for GUI-selected elements):
+- moveSelection(delta): Move selected endpoints by delta bp
+- clearSelection(): Clear selection
 
-INSERTIONS/DELETIONS:
-- addInsertion(helix_num, idx, length): Add insertion (length>0) or deletion (length=-1)
-- removeInsertion(helix_num, idx): Remove an insertion/deletion
+OTHER:
+- extendPartSize(min_length_needed): Extend part to fit longer strands
+- addInsertion(helix_num, idx, length): Add insertion/deletion
 
-WORKFLOW INSTRUCTIONS:
-1. You work iteratively. After each method call, you'll see the result.
-2. Plan your approach, then execute step by step.
-3. Use verification methods to check your progress.
+COMPOSING OPERATIONS:
+Complex tasks are composed from primitives. Examples:
+
+"Shorten all scaffold strands by 2 bp":
+1. listStrands(strand_type="scaffold") → get all scaffold strands
+2. For each strand, based on parity:
+   - even parity: 5'→3' goes right, so shorten from high end: resizeStrand(..., new_high=high-2)
+   - odd parity: 5'→3' goes left, so shorten from low end: resizeStrand(..., new_low=low+2)
+
+"Move selected strand 3 bp right":
+1. moveSelection(delta=3)
+
+PARITY RULES:
+- even parity (row%2 == col%2): scaffold 5'→3' goes LEFT to RIGHT (increasing idx)
+- odd parity (row%2 != col%2): scaffold 5'→3' goes RIGHT to LEFT (decreasing idx)
 
 RESPONSE FORMAT:
 - To call a method: {"method": "methodName", "params": {"param1": value1}}
-- To finish: {"done": true, "message": "Summary of what was accomplished"}
-- To ask a question: Just respond with plain text.
+- When done: {"done": true, "message": "Summary"}
 
 ====================
 DNA NANOSTRUCTURE DESIGN RULES
@@ -156,10 +227,13 @@ NEIGHBOR DIRECTIONS BY PARITY:
 EXAMPLE: CREATE 6-HELIX BUNDLE (84bp)
 ====================
 
-Step 1: Get positions
+Step 1: Extend part size to fit 84bp strands (default is only 42bp)
+{"method": "extendPartSize", "params": {"min_length_needed": 84}}
+
+Step 2: Get positions
 {"method": "getHoneycombPositions", "params": {"num_helices": 6}}
 
-Step 2-7: Create 6 helices
+Step 3-8: Create 6 helices
 {"method": "createHelix", "params": {"row": 20, "col": 20}}
 {"method": "createHelix", "params": {"row": 20, "col": 21}}
 {"method": "createHelix", "params": {"row": 21, "col": 20}}
@@ -167,14 +241,14 @@ Step 2-7: Create 6 helices
 {"method": "createHelix", "params": {"row": 22, "col": 20}}
 {"method": "createHelix", "params": {"row": 22, "col": 21}}
 
-Step 8-13: Create scaffold strands (84bp each)
+Step 9-14: Create scaffold strands (84bp each)
 {"method": "createScaffoldStrand", "params": {"helix_num": 0, "start_idx": 0, "length": 84}}
 ... repeat for helices 1-5
 
-Step 14: Get valid crossover positions
+Step 15: Get valid crossover positions
 {"method": "getValidCrossoverPositions", "params": {"helix1": 0, "helix2": 1, "strand_type": "scaffold"}}
 
-Step 15+: Create crossovers between adjacent helices
+Step 16+: Create crossovers between adjacent helices
 {"method": "createCrossover", "params": {"helix1": 0, "idx1": 11, "helix2": 1, "idx2": 11, "strand_type": "scaffold"}}
 
 Step N: Verify the result
@@ -185,14 +259,38 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
 
     MAX_ITERATIONS = 50  # Safety limit for agent loop
 
+    # Available backend types
+    BACKEND_OLLAMA = "ollama"
+    BACKEND_OPENAI = "openai"
+
     def __init__(self, parent=None):
         super().__init__(parent)
+        # Backend configuration
+        self._backendType = self.BACKEND_OLLAMA  # Default to Ollama
+
+        # Ollama settings
         self._endpoint = "http://localhost:11434"
-        self._model = "qwen3:4b"
+        self._ollamaModel = "qwen3:1.7b"
+
+        # OpenAI settings
+        self._openaiApiKey = os.environ.get('OPENAI_API_KEY', '')
+        self._openaiModel = "gpt-5"  # Default to GPT-5
+
         self._worker = None
         self._conversation = []  # Multi-turn conversation history
         self._isAgentLoop = False  # Whether we're in an agent loop
         self._iterationCount = 0  # Track iterations for safety
+
+    @property
+    def backendType(self):
+        return self._backendType
+
+    @backendType.setter
+    def backendType(self, value):
+        if value in (self.BACKEND_OLLAMA, self.BACKEND_OPENAI):
+            self._backendType = value
+        else:
+            raise ValueError(f"Unknown backend type: {value}")
 
     @property
     def endpoint(self):
@@ -204,11 +302,42 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
 
     @property
     def model(self):
-        return self._model
+        """Return the current model based on backend type."""
+        if self._backendType == self.BACKEND_OPENAI:
+            return self._openaiModel
+        return self._ollamaModel
 
     @model.setter
     def model(self, value):
-        self._model = value
+        """Set the model for the current backend type."""
+        if self._backendType == self.BACKEND_OPENAI:
+            self._openaiModel = value
+        else:
+            self._ollamaModel = value
+
+    @property
+    def openaiApiKey(self):
+        return self._openaiApiKey
+
+    @openaiApiKey.setter
+    def openaiApiKey(self, value):
+        self._openaiApiKey = value
+
+    def setBackend(self, backend_type, model=None, api_key=None):
+        """
+        Configure the backend.
+
+        Args:
+            backend_type (str): 'ollama' or 'openai'
+            model (str): Model name (optional)
+            api_key (str): API key for OpenAI (optional, can also use OPENAI_API_KEY env var)
+        """
+        self.backendType = backend_type
+        if model:
+            self.model = model
+        if api_key:
+            self._openaiApiKey = api_key
+        print(f"[Agent] Backend set to: {backend_type}, model: {self.model}")
 
     def processCommand(self, command, mode="edit"):
         """
@@ -244,11 +373,25 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
             self.processingFinished.emit()
             return
 
-        self._worker = OllamaWorker(
-            self._endpoint,
-            self._model,
-            self._conversation
-        )
+        # Create appropriate worker based on backend type
+        if self._backendType == self.BACKEND_OPENAI:
+            if not self._openaiApiKey:
+                self._isAgentLoop = False
+                self.errorOccurred.emit("OpenAI API key not set. Set OPENAI_API_KEY environment variable or call setBackend() with api_key.")
+                self.processingFinished.emit()
+                return
+            self._worker = OpenAIWorker(
+                self._openaiApiKey,
+                self._openaiModel,
+                self._conversation
+            )
+        else:
+            self._worker = OllamaWorker(
+                self._endpoint,
+                self._ollamaModel,
+                self._conversation
+            )
+
         self._worker.finished.connect(self._handleAgentResponse)
         self._worker.error.connect(self._handleError)
         self._worker.start()
@@ -263,15 +406,68 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
         if not self._isAgentLoop:
             return
 
-        # Add the result as an assistant message observation
+        # Add the result as feedback
         self._conversation.append({
             "role": "user",
-            "content": f"Result: {result}\n\nWhat's the next step?"
+            "content": f"Result: {result}"
         })
         self._continueAgentLoop()
 
+    def _extractFirstJsonObject(self, text):
+        """
+        Extract the first valid JSON object from text.
+        Handles cases where multiple JSON objects are present,
+        JSON in markdown code blocks, etc.
+
+        Returns:
+            dict or None: Parsed JSON object, or None if not found
+        """
+        import re
+
+        # Try multiple patterns for markdown code blocks
+        code_block_patterns = [
+            r'```json\s*(\{.*?\})\s*```',  # ```json {...} ```
+            r'```\s*(\{.*?\})\s*```',       # ``` {...} ```
+            r'`(\{[^`]+\})`',               # `{...}`
+        ]
+        for pattern in code_block_patterns:
+            match = re.search(pattern, text, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group(1))
+                except json.JSONDecodeError:
+                    continue
+
+        # Fall back to brace matching - find JSON objects with "method" or "done" keys
+        depth = 0
+        start = None
+
+        for i, char in enumerate(text):
+            if char == '{':
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif char == '}':
+                depth -= 1
+                if depth == 0 and start is not None:
+                    json_str = text[start:i + 1]
+                    try:
+                        obj = json.loads(json_str)
+                        # Only return if it looks like a valid action
+                        if isinstance(obj, dict) and ('method' in obj or 'done' in obj):
+                            return obj
+                    except json.JSONDecodeError:
+                        pass
+                    # Reset and try next object
+                    start = None
+                    continue
+        return None
+
     def _handleAgentResponse(self, response):
         """Handle response from Ollama in agent loop."""
+        print(f"[Agent] Raw response length: {len(response)}")
+        print(f"[Agent] Raw response preview: {response[:300]}...")
+
         # Add assistant response to conversation
         self._conversation.append({
             "role": "assistant",
@@ -282,47 +478,65 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
         response_stripped = response.strip()
 
         # Handle /think tags from qwen3 - extract content after </think>
+        thinking_content = None
         if '/think>' in response_stripped:
             # Find the thinking part and the actual response
             think_end = response_stripped.rfind('</think>')
             if think_end != -1:
-                thinking = response_stripped[:think_end]
+                thinking_content = response_stripped[:think_end]
                 response_stripped = response_stripped[think_end + 8:].strip()
                 # Emit thinking for display (optional)
-                self.agentThinking.emit(thinking)
+                self.agentThinking.emit(thinking_content)
 
-        # Try to find JSON in response
-        json_start = response_stripped.find('{')
-        json_end = response_stripped.rfind('}') + 1
+        # Try to find JSON - first in the main response, then in thinking content
+        data = self._extractFirstJsonObject(response_stripped)
 
-        if json_start != -1 and json_end > json_start:
-            try:
-                json_str = response_stripped[json_start:json_end]
-                data = json.loads(json_str)
+        # If no valid JSON in response, check thinking content
+        if data is None and thinking_content:
+            data = self._extractFirstJsonObject(thinking_content)
 
-                # Check if agent is done
-                if data.get('done'):
-                    self._isAgentLoop = False
-                    self.responseReceived.emit(f"Done: {data.get('message', 'Task complete')}")
-                    self.processingFinished.emit()
-                    return
+        if data is not None:
+            print(f"[Agent] Parsed JSON: {data}")
 
-                # Check if it's a method call
-                if 'method' in data:
-                    params = data.get('params', {})
-                    self.methodCallRequested.emit(data['method'], params)
-                    # Don't emit processingFinished - wait for feedback
-                    return
+            # Check if agent is done
+            if data.get('done'):
+                self._isAgentLoop = False
+                self.responseReceived.emit(f"Done: {data.get('message', 'Task complete')}")
+                self.processingFinished.emit()
+                return
 
-            except json.JSONDecodeError:
-                pass
+            # Check if it's a method call
+            if 'method' in data:
+                params = data.get('params', {})
+                print(f"[Agent] Emitting methodCallRequested: {data['method']}")
+                # Show the user what method is being called
+                self.responseReceived.emit(f"Calling: {data['method']}({params})")
+                self.methodCallRequested.emit(data['method'], params)
+                # Don't emit processingFinished - wait for feedback
+                return
+        else:
+            print(f"[Agent] No valid JSON found in response")
+            print(f"[Agent] Response stripped: {response_stripped[:200]}...")
+            if thinking_content:
+                print(f"[Agent] Thinking content: {thinking_content[:200]}...")
 
         # Plain text response (explanation or question)
-        # Check if it looks like the agent is asking a question (needs user input)
+        # Check if it looks like the agent is asking a question that needs user input
         response_lower = response_stripped.lower() if response_stripped else response.lower()
-        needs_user_input = any(q in response_lower for q in [
-            '?', 'would you like', 'do you want', 'should i', 'please confirm',
-            'which option', 'what would you prefer', 'let me know'
+
+        # More specific patterns that indicate the agent needs user clarification
+        needs_user_input = any(phrase in response_lower for phrase in [
+            'would you like me to',
+            'do you want me to',
+            'should i proceed',
+            'please confirm',
+            'which option',
+            'what would you prefer',
+            'let me know if',
+            'please specify',
+            'could you clarify',
+            'what should i',
+            'how would you like'
         ])
 
         if needs_user_input:
@@ -331,11 +545,11 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
             self.responseReceived.emit(response_stripped if response_stripped else response)
             self.processingFinished.emit()
         else:
-            # Agent is explaining/thinking - prompt it to continue
+            # Agent is explaining/thinking - prompt it to provide a JSON action
             self.responseReceived.emit(response_stripped if response_stripped else response)
             self._conversation.append({
                 "role": "user",
-                "content": "Continue with the next action. Respond with a JSON method call or {\"done\": true, \"message\": \"...\"} if finished."
+                "content": "Please respond with ONLY a JSON object. Either a method call like {\"method\": \"methodName\", \"params\": {...}} or {\"done\": true, \"message\": \"...\"}. No explanation, just the JSON."
             })
             self._continueAgentLoop()
 
@@ -455,6 +669,13 @@ Examples:
         self.processingFinished.emit()
 
     def testConnection(self):
+        """Test connection to the configured backend."""
+        if self._backendType == self.BACKEND_OPENAI:
+            return self._testOpenAIConnection()
+        else:
+            return self._testOllamaConnection()
+
+    def _testOllamaConnection(self):
         """Test connection to Ollama server."""
         try:
             url = f"{self._endpoint}/api/tags"
@@ -463,5 +684,28 @@ Examples:
                 result = json.loads(response.read().decode('utf-8'))
                 models = [m['name'] for m in result.get('models', [])]
                 return True, models
+        except Exception as e:
+            return False, str(e)
+
+    def _testOpenAIConnection(self):
+        """Test connection to OpenAI API."""
+        if not self._openaiApiKey:
+            return False, "OpenAI API key not set"
+        try:
+            url = "https://api.openai.com/v1/models"
+            req = urllib.request.Request(
+                url,
+                headers={'Authorization': f'Bearer {self._openaiApiKey}'}
+            )
+            with urllib.request.urlopen(req, timeout=10) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                # Filter to show only chat models
+                models = [m['id'] for m in result.get('data', [])
+                         if 'gpt' in m['id']]
+                return True, models[:10]  # Limit to first 10
+        except urllib.error.HTTPError as e:
+            if e.code == 401:
+                return False, "Invalid API key"
+            return False, f"HTTP {e.code}: {e.reason}"
         except Exception as e:
             return False, str(e)
