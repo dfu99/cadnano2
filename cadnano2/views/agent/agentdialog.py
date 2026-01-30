@@ -27,8 +27,7 @@ class AgentDialog(QWidget):
         backendChanged(str): Emitted when backend is changed ('ollama' or 'openai')
         dialogClosed(): Emitted when dialog is closed
         actionApproved(): Emitted when user approves an action
-        actionUndoRequested(): Emitted when user wants to undo an action
-        actionCorrectionRequested(): Emitted when user wants to correct an action
+        actionCorrectionRequested(): Emitted when user wants to reject and correct an action
     """
 
     commandSubmitted = pyqtSignal(str)
@@ -37,7 +36,6 @@ class AgentDialog(QWidget):
     apiKeySubmitted = pyqtSignal(str)
     dialogClosed = pyqtSignal()
     actionApproved = pyqtSignal()
-    actionUndoRequested = pyqtSignal()
     actionCorrectionRequested = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -243,8 +241,8 @@ class AgentDialog(QWidget):
         """)
         self._approveButton.clicked.connect(self._onApprove)
 
-        self._undoButton = QPushButton("↩ Undo")
-        self._undoButton.setStyleSheet(buttonStyle + """
+        self._correctButton = QPushButton("✎ Reject && Correct")
+        self._correctButton.setStyleSheet(buttonStyle + """
             QPushButton {
                 background-color: #dc3545;
                 color: white;
@@ -254,25 +252,11 @@ class AgentDialog(QWidget):
                 background-color: #c82333;
             }
         """)
-        self._undoButton.clicked.connect(self._onUndo)
-
-        self._correctButton = QPushButton("✎ Correct")
-        self._correctButton.setStyleSheet(buttonStyle + """
-            QPushButton {
-                background-color: #007bff;
-                color: white;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-        """)
         self._correctButton.clicked.connect(self._onCorrect)
 
         approvalLayout.addWidget(self._approvalLabel)
         approvalLayout.addStretch()
         approvalLayout.addWidget(self._approveButton)
-        approvalLayout.addWidget(self._undoButton)
         approvalLayout.addWidget(self._correctButton)
 
         self._approvalRow.hide()  # Hidden by default
@@ -392,11 +376,6 @@ class AgentDialog(QWidget):
         """Handle approve button click."""
         self.hideApprovalButtons()
         self.actionApproved.emit()
-
-    def _onUndo(self):
-        """Handle undo button click."""
-        self.hideApprovalButtons()
-        self.actionUndoRequested.emit()
 
     def _onCorrect(self):
         """Handle correct button click."""

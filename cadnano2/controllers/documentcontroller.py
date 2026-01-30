@@ -112,6 +112,8 @@ class DocumentController():
 
         # Approval mode state
         self._awaitingApproval = False
+        self._awaitingCorrection = False
+        self._preCorrectionState = None
         self._lastActionMethod = None
         self._lastActionParams = None
         self._lastActionResult = None
@@ -130,7 +132,6 @@ class DocumentController():
 
         # Connect approval signals
         self._agentDialog.actionApproved.connect(self._onActionApproved)
-        self._agentDialog.actionUndoRequested.connect(self._onActionUndo)
         self._agentDialog.actionCorrectionRequested.connect(self._onActionCorrect)
 
         # Connect API key signals
@@ -267,6 +268,11 @@ class DocumentController():
     def _onAgentCommand(self, command):
         """Forward command to the agent backend."""
         mode = self._agentDialog.mode()
+
+        # Handle correction mode: user has made their fix and described it
+        if self._awaitingCorrection:
+            self._handleCorrectionSubmitted(command)
+            return
 
         # Check for special replay commands
         if command.startswith("/replay "):
@@ -434,65 +440,88 @@ class DocumentController():
         result_msg = f"{self._lastActionResult} [User approved]"
         self._agentBackend.feedbackToAgent(result_msg)
 
-    def _onActionUndo(self):
-        """Handle user requesting undo of an action."""
-        print("[Agent] Action undo requested by user")
-
-        # Perform the undo using cadnano's undo stack
-        undo_stack = self.undoStack()
-        if undo_stack and undo_stack.canUndo():
-            undo_stack.undo()
-            undo_msg = "Action undone successfully."
-            self._agentDialog.appendStatus(f"\n[Undo] {undo_msg}")
-        else:
-            undo_msg = "Nothing to undo."
-            self._agentDialog.appendStatus(f"\n[Undo] {undo_msg}")
-
-        # Log undo decision
-        if self._trajectoryLogger.isRecording():
-            self._trajectoryLogger.logConversation(
-                "user",
-                f"[UNDONE] {self._lastActionMethod} - {undo_msg}"
-            )
-            # Mark the last action as unsuccessful in training data
-            self._trajectoryLogger.logAction(
-                method_name=self._lastActionMethod,
-                params=self._lastActionParams,
-                result="Undone by user",
-                success=False,
-                validation_msg="User rejected and undid this action"
-            )
-
-        # Reset approval state
-        self._awaitingApproval = False
-
-        # Continue the agent loop with negative feedback
-        self._agentBackend.feedbackToAgent(
-            f"User undid the action. The action was not acceptable. "
-            f"Try a different approach or ask for clarification."
-        )
-
     def _onActionCorrect(self):
         """Handle user wanting to correct/refine an action."""
         print("[Agent] Action correction requested by user")
 
-        # Log correction request
+        # Undo the wrong action first
+        undo_stack = self.undoStack()
+        if undo_stack and undo_stack.canUndo():
+            undo_stack.undo()
+            self._agentDialog.appendStatus("\n[Correct] Wrong action undone.")
+        else:
+            self._agentDialog.appendStatus("\n[Correct] Nothing to undo.")
+
+        # Log correction request and undo
         if self._trajectoryLogger.isRecording():
             self._trajectoryLogger.logConversation(
                 "user",
                 f"[CORRECTION REQUESTED] {self._lastActionMethod}"
             )
+            self._trajectoryLogger.logAction(
+                method_name=self._lastActionMethod,
+                params=self._lastActionParams,
+                result="Undone by user for correction",
+                success=False,
+                validation_msg="User corrected this action"
+            )
 
-        # Reset approval state so user can type
+        # Capture pre-correction state snapshot
+        self._preCorrectionState = self._captureDesignState()
+
+        # Enter correction mode and let user act in the GUI
         self._awaitingApproval = False
+        self._awaitingCorrection = True
 
-        # Show message prompting user for correction
         self._agentDialog.appendStatus(
-            "\n[Correct] Enter your correction or clarification below:"
+            "\n[Correct] Make your correction in the GUI, then describe "
+            "what you did below and press Enter."
         )
 
-        # The agent loop is paused - user will type a new command
-        # which will be processed as a follow-up to refine the action
+    def _captureDesignState(self):
+        """Capture the current design state as a string for diffing."""
+        parts = []
+        success, helices = self._agentMethods.executeMethod('listHelices', {})
+        if success:
+            parts.append(f"Helices:\n{helices}")
+        success, strands = self._agentMethods.executeMethod('listStrands', {})
+        if success:
+            parts.append(f"Strands:\n{strands}")
+        return "\n\n".join(parts)
+
+    def _handleCorrectionSubmitted(self, user_description):
+        """Handle user submitting their correction description."""
+        print(f"[Agent] Correction submitted: {user_description}")
+        self._awaitingCorrection = False
+
+        # Capture post-correction state
+        post_state = self._captureDesignState()
+
+        # Log the user's correction description
+        if self._trajectoryLogger.isRecording():
+            self._trajectoryLogger.logConversation(
+                "user",
+                f"[CORRECTION] {user_description}"
+            )
+
+        # Build diff feedback for the agent
+        pre = self._preCorrectionState or "(no state captured)"
+        feedback = (
+            f"User rejected the last action ({self._lastActionMethod}) and "
+            f"performed a manual correction.\n\n"
+            f"User's description of correction: {user_description}\n\n"
+            f"State BEFORE correction:\n{pre}\n\n"
+            f"State AFTER correction:\n{post_state}\n\n"
+            f"Based on the diff above, respond with the single JSON method "
+            f"call that would reproduce the user's correction. Then continue "
+            f"with any remaining steps."
+        )
+
+        self._preCorrectionState = None
+        self._agentDialog.appendStatus("\n[Correct] Correction captured. Resuming agent...")
+
+        # Resume the agent loop with the diff feedback
+        self._agentBackend.feedbackToAgent(feedback)
 
     def destroyDC(self):
         self.disconnectSignalsToSelf()

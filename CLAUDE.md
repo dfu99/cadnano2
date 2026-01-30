@@ -132,8 +132,7 @@ The DocumentController (`cadnano2/controllers/documentcontroller.py`) integrates
 1. User issues command → agent processes → method executes
 2. For modifying actions (not queries), approval buttons appear:
    - **Approve**: Logs positive signal, continues agent loop
-   - **Undo**: Reverts via undo stack, logs negative signal, agent retries
-   - **Correct**: Pauses for user to type clarification
+   - **Reject & Correct**: Undoes the action, snapshots state, user demonstrates the correct action in GUI, describes it, agent infers the correct method call and logs it in the trajectory
 3. Query methods (listHelices, getStrandAt, etc.) auto-continue without approval
 
 ### Special Commands
@@ -177,14 +176,12 @@ These simpler tasks:
 
 #### Using the OpenAI Backend
 
-1. Set your API key as an environment variable:
-   ```bash
-   export OPENAI_API_KEY="sk-..."
-   ```
+1. Launch cadnano and open the agent dialog (Ctrl+I)
 
-2. Launch cadnano and open the agent dialog (Ctrl+I)
+2. Use the dropdown in the dialog to select "OpenAI API"
 
-3. Use the dropdown in the dialog to select "OpenAI API"
+3. If no API key is found, the dialog prompts for one and saves it to `~/.cadnano2/.env.cadnano`
+   - Alternatively, set `OPENAI_API_KEY` as an environment variable
 
 4. The backend will use `gpt-5` by default
 
@@ -200,21 +197,24 @@ These simpler tasks:
 This is better than pre-approval because users can't easily map helix IDs to the GUI.
 
 - [x] Add post-execution approval UI to agent dialog
-  - After each action executes, show [Approve] / [Undo] / [Correct] buttons
+  - After each action executes, show [Approve] / [Reject & Correct] buttons
   - User sees result in GUI, then decides
 - [x] [Approve] continues the agent loop, logs positive signal
-- [x] [Undo] reverts the action using cadnano undo stack, logs negative signal, agent retries
-- [x] [Correct] pauses agent loop for user to type correction/clarification
+- [x] [Reject & Correct] undoes the action, captures state, lets user demonstrate the correct action (see Phase 3)
 - [x] Log human decisions as training signals in trajectory
 - [ ] Track where the model makes mistakes (analysis tooling)
 
-### Phase 3: Recording Mode for Corrections
+### Phase 3: Recording Mode for Corrections (Complete)
 **Goal:** When human corrects the agent, capture the correct action.
 
-- [ ] Implement "record mode" in the dialog
-- [ ] When human clicks [Correct], enter demonstration mode
-- [ ] Capture (context, wrong_action, correct_action) tuples
-- [ ] Save correction data for training
+- [x] Implement "record mode" in the dialog
+  - [Reject & Correct] undoes the wrong action, snapshots design state, waits for user to demonstrate
+- [x] When human clicks [Reject & Correct], enter demonstration mode
+  - User makes correction in GUI, then describes what they did and presses Enter
+- [x] Capture (context, wrong_action, correct_action) tuples
+  - Pre/post state diff sent to agent; agent infers the correct method call for the trajectory
+- [x] Save correction data for training
+  - Wrong action logged as failed; agent's inferred correct action logged via trajectory logger
 
 ### Phase 4: Distillation & Fine-tuning
 **Goal:** Train local model on expert + corrected trajectories.

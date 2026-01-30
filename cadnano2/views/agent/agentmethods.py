@@ -116,6 +116,54 @@ class AgentMethods:
             'staple_strands': stap_strands
         }
 
+    def getHelixDirection(self, helix_num):
+        """
+        Get strand direction and neighbor info for a helix.
+
+        Returns parity, which strand is on top, the 5'->3' direction for
+        scaffold and staple, and the neighbor helices by direction.
+
+        Args:
+            helix_num (int): The virtual helix number
+
+        Returns:
+            str: Direction and neighbor information
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        row, col = vh.coord()
+        even = part.isEvenParity(row, col)
+        scafSS = vh.scaffoldStrandSet()
+        stapSS = vh.stapleStrandSet()
+
+        neighbors = part.getVirtualHelixNeighbors(vh)
+        neighbor_info = []
+        for i, n in enumerate(neighbors):
+            if n is not None:
+                neighbor_info.append(f"p{i}=helix {n.number()}")
+            else:
+                neighbor_info.append(f"p{i}=empty")
+
+        info = {
+            'helix_num': helix_num,
+            'row': row,
+            'col': col,
+            'parity': 'even' if even else 'odd',
+            'scaffold_on_top': vh.scaffoldIsOnTop(),
+            'scaffold_5to3': 'left-to-right (low→high idx)' if vh.isDrawn5to3(scafSS) else 'right-to-left (high→low idx)',
+            'staple_5to3': 'left-to-right (low→high idx)' if vh.isDrawn5to3(stapSS) else 'right-to-left (high→low idx)',
+            'neighbors': ', '.join(neighbor_info),
+        }
+
+        lines = [f"{k}: {v}" for k, v in info.items()]
+        return '\n'.join(lines)
+
     def getHoneycombPositions(self, num_helices):
         """
         Get (row, col) positions for a honeycomb bundle.
@@ -1085,6 +1133,7 @@ class AgentMethods:
     def getValidCrossoverPositions(self, helix1, helix2, strand_type):
         """
         Get valid crossover positions between two helices.
+        Delegates to the model's potentialCrossoverList().
 
         Args:
             helix1 (int): First helix number
@@ -1106,38 +1155,12 @@ class AgentMethods:
         if vh2 is None:
             return f"Error: Helix {helix2} not found"
 
-        # Check if they're neighbors and get direction
-        neighbors = part.getVirtualHelixNeighbors(vh1)
-        if vh2 not in neighbors:
-            return f"Error: Helix {helix2} is not a neighbor of helix {helix1}"
+        st = StrandType.Scaffold if strand_type.lower() == "scaffold" else StrandType.Staple
+        crossovers = part.potentialCrossoverList(vh1)
 
-        neighbor_idx = neighbors.index(vh2)
-        direction = f'p{neighbor_idx}'
+        valid_indices = sorted(set(
+            idx for neighborVh, idx, sType, isLowIdx in crossovers
+            if sType == st and neighborVh == vh2
+        ))
 
-        # Get valid positions from verifier
-        STEP = 21
-        if strand_type.lower() == 'scaffold':
-            positions_mod = {
-                'p0': [1, 2, 11, 12],
-                'p1': [8, 9, 18, 19],
-                'p2': [4, 5, 15, 16],
-            }
-        else:
-            positions_mod = {
-                'p0': [6, 7],
-                'p1': [13, 14],
-                'p2': [0, 20],
-            }
-
-        valid_mod = positions_mod.get(direction, [])
-        max_idx = part.maxBaseIdx()
-
-        # Generate actual indices
-        valid_indices = []
-        for base in range(0, max_idx + 1, STEP):
-            for mod in valid_mod:
-                idx = base + mod
-                if idx <= max_idx:
-                    valid_indices.append(idx)
-
-        return f"Valid {strand_type} crossover indices between helix {helix1} and {helix2}: {valid_indices[:20]}... (showing first 20)"
+        return f"Valid {strand_type} crossover indices between helix {helix1} and {helix2}: {valid_indices}"

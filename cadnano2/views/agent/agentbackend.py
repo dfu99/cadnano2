@@ -144,6 +144,7 @@ QUERY (use these to understand the current state):
 - listHelices(): List all helices with numbers, positions, parity
 - listStrands(helix_num?, strand_type?): List all strands with endpoints and properties
 - getStrandAt(helix_num, idx, strand_type): Get info about specific strand
+- getHelixDirection(helix_num): Get parity, strand directions (5'→3'), which strand is on top, and neighbor helices
 - getSelectedStrands(): Get currently selected strands from GUI
 - getPartSize(): Get valid index range
 

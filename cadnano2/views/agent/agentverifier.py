@@ -6,6 +6,25 @@ Provides validation and reward signals for RLVR-style training.
 """
 
 from cadnano2.model.enum import StrandType
+from cadnano2.model.parts.honeycombpart import Crossovers, HoneycombPart
+
+
+def _buildXoverPositionMap(scafLow, scafHigh, stapLow, stapHigh):
+    """Build crossover position lookup dicts from the model's Crossovers tables."""
+    scaffold = {}
+    staple = {}
+    for i in range(len(scafLow)):
+        direction = f'p{i}'
+        scaffold[direction] = sorted(scafLow[i] + scafHigh[i])
+        staple[direction] = sorted(stapLow[i] + stapHigh[i])
+    return scaffold, staple
+
+
+# Derived from the canonical Crossovers tables — single source of truth
+SCAFFOLD_XOVER_POSITIONS, STAPLE_XOVER_POSITIONS = _buildXoverPositionMap(
+    Crossovers.honeycombScafLow, Crossovers.honeycombScafHigh,
+    Crossovers.honeycombStapLow, Crossovers.honeycombStapHigh,
+)
 
 
 class DesignVerifier:
@@ -18,23 +37,7 @@ class DesignVerifier:
     - Reward signals for reinforcement learning
     """
 
-    # Honeycomb lattice constants
-    STEP = 21  # bases per helical turn
-
-    # Valid scaffold crossover positions within a 21-base step (mod 21)
-    # These are positions where scaffold crossovers align between neighbors
-    SCAFFOLD_XOVER_POSITIONS = {
-        'p0': [1, 2, 11, 12],   # neighbor direction 0
-        'p1': [8, 9, 18, 19],   # neighbor direction 1
-        'p2': [4, 5, 15, 16],   # neighbor direction 2
-    }
-
-    # Valid staple crossover positions
-    STAPLE_XOVER_POSITIONS = {
-        'p0': [6, 7],
-        'p1': [13, 14],
-        'p2': [0, 20],
-    }
+    STEP = HoneycombPart._step
 
     def __init__(self, documentController):
         self._documentController = documentController
@@ -186,9 +189,9 @@ class DesignVerifier:
         direction = f'p{neighbor_idx}'
 
         if strand_type.lower() == 'scaffold':
-            valid_positions = self.SCAFFOLD_XOVER_POSITIONS.get(direction, [])
+            valid_positions = SCAFFOLD_XOVER_POSITIONS.get(direction, [])
         else:
-            valid_positions = self.STAPLE_XOVER_POSITIONS.get(direction, [])
+            valid_positions = STAPLE_XOVER_POSITIONS.get(direction, [])
 
         idx_mod = idx1 % self.STEP
         if idx_mod not in valid_positions:
