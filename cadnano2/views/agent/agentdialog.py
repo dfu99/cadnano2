@@ -27,6 +27,7 @@ class AgentDialog(QWidget):
         backendChanged(str): Emitted when backend is changed ('ollama' or 'openai')
         dialogClosed(): Emitted when dialog is closed
         actionApproved(): Emitted when user approves an action
+        actionApproveAll(): Emitted when user approves all remaining actions
         actionCorrectionRequested(): Emitted when user wants to reject and correct an action
     """
 
@@ -36,6 +37,7 @@ class AgentDialog(QWidget):
     apiKeySubmitted = pyqtSignal(str)
     dialogClosed = pyqtSignal()
     actionApproved = pyqtSignal()
+    actionApproveAll = pyqtSignal()
     actionCorrectionRequested = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -241,6 +243,19 @@ class AgentDialog(QWidget):
         """)
         self._approveButton.clicked.connect(self._onApprove)
 
+        self._approveAllButton = QPushButton("✓✓ Approve All")
+        self._approveAllButton.setStyleSheet(buttonStyle + """
+            QPushButton {
+                background-color: #1d8348;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #196f3d;
+            }
+        """)
+        self._approveAllButton.clicked.connect(self._onApproveAll)
+
         self._correctButton = QPushButton("✎ Reject && Correct")
         self._correctButton.setStyleSheet(buttonStyle + """
             QPushButton {
@@ -257,6 +272,7 @@ class AgentDialog(QWidget):
         approvalLayout.addWidget(self._approvalLabel)
         approvalLayout.addStretch()
         approvalLayout.addWidget(self._approveButton)
+        approvalLayout.addWidget(self._approveAllButton)
         approvalLayout.addWidget(self._correctButton)
 
         self._approvalRow.hide()  # Hidden by default
@@ -376,6 +392,11 @@ class AgentDialog(QWidget):
         """Handle approve button click."""
         self.hideApprovalButtons()
         self.actionApproved.emit()
+
+    def _onApproveAll(self):
+        """Handle approve all button click."""
+        self.hideApprovalButtons()
+        self.actionApproveAll.emit()
 
     def _onCorrect(self):
         """Handle correct button click."""

@@ -113,6 +113,7 @@ class DocumentController():
         # Approval mode state
         self._awaitingApproval = False
         self._awaitingCorrection = False
+        self._autoApproveAll = False
         self._preCorrectionState = None
         self._lastActionMethod = None
         self._lastActionParams = None
@@ -132,6 +133,7 @@ class DocumentController():
 
         # Connect approval signals
         self._agentDialog.actionApproved.connect(self._onActionApproved)
+        self._agentDialog.actionApproveAll.connect(self._onActionApproveAll)
         self._agentDialog.actionCorrectionRequested.connect(self._onActionCorrect)
 
         # Connect API key signals
@@ -283,6 +285,9 @@ class DocumentController():
             self._listTrajectories()
             return
 
+        # Reset auto-approve for new trajectory
+        self._autoApproveAll = False
+
         # Start trajectory logging for Edit mode
         if mode == "edit":
             self._trajectoryLogger.startTrajectory(
@@ -371,9 +376,10 @@ class DocumentController():
         # Query methods don't need approval, only actions that change the design
         query_methods = {
             'listHelices', 'listStrands', 'getStrandAt', 'getActivePartInfo',
-            'getHelixInfo', 'getHoneycombPositions', 'getPotentialCrossovers',
-            'getValidCrossoverPositions', 'getSelectedStrands', 'verifyDesign',
-            'verify6HelixBundle'
+            'getHelixInfo', 'getHelixDirection', 'getHoneycombPositions',
+            'getPotentialCrossovers', 'getValidCrossoverPositions',
+            'getSelectedStrands', 'verifyDesign', 'verify6HelixBundle',
+            'getPartSize'
         }
 
         if success and methodName not in query_methods:
@@ -381,6 +387,18 @@ class DocumentController():
             self._lastActionMethod = methodName
             self._lastActionParams = params
             self._lastActionResult = result_msg
+
+            if self._autoApproveAll:
+                # Auto-approve: log and continue without prompting
+                if self._trajectoryLogger.isRecording():
+                    self._trajectoryLogger.logConversation(
+                        "user",
+                        f"[AUTO-APPROVED] {methodName}"
+                    )
+                result_msg = f"{result_msg} [Auto-approved]"
+                self._agentBackend.feedbackToAgent(result_msg)
+                return
+
             self._awaitingApproval = True
 
             # Show approval buttons - user will see result in GUI
@@ -438,6 +456,23 @@ class DocumentController():
 
         # Continue the agent loop with positive feedback
         result_msg = f"{self._lastActionResult} [User approved]"
+        self._agentBackend.feedbackToAgent(result_msg)
+
+    def _onActionApproveAll(self):
+        """Handle user approving all remaining actions in this trajectory."""
+        print("[Agent] Approve All selected by user")
+        self._autoApproveAll = True
+
+        # Log and continue as a normal approval
+        if self._trajectoryLogger.isRecording():
+            self._trajectoryLogger.logConversation(
+                "user",
+                f"[APPROVE ALL] {self._lastActionMethod}"
+            )
+
+        self._awaitingApproval = False
+
+        result_msg = f"{self._lastActionResult} [User approved all]"
         self._agentBackend.feedbackToAgent(result_msg)
 
     def _onActionCorrect(self):

@@ -159,7 +159,8 @@ STRAND (these are the core primitives):
 - deleteStrand(helix_num, idx, strand_type): Remove a strand
 
 CROSSOVER:
-- createCrossover(helix1, idx1, helix2, idx2, strand_type): Connect strands
+- createCrossover(helix1, idx1, helix2, idx2, strand_type): Create a double crossover (two half-crossovers at the Low/High pair). Provide any valid crossover index — the paired index is found automatically.
+- createHalfCrossover(helix1, idx1, helix2, idx2, strand_type): Create a single half-crossover (rare — use createCrossover unless explicitly asked for a half-crossover)
 - removeCrossover(helix_num, idx, strand_type): Disconnect strands
 
 SELECTION (for GUI-selected elements):
@@ -250,7 +251,7 @@ Step 9-14: Create scaffold strands (84bp each)
 Step 15: Get valid crossover positions
 {"method": "getValidCrossoverPositions", "params": {"helix1": 0, "helix2": 1, "strand_type": "scaffold"}}
 
-Step 16+: Create crossovers between adjacent helices
+Step 16+: Create double crossovers between adjacent helices (one call creates both half-crossovers)
 {"method": "createCrossover", "params": {"helix1": 0, "idx1": 11, "helix2": 1, "idx2": 11, "strand_type": "scaffold"}}
 
 Step N: Verify the result

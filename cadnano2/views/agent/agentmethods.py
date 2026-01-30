@@ -6,6 +6,7 @@ Provides constrained, atomic operations on cadnano documents.
 """
 
 from cadnano2.model.enum import StrandType
+from cadnano2.model.parts.honeycombpart import Crossovers
 from .agentverifier import DesignVerifier
 
 
@@ -795,9 +796,122 @@ class AgentMethods:
 
     # ==================== CROSSOVER MANAGEMENT ====================
 
+    def _getDoubleCrossoverPair(self, part, vh1, vh2, idx, strand_type):
+        """Find the paired index for a double crossover.
+
+        Given one index of a crossover, returns the paired Low/High index
+        from the honeycomb crossover tables.
+
+        Returns:
+            int or None: The paired index, or None if not found.
+        """
+        neighbors = part.getVirtualHelixNeighbors(vh1)
+        if vh2 not in neighbors:
+            return None
+        direction = neighbors.index(vh2)
+
+        if strand_type.lower() == "scaffold":
+            low_positions = Crossovers.honeycombScafLow[direction]
+            high_positions = Crossovers.honeycombScafHigh[direction]
+        else:
+            low_positions = Crossovers.honeycombStapLow[direction]
+            high_positions = Crossovers.honeycombStapHigh[direction]
+
+        step = part._step
+        base = (idx // step) * step
+        mod = idx % step
+
+        # Find which pair this index belongs to and return the other
+        for low, high in zip(low_positions, high_positions):
+            if mod == low:
+                return base + high
+            elif mod == high:
+                return base + low
+        return None
+
     def createCrossover(self, helix1, idx1, helix2, idx2, strand_type):
         """
-        Create a crossover between two helices.
+        Create a double crossover between two helices.
+
+        A double crossover consists of two half-crossovers at adjacent
+        positions (the Low/High pair). This is the standard crossover
+        in DNA origami. The provided index is used to find the paired
+        position automatically.
+
+        Args:
+            helix1 (int): First helix number
+            idx1 (int): Index on first helix (either the Low or High position)
+            helix2 (int): Second helix number
+            idx2 (int): Index on second helix (must equal idx1)
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: Success message or error
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+
+        if vh1 is None:
+            return f"Error: Helix {helix1} not found"
+        if vh2 is None:
+            return f"Error: Helix {helix2} not found"
+
+        # Find the paired index for the double crossover
+        paired_idx = self._getDoubleCrossoverPair(part, vh1, vh2, idx1, strand_type)
+        if paired_idx is None:
+            return (f"Error: Index {idx1} is not a valid {strand_type} crossover "
+                    f"position between helix {helix1} and helix {helix2}")
+
+        low_idx = min(idx1, paired_idx)
+        high_idx = max(idx1, paired_idx)
+
+        if strand_type.lower() == "scaffold":
+            get_ss = lambda vh: vh.scaffoldStrandSet()
+        else:
+            get_ss = lambda vh: vh.stapleStrandSet()
+
+        # Both half-crossovers in one undo macro so a single undo reverts both.
+        # The two halves cross in opposite directions:
+        #   Low:  helix2 → helix1
+        #   High: helix1 → helix2
+        xover_pairs = [
+            (vh2, vh1, low_idx),   # Low half-crossover
+            (vh1, vh2, high_idx),  # High half-crossover
+        ]
+
+        part.undoStack().beginMacro("Create Double Crossover")
+        try:
+            for vh_5p, vh_3p, idx in xover_pairs:
+                s5p = get_ss(vh_5p).getStrand(idx)
+                s3p = get_ss(vh_3p).getStrand(idx)
+                if s5p is None:
+                    part.undoStack().endMacro()
+                    part.undoStack().undo()
+                    return f"Error: No {strand_type} strand at helix {vh_5p.number()} index {idx}"
+                if s3p is None:
+                    part.undoStack().endMacro()
+                    part.undoStack().undo()
+                    return f"Error: No {strand_type} strand at helix {vh_3p.number()} index {idx}"
+                part.createXover(s5p, idx, s3p, idx, useUndoStack=True)
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error creating double crossover: {e}"
+
+        return (f"Created {strand_type} double crossover: helix {helix1} <-> "
+                f"helix {helix2} at indices [{low_idx}, {high_idx}]")
+
+    def createHalfCrossover(self, helix1, idx1, helix2, idx2, strand_type):
+        """
+        Create a single half-crossover between two helices.
+
+        Most of the time you want createCrossover (double crossover) instead.
+        Only use this for explicit half-crossover requests.
 
         Args:
             helix1 (int): First helix number
@@ -838,9 +952,9 @@ class AgentMethods:
 
         try:
             part.createXover(strand1, idx1, strand2, idx2, useUndoStack=True)
-            return f"Created {strand_type} crossover: helix {helix1}[{idx1}] <-> helix {helix2}[{idx2}]"
+            return f"Created {strand_type} half-crossover: helix {helix1}[{idx1}] <-> helix {helix2}[{idx2}]"
         except Exception as e:
-            return f"Error creating crossover: {e}"
+            return f"Error creating half-crossover: {e}"
 
     def removeCrossover(self, helix_num, idx, strand_type):
         """
