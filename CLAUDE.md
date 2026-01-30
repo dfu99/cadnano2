@@ -95,12 +95,12 @@ The agent should:
 
 #### Agent Methods (`cadnano2/views/agent/agentmethods.py`)
 Primitive methods for DNA design manipulation:
-- **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHoneycombPositions`, `listHelices`, `getPartSize`
+- **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHelixDirection`, `getHoneycombPositions`, `listHelices`, `getPartSize`
 - **Part Size**: `extendPartSize(min_length_needed)`
 - **Helix**: `createHelix(row, col)`
 - **Strands**: `createScaffoldStrand`, `createStapleStrand`, `createFullLengthStrands`
 - **Selection**: `getSelectedStrands`, `selectStrand`, `moveSelection`, `clearSelection`
-- **Crossovers**: `createCrossover`, `getPotentialCrossovers`, `getValidCrossoverPositions`
+- **Crossovers**: `createCrossover` (double, default), `createHalfCrossover` (single), `getPotentialCrossovers`, `getValidCrossoverPositions`
 - **Insertions**: `addInsertion`, `removeInsertion`
 - **Verification**: `verifyDesign`, `verify6HelixBundle`
 
@@ -108,7 +108,7 @@ Primitive methods for DNA design manipulation:
 - Pre-execution validation (checks params before execution)
 - Validates helix positions, strand bounds, crossover alignment (mod 21 rules)
 - Post-execution verification with reward scores (0-1)
-- Honeycomb lattice crossover position rules encoded
+- Crossover position rules derived from `honeycombpart.Crossovers` (single source of truth)
 
 #### Trajectory Logger (`cadnano2/views/agent/trajectorylogger.py`)
 - Records agent sessions: task, actions, results, verification scores
@@ -132,7 +132,8 @@ The DocumentController (`cadnano2/controllers/documentcontroller.py`) integrates
 1. User issues command → agent processes → method executes
 2. For modifying actions (not queries), approval buttons appear:
    - **Approve**: Logs positive signal, continues agent loop
-   - **Reject & Correct**: Undoes the action, snapshots state, user demonstrates the correct action in GUI, describes it, agent infers the correct method call and logs it in the trajectory
+   - **Approve All**: Sets auto-approve for remaining actions in this trajectory
+   - **Reject & Correct**: Undoes the action (atomic undo for double crossovers), snapshots state, user demonstrates the correct action in GUI, describes it, agent infers the correct method call and logs it in the trajectory
 3. Query methods (listHelices, getStrandAt, etc.) auto-continue without approval
 
 ### Special Commands
@@ -141,9 +142,13 @@ In the agent dialog:
 - `/list` or `/trajectories` - List saved trajectories
 - `/replay <trajectory_id>` - Replay a saved trajectory step-by-step
 
+### Crossover Nomenclature
+In DNA origami, "crossover" means **double crossover** (two half-crossovers at adjacent Low/High positions). `createCrossover` creates a double crossover by default. Use `createHalfCrossover` only when a single half-crossover is explicitly needed. Double crossovers are wrapped in a single undo macro for atomic undo.
+
 ### Known Issues
 - Timeout errors may occur with slow model responses (current timeout: 120s)
 - Verifier needs more test coverage with successful trajectories
+- Agent sometimes places double crossover half-pairs at non-adjacent positions (training needed)
 
 ---
 
