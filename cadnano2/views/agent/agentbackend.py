@@ -134,6 +134,7 @@ class AgentBackend(QObject):
     processingFinished = pyqtSignal()
     methodCallRequested = pyqtSignal(str, dict)
     agentThinking = pyqtSignal(str)
+    apiKeyNeeded = pyqtSignal()
 
     SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant. You modify DNA origami designs using primitive operations.
 
@@ -273,7 +274,7 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
         self._ollamaModel = "qwen3:1.7b"
 
         # OpenAI settings
-        self._openaiApiKey = os.environ.get('OPENAI_API_KEY', '')
+        self._openaiApiKey = self._loadApiKey()
         self._openaiModel = "gpt-5"  # Default to GPT-5
 
         self._worker = None
@@ -339,6 +340,60 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
             self._openaiApiKey = api_key
         print(f"[Agent] Backend set to: {backend_type}, model: {self.model}")
 
+    @staticmethod
+    def _envFilePath():
+        """Return path to the .env.cadnano file."""
+        config_dir = os.path.expanduser("~/.cadnano2")
+        return os.path.join(config_dir, ".env.cadnano")
+
+    @staticmethod
+    def _loadApiKey():
+        """Load the OpenAI API key from .env.cadnano or environment."""
+        # First check environment variable
+        key = os.environ.get('OPENAI_API_KEY', '')
+        if key:
+            return key
+        # Then check .env.cadnano file
+        env_path = AgentBackend._envFilePath()
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('OPENAI_API_KEY=') and not line.startswith('#'):
+                            return line.split('=', 1)[1].strip()
+            except OSError:
+                pass
+        return ''
+
+    @staticmethod
+    def saveApiKey(api_key):
+        """Save the OpenAI API key to ~/.cadnano2/.env.cadnano."""
+        config_dir = os.path.expanduser("~/.cadnano2")
+        os.makedirs(config_dir, exist_ok=True)
+        env_path = AgentBackend._envFilePath()
+
+        # Read existing lines (if any), replacing any existing key
+        lines = []
+        found = False
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        if line.strip().startswith('OPENAI_API_KEY='):
+                            lines.append(f'OPENAI_API_KEY={api_key}\n')
+                            found = True
+                        else:
+                            lines.append(line)
+            except OSError:
+                pass
+        if not found:
+            lines.append(f'OPENAI_API_KEY={api_key}\n')
+
+        with open(env_path, 'w') as f:
+            f.writelines(lines)
+        print(f"[Agent] API key saved to {env_path}")
+
     def processCommand(self, command, mode="edit"):
         """
         Process a command from the agent dialog.
@@ -377,7 +432,7 @@ Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffol
         if self._backendType == self.BACKEND_OPENAI:
             if not self._openaiApiKey:
                 self._isAgentLoop = False
-                self.errorOccurred.emit("OpenAI API key not set. Set OPENAI_API_KEY environment variable or call setBackend() with api_key.")
+                self.apiKeyNeeded.emit()
                 self.processingFinished.emit()
                 return
             self._worker = OpenAIWorker(

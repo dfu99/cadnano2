@@ -34,6 +34,7 @@ class AgentDialog(QWidget):
     commandSubmitted = pyqtSignal(str)
     modeChanged = pyqtSignal(str)
     backendChanged = pyqtSignal(str)
+    apiKeySubmitted = pyqtSignal(str)
     dialogClosed = pyqtSignal()
     actionApproved = pyqtSignal()
     actionUndoRequested = pyqtSignal()
@@ -277,6 +278,58 @@ class AgentDialog(QWidget):
         self._approvalRow.hide()  # Hidden by default
         containerLayout.addWidget(self._approvalRow)
 
+        # API key input row (hidden by default)
+        self._apiKeyRow = QWidget()
+        apiKeyLayout = QHBoxLayout(self._apiKeyRow)
+        apiKeyLayout.setContentsMargins(0, 4, 0, 4)
+        apiKeyLayout.setSpacing(8)
+
+        apiKeyLabel = QLabel("OpenAI API Key:")
+        apiKeyLabel.setStyleSheet("color: #666; font-size: 11px;")
+
+        self._apiKeyInput = QLineEdit()
+        self._apiKeyInput.setPlaceholderText("sk-...")
+        self._apiKeyInput.setEchoMode(QLineEdit.EchoMode.Password)
+        self._apiKeyInput.setStyleSheet("""
+            QLineEdit {
+                border: 1px solid #c0c0c0;
+                border-radius: 4px;
+                padding: 6px;
+                font-size: 12px;
+                background-color: #fafafa;
+                color: black;
+            }
+            QLineEdit:focus {
+                border-color: #0078d4;
+                background-color: white;
+            }
+        """)
+        self._apiKeyInput.returnPressed.connect(self._onApiKeySubmit)
+
+        self._apiKeySaveButton = QPushButton("Save")
+        self._apiKeySaveButton.setStyleSheet("""
+            QPushButton {
+                background-color: #0078d4;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+        """)
+        self._apiKeySaveButton.clicked.connect(self._onApiKeySubmit)
+
+        apiKeyLayout.addWidget(apiKeyLabel)
+        apiKeyLayout.addWidget(self._apiKeyInput, 1)
+        apiKeyLayout.addWidget(self._apiKeySaveButton)
+
+        self._apiKeyRow.hide()
+        containerLayout.addWidget(self._apiKeyRow)
+
         # Bottom row with size grip
         bottomRow = QHBoxLayout()
         bottomRow.setContentsMargins(0, 0, 0, 0)
@@ -362,6 +415,27 @@ class AgentDialog(QWidget):
     def hideApprovalButtons(self):
         """Hide the approval buttons."""
         self._approvalRow.hide()
+        self._inputField.setEnabled(True)
+
+    def _onApiKeySubmit(self):
+        """Handle API key submission."""
+        key = self._apiKeyInput.text().strip()
+        if key:
+            self._apiKeyRow.hide()
+            self._apiKeyInput.clear()
+            self._inputField.setEnabled(True)
+            self.apiKeySubmitted.emit(key)
+
+    def showApiKeyPrompt(self):
+        """Show the API key input row."""
+        self._apiKeyRow.show()
+        self._apiKeyInput.setFocus()
+        self._inputField.setEnabled(False)
+        self.setStatus("OpenAI API key required. Enter your key below.")
+
+    def hideApiKeyPrompt(self):
+        """Hide the API key input row."""
+        self._apiKeyRow.hide()
         self._inputField.setEnabled(True)
 
     def mode(self):

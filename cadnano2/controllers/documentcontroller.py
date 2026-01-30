@@ -133,6 +133,10 @@ class DocumentController():
         self._agentDialog.actionUndoRequested.connect(self._onActionUndo)
         self._agentDialog.actionCorrectionRequested.connect(self._onActionCorrect)
 
+        # Connect API key signals
+        self._agentDialog.apiKeySubmitted.connect(self._onApiKeySubmitted)
+        self._agentBackend.apiKeyNeeded.connect(self._onApiKeyNeeded)
+
         # Initialize backend from saved dialog setting
         self._onBackendChanged(self._agentDialog.backend())
 
@@ -154,8 +158,22 @@ class DocumentController():
         """Handle backend change from dialog."""
         if backend == "openai":
             self._agentBackend.setBackend("openai", model="gpt-5")
+            # If no API key is available, prompt for one
+            if not self._agentBackend.openaiApiKey:
+                self._agentDialog.showApiKeyPrompt()
         else:
             self._agentBackend.setBackend("ollama", model="qwen3:1.7b")
+
+    def _onApiKeyNeeded(self):
+        """Handle backend requesting an API key."""
+        self._agentDialog.showApiKeyPrompt()
+
+    def _onApiKeySubmitted(self, api_key):
+        """Handle API key submitted from dialog."""
+        from cadnano2.views.agent.agentbackend import AgentBackend
+        AgentBackend.saveApiKey(api_key)
+        self._agentBackend.openaiApiKey = api_key
+        self._agentDialog.setStatus("API key saved. You can now use the OpenAI backend.")
 
     def _listTrajectories(self):
         """List available trajectories."""
