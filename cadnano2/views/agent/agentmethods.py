@@ -401,6 +401,10 @@ class AgentMethods:
         """
         Clear all strand selections.
 
+        Goes through the view's SelectionItemGroup to properly remove
+        items from the graphics group, hide the selection box, and
+        update both model and view state.
+
         Returns:
             str: Success message
         """
@@ -408,7 +412,17 @@ class AgentMethods:
         if doc is None:
             return "Error: No document"
 
-        doc.clearAllSelections()
+        try:
+            pathroot = self._documentController.win.pathroot
+            selectionGroup = pathroot.strandItemSelectionGroup()
+            selectionGroup.clearSelection(False)
+        except Exception:
+            # Fallback: clear model selection directly
+            selectionDict = doc.selectionDict()
+            for strandSetDict in list(selectionDict.values()):
+                for strand in list(strandSetDict.keys()):
+                    doc.removeStrandFromSelection(strand)
+            doc.updateSelection()
         return "Selection cleared"
 
     def selectStrand(self, helix_num, idx, strand_type, select_low=True, select_high=True):
@@ -448,6 +462,231 @@ class AgentMethods:
 
         idxL, idxH = strand.idxs()
         return f"Selected {strand_type} strand on helix {helix_num} [{idxL}-{idxH}]"
+
+    def selectEndpoint(self, helix_num, idx, strand_type, which_end):
+        """
+        Select a single endpoint of a strand.
+
+        Selecting just one endpoint means moveSelection will extend/shrink
+        the strand at that end while the other end stays fixed.
+
+        Args:
+            helix_num (int): Virtual helix number
+            idx (int): Any index within the strand to identify it
+            strand_type (str): "scaffold" or "staple"
+            which_end (str): "low" or "high" — which endpoint to select
+
+        Returns:
+            str: Success message or error
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        if strand_type.lower() == "scaffold":
+            strandSet = vh.scaffoldStrandSet()
+        else:
+            strandSet = vh.stapleStrandSet()
+
+        strand = strandSet.getStrand(idx)
+        if strand is None:
+            return f"Error: No {strand_type} strand at helix {helix_num} index {idx}"
+
+        if which_end.lower() == "low":
+            value = (True, False)
+        elif which_end.lower() == "high":
+            value = (False, True)
+        else:
+            return f"Error: which_end must be 'low' or 'high', got '{which_end}'"
+
+        doc = self.document
+        doc.addStrandToSelection(strand, value)
+        doc.updateSelection()
+
+        idxL, idxH = strand.idxs()
+        endpoint_idx = idxL if which_end.lower() == "low" else idxH
+        has_xover = (strand.connectionLow() is not None) if which_end.lower() == "low" else (strand.connectionHigh() is not None)
+        xover_note = " (has crossover)" if has_xover else ""
+        return f"Selected {which_end} endpoint of {strand_type} strand on helix {helix_num} [{idxL}-{idxH}] at index {endpoint_idx}{xover_note}"
+
+    def selectCrossover(self, helix1, helix2, idx, strand_type):
+        """
+        Select a crossover between two helices at a given index.
+
+        This selects the crossover endpoints on both connected strands,
+        mirroring the behavior of clicking a crossover in the GUI.
+        After selecting, moveSelection(delta) will move the crossover
+        to the next valid lattice position, resizing both strands.
+
+        Args:
+            helix1 (int): First helix number
+            helix2 (int): Second helix number
+            idx (int): Index of the crossover on helix1
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: Success message or error
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+        if vh1 is None:
+            return f"Error: Helix {helix1} not found"
+        if vh2 is None:
+            return f"Error: Helix {helix2} not found"
+
+        if strand_type.lower() == "scaffold":
+            ss1 = vh1.scaffoldStrandSet()
+        else:
+            ss1 = vh1.stapleStrandSet()
+
+        strand = ss1.getStrand(idx)
+        if strand is None:
+            return f"Error: No {strand_type} strand at helix {helix1} index {idx}"
+
+        # Determine which end of the strand has the crossover to helix2
+        lo, hi = strand.idxs()
+        connected_strand = None
+        if idx == lo and strand.connectionLow():
+            partner = strand.connectionLow()
+            if partner.virtualHelix().number() == helix2:
+                connected_strand = partner
+        if idx == hi and strand.connectionHigh():
+            partner = strand.connectionHigh()
+            if partner.virtualHelix().number() == helix2:
+                connected_strand = partner
+
+        if connected_strand is None:
+            return (f"Error: No crossover from helix {helix1} to helix {helix2} "
+                    f"at index {idx}")
+
+        # Replicate XoverItem.modelSelect logic:
+        # The crossover is a connection from strand (5p side) to connected_strand (3p side).
+        # For the 5p strand: select the high endpoint if drawn 5to3, else the low endpoint.
+        # For the 3p strand: select the low endpoint if drawn 5to3, else the high endpoint.
+        doc = self.document
+
+        # strand on helix1: the crossover is at the endpoint connecting to helix2
+        test1 = doc.isModelStrandSelected(strand)
+        lowVal1, highVal1 = doc.getSelectedStrandValue(strand) if test1 else (False, False)
+        if idx == lo:
+            lowVal1 = True
+        else:
+            highVal1 = True
+
+        # connected_strand on helix2
+        test2 = doc.isModelStrandSelected(connected_strand)
+        lowVal2, highVal2 = doc.getSelectedStrandValue(connected_strand) if test2 else (False, False)
+        conn_lo, conn_hi = connected_strand.idxs()
+        # The crossover connects at the partner's endpoint closest to idx
+        if connected_strand.connectionLow() == strand:
+            lowVal2 = True
+        elif connected_strand.connectionHigh() == strand:
+            highVal2 = True
+        else:
+            # Fallback: check by index
+            if idx == conn_lo:
+                lowVal2 = True
+            else:
+                highVal2 = True
+
+        doc.addStrandToSelection(strand, (lowVal1, highVal1))
+        doc.addStrandToSelection(connected_strand, (lowVal2, highVal2))
+        doc.updateSelection()
+
+        conn_lo, conn_hi = connected_strand.idxs()
+        return (f"Selected {strand_type} crossover between helix {helix1}[{idx}] "
+                f"and helix {helix2}[{conn_lo if lowVal2 else conn_hi}]")
+
+    def listCrossovers(self, helix_num=None, strand_type=None):
+        """
+        List all existing crossovers in the design.
+
+        Args:
+            helix_num (int, optional): Filter to crossovers involving this helix
+            strand_type (str, optional): Filter to "scaffold" or "staple"
+
+        Returns:
+            str: JSON-formatted list of crossovers with properties
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vhs = part.getVirtualHelices()
+        crossovers = []
+        seen = set()  # avoid duplicates (each xover connects two strands)
+
+        for vh in vhs:
+            vh_num = vh.number()
+            if helix_num is not None and vh_num != helix_num:
+                continue
+
+            strand_sets = []
+            if strand_type is None or strand_type.lower() == "scaffold":
+                strand_sets.append(("scaffold", vh.scaffoldStrandSet()))
+            if strand_type is None or strand_type.lower() == "staple":
+                strand_sets.append(("staple", vh.stapleStrandSet()))
+
+            for stype, ss in strand_sets:
+                for strand in ss:
+                    lo, hi = strand.idxs()
+                    # Check low endpoint
+                    if strand.connectionLow():
+                        partner = strand.connectionLow()
+                        partner_vh = partner.virtualHelix().number()
+                        partner_lo, partner_hi = partner.idxs()
+                        # Use the partner's endpoint index that connects back
+                        if partner.connectionLow() == strand:
+                            partner_idx = partner_lo
+                        else:
+                            partner_idx = partner_hi
+                        key = tuple(sorted([(vh_num, lo), (partner_vh, partner_idx)]))
+                        if key not in seen:
+                            seen.add(key)
+                            crossovers.append({
+                                "helix1": vh_num,
+                                "idx1": lo,
+                                "helix2": partner_vh,
+                                "idx2": partner_idx,
+                                "strand_type": stype
+                            })
+                    # Check high endpoint
+                    if strand.connectionHigh():
+                        partner = strand.connectionHigh()
+                        partner_vh = partner.virtualHelix().number()
+                        partner_lo, partner_hi = partner.idxs()
+                        if partner.connectionLow() == strand:
+                            partner_idx = partner_lo
+                        else:
+                            partner_idx = partner_hi
+                        key = tuple(sorted([(vh_num, hi), (partner_vh, partner_idx)]))
+                        if key not in seen:
+                            seen.add(key)
+                            crossovers.append({
+                                "helix1": vh_num,
+                                "idx1": hi,
+                                "helix2": partner_vh,
+                                "idx2": partner_idx,
+                                "strand_type": stype
+                            })
+
+        crossovers.sort(key=lambda x: (x["helix1"], x["helix2"], x["idx1"]))
+
+        filter_desc = ""
+        if helix_num is not None:
+            filter_desc += f" on helix {helix_num}"
+        if strand_type is not None:
+            filter_desc += f" ({strand_type})"
+
+        return f"Crossovers{filter_desc} ({len(crossovers)} total): {crossovers}"
 
     # ==================== STRAND PRIMITIVES ====================
 
@@ -1010,6 +1249,222 @@ class AgentMethods:
 
         if not removed:
             return f"No crossover found at helix {helix_num} index {idx}"
+
+    def moveCrossover(self, helix1, helix2, idx, strand_type, delta):
+        """
+        Move a crossover by delta base pairs, bypassing lattice snap-to.
+
+        Unlike moveSelection which snaps crossovers to the next valid
+        lattice position, this method moves the crossover by exactly
+        delta bases. It removes the crossover(s), resizes the strands,
+        and recreates the crossover(s) at the new position.
+
+        For a double crossover, both half-crossovers move by delta.
+
+        The only constraint enforced is topology: the move is rejected
+        if it would cause a strand to overlap a neighboring strand.
+
+        Args:
+            helix1 (int): First helix number
+            helix2 (int): Second helix number
+            idx (int): Index of one half-crossover on helix1
+            strand_type (str): "scaffold" or "staple"
+            delta (int): Base pairs to move (positive = right, negative = left)
+
+        Returns:
+            str: Success message or error
+        """
+        from cadnano2.model.strand import Strand
+
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+        if vh1 is None:
+            return f"Error: Helix {helix1} not found"
+        if vh2 is None:
+            return f"Error: Helix {helix2} not found"
+
+        if strand_type.lower() == "scaffold":
+            ss1 = vh1.scaffoldStrandSet()
+            ss2 = vh2.scaffoldStrandSet()
+        else:
+            ss1 = vh1.stapleStrandSet()
+            ss2 = vh2.stapleStrandSet()
+
+        strand1 = ss1.getStrand(idx)
+        if strand1 is None:
+            return f"Error: No {strand_type} strand at helix {helix1} index {idx}"
+
+        # Find which endpoint on strand1 has the crossover to helix2
+        lo1, hi1 = strand1.idxs()
+        xover_at_low1 = (idx == lo1 and strand1.connectionLow() and
+                         strand1.connectionLow().virtualHelix().number() == helix2)
+        xover_at_high1 = (idx == hi1 and strand1.connectionHigh() and
+                          strand1.connectionHigh().virtualHelix().number() == helix2)
+        if not xover_at_low1 and not xover_at_high1:
+            return (f"Error: No crossover from helix {helix1} to helix {helix2} "
+                    f"at index {idx}")
+
+        if xover_at_low1:
+            partner1 = strand1.connectionLow()
+        else:
+            partner1 = strand1.connectionHigh()
+
+        # Determine the partner's crossover endpoint index
+        p1_lo, p1_hi = partner1.idxs()
+        if partner1.connectionLow() == strand1:
+            partner1_xover_at_low = True
+            partner1_idx = p1_lo
+        else:
+            partner1_xover_at_low = False
+            partner1_idx = p1_hi
+
+        # Check if this is part of a double crossover (look for paired half-xover)
+        paired_idx = self._getDoubleCrossoverPair(part, vh1, vh2, idx, strand_type)
+        is_double = False
+        strand2 = None
+        partner2 = None
+
+        if paired_idx is not None:
+            strand2 = ss1.getStrand(paired_idx)
+            if strand2 is not None:
+                lo2, hi2 = strand2.idxs()
+                xover2_low = (paired_idx == lo2 and strand2.connectionLow() and
+                              strand2.connectionLow().virtualHelix().number() == helix2)
+                xover2_high = (paired_idx == hi2 and strand2.connectionHigh() and
+                               strand2.connectionHigh().virtualHelix().number() == helix2)
+                if xover2_low:
+                    partner2 = strand2.connectionLow()
+                    is_double = True
+                elif xover2_high:
+                    partner2 = strand2.connectionHigh()
+                    is_double = True
+
+        # Collect all (strand, is_xover_at_low, current_xover_idx) tuples
+        # Each crossover endpoint needs its strand resized
+        xover_endpoints = []
+        # First half-crossover: strand1 side
+        xover_endpoints.append((strand1, xover_at_low1, idx))
+        # First half-crossover: partner1 side
+        xover_endpoints.append((partner1, partner1_xover_at_low, partner1_idx))
+
+        if is_double:
+            lo2, hi2 = strand2.idxs()
+            strand2_at_low = (paired_idx == lo2)
+            xover_endpoints.append((strand2, strand2_at_low, paired_idx))
+            p2_lo, p2_hi = partner2.idxs()
+            if partner2.connectionLow() == strand2:
+                partner2_at_low = True
+                partner2_idx = p2_lo
+            else:
+                partner2_at_low = False
+                partner2_idx = p2_hi
+            xover_endpoints.append((partner2, partner2_at_low, partner2_idx))
+
+        # Validate bounds for all strands being resized
+        for strand, at_low, xover_idx in xover_endpoints:
+            lo, hi = strand.idxs()
+            if at_low:
+                new_lo = lo + delta
+                new_hi = hi
+                # Check: new_lo must not go below lower neighbor's high idx
+                neighbors = strand.strandSet().getNeighbors(strand)
+                if neighbors[0]:
+                    if new_lo <= neighbors[0].highIdx():
+                        return (f"Error: Moving by {delta} would overlap "
+                                f"neighboring strand on helix "
+                                f"{strand.virtualHelix().number()} "
+                                f"(bound: {neighbors[0].highIdx() + 1})")
+                elif new_lo < part.minBaseIdx():
+                    return f"Error: Moving by {delta} would go below minimum index"
+                if new_lo > new_hi:
+                    return f"Error: Moving by {delta} would make strand length negative"
+            else:
+                new_lo = lo
+                new_hi = hi + delta
+                neighbors = strand.strandSet().getNeighbors(strand)
+                if neighbors[1]:
+                    if new_hi >= neighbors[1].lowIdx():
+                        return (f"Error: Moving by {delta} would overlap "
+                                f"neighboring strand on helix "
+                                f"{strand.virtualHelix().number()} "
+                                f"(bound: {neighbors[1].lowIdx() - 1})")
+                elif new_hi > part.maxBaseIdx():
+                    return f"Error: Moving by {delta} would exceed maximum index"
+                if new_lo > new_hi:
+                    return f"Error: Moving by {delta} would make strand length negative"
+
+        # All checks passed — execute the move in one undo macro
+        part.undoStack().beginMacro("Move Crossover")
+        try:
+            # Step 1: Remove crossover connections
+            if xover_at_low1:
+                s5p, s3p = (strand1, partner1) if strand1.connection5p() == partner1 \
+                            else (partner1, strand1)
+            else:
+                s5p, s3p = (strand1, partner1) if strand1.connection3p() == partner1 \
+                            else (partner1, strand1)
+            part.removeXover(s5p, s3p, useUndoStack=True)
+
+            if is_double:
+                lo2, hi2 = strand2.idxs()
+                strand2_at_low = (paired_idx == lo2)
+                if strand2_at_low:
+                    s5p2, s3p2 = (strand2, partner2) if strand2.connection5p() == partner2 \
+                                  else (partner2, strand2)
+                else:
+                    s5p2, s3p2 = (strand2, partner2) if strand2.connection3p() == partner2 \
+                                  else (partner2, strand2)
+                part.removeXover(s5p2, s3p2, useUndoStack=True)
+
+            # Step 2: Resize all strands
+            for strand, at_low, xover_idx in xover_endpoints:
+                lo, hi = strand.idxs()
+                if at_low:
+                    Strand.resize(strand, (lo + delta, hi), useUndoStack=True)
+                else:
+                    Strand.resize(strand, (lo, hi + delta), useUndoStack=True)
+
+            # Step 3: Recreate crossover connections at new positions
+            new_idx = idx + delta
+            new_strand1 = ss1.getStrand(new_idx)
+            new_partner1 = ss2.getStrand(partner1_idx + delta)
+            if new_strand1 is None or new_partner1 is None:
+                part.undoStack().endMacro()
+                part.undoStack().undo()
+                return f"Error: Could not find strands at new positions after resize"
+            part.createXover(new_strand1, new_idx, new_partner1, partner1_idx + delta,
+                             useUndoStack=True)
+
+            if is_double:
+                new_paired_idx = paired_idx + delta
+                new_strand2 = ss1.getStrand(new_paired_idx)
+                new_partner2 = ss2.getStrand(partner2_idx + delta)
+                if new_strand2 is None or new_partner2 is None:
+                    part.undoStack().endMacro()
+                    part.undoStack().undo()
+                    return f"Error: Could not find strands at new positions for paired crossover"
+                part.createXover(new_strand2, new_paired_idx, new_partner2,
+                                 partner2_idx + delta, useUndoStack=True)
+
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error moving crossover: {e}"
+
+        if is_double:
+            new_low = min(idx + delta, paired_idx + delta)
+            new_high = max(idx + delta, paired_idx + delta)
+            return (f"Moved {strand_type} double crossover between helix {helix1} "
+                    f"and helix {helix2} by {delta}bp to indices "
+                    f"[{new_low}, {new_high}]")
+        else:
+            return (f"Moved {strand_type} half-crossover between helix {helix1} "
+                    f"and helix {helix2} by {delta}bp to index {idx + delta}")
 
     def findCrossoversWithSpacing(self, strand_type, min_spacing=21):
         """

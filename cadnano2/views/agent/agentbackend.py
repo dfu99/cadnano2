@@ -162,10 +162,18 @@ CROSSOVER:
 - createCrossover(helix1, idx1, helix2, idx2, strand_type): Create a double crossover (two half-crossovers at the Low/High pair). Provide any valid crossover index — the paired index is found automatically.
 - createHalfCrossover(helix1, idx1, helix2, idx2, strand_type): Create a single half-crossover (rare — use createCrossover unless explicitly asked for a half-crossover)
 - removeCrossover(helix_num, idx, strand_type): Disconnect strands
+- moveCrossover(helix1, helix2, idx, strand_type, delta): Move a crossover by exactly delta bp. Unlike moveSelection, this does NOT snap to lattice positions — it moves freely. Only rejects if the move would overlap a neighboring strand.
 
 SELECTION (for GUI-selected elements):
-- moveSelection(delta): Move selected endpoints by delta bp
+- selectStrand(helix_num, idx, strand_type, select_low?, select_high?): Select a strand (both endpoints by default)
+- selectEndpoint(helix_num, idx, strand_type, which_end): Select one endpoint ("low" or "high"). moveSelection will extend/shrink at that end.
+- selectCrossover(helix1, helix2, idx, strand_type): Select a crossover between two helices. moveSelection will move the crossover to the next valid lattice position, resizing both connected strands.
+- moveSelection(delta): Move selected endpoints by delta bp. Behavior depends on what is selected:
+  * Both endpoints selected → strand translates (position changes, length stays same)
+  * One endpoint selected → strand extends/shrinks at that end
+  * Crossover endpoint selected → crossover snaps to next valid position, both strands resize
 - clearSelection(): Clear selection
+- listCrossovers(helix_num?, strand_type?): List all existing crossovers in the design
 
 OTHER:
 - extendPartSize(min_length_needed): Extend part to fit longer strands
@@ -182,6 +190,15 @@ Complex tasks are composed from primitives. Examples:
 
 "Move selected strand 3 bp right":
 1. moveSelection(delta=3)
+
+"Move the crossover between helix 0 and helix 1 at index 11 two bases to the right":
+1. moveCrossover(helix1=0, helix2=1, idx=11, strand_type="scaffold", delta=2)
+Note: moveCrossover moves freely. moveSelection with a selected crossover snaps to lattice positions.
+
+"Extend the high end of scaffold on helix 0 by 5 bases":
+1. clearSelection()
+2. selectEndpoint(helix_num=0, idx=0, strand_type="scaffold", which_end="high")
+3. moveSelection(delta=5)
 
 PARITY RULES:
 - even parity (row%2 == col%2): scaffold 5'→3' goes LEFT to RIGHT (increasing idx)

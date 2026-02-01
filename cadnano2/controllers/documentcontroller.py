@@ -379,7 +379,8 @@ class DocumentController():
             'getHelixInfo', 'getHelixDirection', 'getHoneycombPositions',
             'getPotentialCrossovers', 'getValidCrossoverPositions',
             'getSelectedStrands', 'verifyDesign', 'verify6HelixBundle',
-            'getPartSize'
+            'getPartSize', 'listCrossovers',
+            'selectStrand', 'selectEndpoint', 'selectCrossover', 'clearSelection'
         }
 
         if success and methodName not in query_methods:

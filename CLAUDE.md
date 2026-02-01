@@ -99,8 +99,8 @@ Primitive methods for DNA design manipulation:
 - **Part Size**: `extendPartSize(min_length_needed)`
 - **Helix**: `createHelix(row, col)`
 - **Strands**: `createScaffoldStrand`, `createStapleStrand`, `createFullLengthStrands`
-- **Selection**: `getSelectedStrands`, `selectStrand`, `moveSelection`, `clearSelection`
-- **Crossovers**: `createCrossover` (double, default), `createHalfCrossover` (single), `getPotentialCrossovers`, `getValidCrossoverPositions`
+- **Selection**: `getSelectedStrands`, `selectStrand`, `selectEndpoint`, `selectCrossover`, `moveSelection`, `clearSelection`
+- **Crossovers**: `createCrossover` (double, default), `createHalfCrossover` (single), `moveCrossover` (free movement, no lattice snap), `getPotentialCrossovers`, `getValidCrossoverPositions`, `listCrossovers`
 - **Insertions**: `addInsertion`, `removeInsertion`
 - **Verification**: `verifyDesign`, `verify6HelixBundle`
 
