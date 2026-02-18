@@ -136,145 +136,58 @@ class AgentBackend(QObject):
     agentThinking = pyqtSignal(str)
     apiKeyNeeded = pyqtSignal()
 
-    SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant. You modify DNA origami designs using primitive operations.
+    SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant.
 
-PRIMITIVE OPERATIONS:
+AVAILABLE TOOLS:
 
-QUERY (use these to understand the current state):
-- listHelices(): List all helices with numbers, positions, parity
-- listStrands(helix_num?, strand_type?): List all strands with endpoints and properties
-- getStrandAt(helix_num, idx, strand_type): Get info about specific strand
-- getHelixDirection(helix_num): Get parity, strand directions (5'→3'), which strand is on top, and neighbor helices
-- getSelectedStrands(): Get currently selected strands from GUI
-- getPartSize(): Get valid index range
+UNDERSTAND THE DESIGN (call these first):
+- analyzeDesign(): Complete state dump — all helices, strands, crossovers, issues
+- describeHelix(helix_num): Everything about one helix — parity, neighbors, strands, valid crossover positions
+- suggestCrossovers(helix1, helix2, strand_type, min_spacing?): Valid crossover positions with recommendations
+- getNeighborPairs(): All neighbor pairs with direction info
 
-HELIX:
-- createHelix(row, col): Create helix at grid position
-- deleteHelix(helix_num): Remove a helix
+BUILD (batch operations — preferred for multi-step tasks):
+- createHelicesWithStrands(positions, strand_type, length): Create multiple helices with strands in one step. positions is a list of [row, col] pairs. strand_type can be "scaffold", "staple", or "both". Auto-extends part size.
+- addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?): Add crossovers between two helices. Auto-computes positions if not specified.
+- addAllNeighborCrossovers(strand_type, spacing?): Wire up all neighbor pairs with crossovers
+- resizeAllStrands(strand_type, new_length?, delta?, helix_num?): Resize strands in bulk. Respects parity for which end to resize.
 
-STRAND (these are the core primitives):
-- createScaffoldStrand(helix_num, start_idx, length): Create scaffold strand
-- createStapleStrand(helix_num, start_idx, length): Create staple strand
-- resizeStrand(helix_num, idx, strand_type, new_low, new_high): Change strand endpoints
-- deleteStrand(helix_num, idx, strand_type): Remove a strand
-
-CROSSOVER:
-- createCrossover(helix1, idx1, helix2, idx2, strand_type): Create a double crossover (two half-crossovers at the Low/High pair). Provide any valid crossover index — the paired index is found automatically.
-- createHalfCrossover(helix1, idx1, helix2, idx2, strand_type): Create a single half-crossover (rare — use createCrossover unless explicitly asked for a half-crossover)
-- removeCrossover(helix_num, idx, strand_type): Disconnect strands
-- moveCrossover(helix1, helix2, idx, strand_type, delta): Move a crossover by exactly delta bp. Unlike moveSelection, this does NOT snap to lattice positions — it moves freely. Only rejects if the move would overlap a neighboring strand.
+FINE-GRAINED CONTROL (when batch tools aren't enough):
+- createHelix(row, col), deleteHelix(helix_num)
+- createScaffoldStrand(helix_num, start_idx, length), createStapleStrand(helix_num, start_idx, length)
+- resizeStrand(helix_num, idx, strand_type, new_low, new_high), deleteStrand(helix_num, idx, strand_type)
+- createCrossover(helix1, idx1, helix2, idx2, strand_type): Double crossover — paired index found automatically
+- createHalfCrossover(helix1, idx1, helix2, idx2, strand_type): Single half-crossover (rare)
+- removeCrossover(helix_num, idx, strand_type)
+- moveCrossover(helix1, helix2, idx, strand_type, delta): Move crossover freely by delta bp
+- extendPartSize(min_length_needed)
 
 SELECTION (for GUI-selected elements):
-- selectStrand(helix_num, idx, strand_type, select_low?, select_high?): Select a strand (both endpoints by default)
-- selectEndpoint(helix_num, idx, strand_type, which_end): Select one endpoint ("low" or "high"). moveSelection will extend/shrink at that end.
-- selectCrossover(helix1, helix2, idx, strand_type): Select a crossover between two helices. moveSelection will move the crossover to the next valid lattice position, resizing both connected strands.
-- moveSelection(delta): Move selected endpoints by delta bp. Behavior depends on what is selected:
-  * Both endpoints selected → strand translates (position changes, length stays same)
-  * One endpoint selected → strand extends/shrinks at that end
-  * Crossover endpoint selected → crossover snaps to next valid position, both strands resize
-- clearSelection(): Clear selection
-- listCrossovers(helix_num?, strand_type?): List all existing crossovers in the design
+- selectStrand(helix_num, idx, strand_type), selectEndpoint(helix_num, idx, strand_type, which_end)
+- selectCrossover(helix1, helix2, idx, strand_type)
+- moveSelection(delta): Move/resize selected elements
+- clearSelection(), getSelectedStrands()
 
-OTHER:
-- extendPartSize(min_length_needed): Extend part to fit longer strands
-- addInsertion(helix_num, idx, length): Add insertion/deletion
+QUERY:
+- listHelices(), listStrands(helix_num?, strand_type?), listCrossovers(helix_num?, strand_type?)
+- getStrandAt(helix_num, idx, strand_type), getPartSize()
+- getHoneycombPositions(num_helices)
 
-COMPOSING OPERATIONS:
-Complex tasks are composed from primitives. Examples:
+VERIFICATION:
+- verifyDesign(), verify6HelixBundle()
 
-"Shorten all scaffold strands by 2 bp":
-1. listStrands(strand_type="scaffold") → get all scaffold strands
-2. For each strand, based on parity:
-   - even parity: 5'→3' goes right, so shorten from high end: resizeStrand(..., new_high=high-2)
-   - odd parity: 5'→3' goes left, so shorten from low end: resizeStrand(..., new_low=low+2)
+HONEYCOMB STEP SIZE: 21bp. Common lengths: 84bp (4 steps), 126bp (6 steps).
 
-"Move selected strand 3 bp right":
-1. moveSelection(delta=3)
-
-"Move the crossover between helix 0 and helix 1 at index 11 two bases to the right":
-1. moveCrossover(helix1=0, helix2=1, idx=11, strand_type="scaffold", delta=2)
-Note: moveCrossover moves freely. moveSelection with a selected crossover snaps to lattice positions.
-
-"Extend the high end of scaffold on helix 0 by 5 bases":
-1. clearSelection()
-2. selectEndpoint(helix_num=0, idx=0, strand_type="scaffold", which_end="high")
-3. moveSelection(delta=5)
-
-PARITY RULES:
-- even parity (row%2 == col%2): scaffold 5'→3' goes LEFT to RIGHT (increasing idx)
-- odd parity (row%2 != col%2): scaffold 5'→3' goes RIGHT to LEFT (decreasing idx)
+EXAMPLE — Create a 6-helix bundle with 84bp scaffold:
+1. {"method": "getHoneycombPositions", "params": {"num_helices": 6}}
+2. {"method": "createHelicesWithStrands", "params": {"positions": [[20,20],[20,21],[21,20],[21,21],[22,20],[22,21]], "strand_type": "scaffold", "length": 84}}
+3. {"method": "addAllNeighborCrossovers", "params": {"strand_type": "scaffold"}}
+4. {"method": "verifyDesign", "params": {}}
+5. {"done": true, "message": "Created 6-helix bundle with scaffold strands and crossovers."}
 
 RESPONSE FORMAT:
 - To call a method: {"method": "methodName", "params": {"param1": value1}}
 - When done: {"done": true, "message": "Summary"}
-
-====================
-DNA NANOSTRUCTURE DESIGN RULES
-====================
-
-HONEYCOMB LATTICE GEOMETRY:
-- Helices arranged in honeycomb pattern with (row, col) coordinates
-- Parity determines strand direction:
-  * EVEN parity (row%2 == col%2): scaffold 5'→3' goes LEFT to RIGHT (increasing index)
-  * ODD parity (row%2 != col%2): scaffold 5'→3' goes RIGHT to LEFT (decreasing index)
-- Each helix has 3 neighbors (p0, p1, p2 directions)
-
-6-HELIX BUNDLE POSITIONS (2 columns x 3 rows):
-  (20,20) (20,21)   <- row 20
-  (21,20) (21,21)   <- row 21
-  (22,20) (22,21)   <- row 22
-
-STEP SIZE AND STRAND LENGTH:
-- Honeycomb step = 21 bases (2 helical turns)
-- Common lengths: 84bp (4 steps), 126bp (6 steps), 168bp (8 steps)
-- Strands should be multiples of 21 for proper crossover alignment
-
-SCAFFOLD CROSSOVER POSITIONS (index mod 21):
-- Between p0 neighbors: positions 1, 2, 11, 12
-- Between p1 neighbors: positions 8, 9, 18, 19
-- Between p2 neighbors: positions 4, 5, 15, 16
-
-STAPLE CROSSOVER POSITIONS (index mod 21):
-- Between p0 neighbors: positions 6, 7
-- Between p1 neighbors: positions 13, 14
-- Between p2 neighbors: positions 0, 20
-
-NEIGHBOR DIRECTIONS BY PARITY:
-- Even parity helix (row,col): p0=(row,col+1), p1=(row-1,col), p2=(row,col-1)
-- Odd parity helix (row,col): p0=(row,col-1), p1=(row+1,col), p2=(row,col+1)
-
-====================
-EXAMPLE: CREATE 6-HELIX BUNDLE (84bp)
-====================
-
-Step 1: Extend part size to fit 84bp strands (default is only 42bp)
-{"method": "extendPartSize", "params": {"min_length_needed": 84}}
-
-Step 2: Get positions
-{"method": "getHoneycombPositions", "params": {"num_helices": 6}}
-
-Step 3-8: Create 6 helices
-{"method": "createHelix", "params": {"row": 20, "col": 20}}
-{"method": "createHelix", "params": {"row": 20, "col": 21}}
-{"method": "createHelix", "params": {"row": 21, "col": 20}}
-{"method": "createHelix", "params": {"row": 21, "col": 21}}
-{"method": "createHelix", "params": {"row": 22, "col": 20}}
-{"method": "createHelix", "params": {"row": 22, "col": 21}}
-
-Step 9-14: Create scaffold strands (84bp each)
-{"method": "createScaffoldStrand", "params": {"helix_num": 0, "start_idx": 0, "length": 84}}
-... repeat for helices 1-5
-
-Step 15: Get valid crossover positions
-{"method": "getValidCrossoverPositions", "params": {"helix1": 0, "helix2": 1, "strand_type": "scaffold"}}
-
-Step 16+: Create double crossovers between adjacent helices (one call creates both half-crossovers)
-{"method": "createCrossover", "params": {"helix1": 0, "idx1": 11, "helix2": 1, "idx2": 11, "strand_type": "scaffold"}}
-
-Step N: Verify the result
-{"method": "verify6HelixBundle", "params": {}}
-
-Final: {"done": true, "message": "Created 6-helix bundle with 6 helices, scaffold strands, and crossovers. Score: X.XX"}
 """
 
     MAX_ITERATIONS = 50  # Safety limit for agent loop
@@ -700,31 +613,36 @@ Examples:
 
         # Try shorthand format: methodName(param1=value1, ...)
         import re
-        match = re.match(r'(\w+)\((.*)\)', command)
+        match = re.match(r'(\w+)\((.*)\)', command, re.DOTALL)
         if match:
             method_name = match.group(1)
             params_str = match.group(2).strip()
 
             params = {}
             if params_str:
-                # Parse key=value pairs
-                for param in params_str.split(','):
+                # Split on commas that are not inside brackets
+                parts = self._splitParams(params_str)
+                for param in parts:
                     param = param.strip()
                     if '=' in param:
                         key, value = param.split('=', 1)
                         key = key.strip()
                         value = value.strip()
-                        # Try to parse as number
+                        # Try JSON parsing first (handles lists, dicts, bools)
                         try:
-                            if '.' in value:
-                                value = float(value)
-                            else:
-                                value = int(value)
-                        except ValueError:
-                            # Keep as string, remove quotes if present
-                            if (value.startswith('"') and value.endswith('"')) or \
-                               (value.startswith("'") and value.endswith("'")):
-                                value = value[1:-1]
+                            value = json.loads(value)
+                        except (json.JSONDecodeError, ValueError):
+                            # Try to parse as number
+                            try:
+                                if '.' in value:
+                                    value = float(value)
+                                else:
+                                    value = int(value)
+                            except ValueError:
+                                # Keep as string, remove quotes if present
+                                if (value.startswith('"') and value.endswith('"')) or \
+                                   (value.startswith("'") and value.endswith("'")):
+                                    value = value[1:-1]
                         params[key] = value
 
             self.methodCallRequested.emit(method_name, params)
@@ -734,6 +652,28 @@ Examples:
         # Unknown format
         self.responseReceived.emit("Unknown command format. Type 'help' for usage.")
         self.processingFinished.emit()
+
+    @staticmethod
+    def _splitParams(s):
+        """Split a parameter string on commas, respecting bracket nesting."""
+        parts = []
+        depth = 0
+        current = []
+        for ch in s:
+            if ch in ('(', '[', '{'):
+                depth += 1
+                current.append(ch)
+            elif ch in (')', ']', '}'):
+                depth -= 1
+                current.append(ch)
+            elif ch == ',' and depth == 0:
+                parts.append(''.join(current))
+                current = []
+            else:
+                current.append(ch)
+        if current:
+            parts.append(''.join(current))
+        return parts
 
     def stopAgentLoop(self):
         """Stop the current agent loop."""

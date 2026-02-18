@@ -380,7 +380,9 @@ class DocumentController():
             'getPotentialCrossovers', 'getValidCrossoverPositions',
             'getSelectedStrands', 'verifyDesign', 'verify6HelixBundle',
             'getPartSize', 'listCrossovers',
-            'selectStrand', 'selectEndpoint', 'selectCrossover', 'clearSelection'
+            'selectStrand', 'selectEndpoint', 'selectCrossover', 'clearSelection',
+            # Level 2 query tools
+            'describeHelix', 'analyzeDesign', 'suggestCrossovers', 'getNeighborPairs'
         }
 
         if success and methodName not in query_methods:

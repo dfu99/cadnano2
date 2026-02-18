@@ -94,7 +94,22 @@ The agent should:
 - MAX_ITERATIONS (50) safety limit
 
 #### Agent Methods (`cadnano2/views/agent/agentmethods.py`)
-Primitive methods for DNA design manipulation:
+
+Methods are organized in two tiers. **Level 2 tools are preferred** — they encode DNA domain rules so the model expresses design intent without computing parity, crossover positions, or neighbor geometry. Level 1 primitives remain available for fine-grained control.
+
+**Level 2 — Constraint-Aware Query Tools:**
+- `describeHelix(helix_num)`: Rich single-call description — parity, directions, neighbors, strands, valid crossover positions
+- `analyzeDesign()`: Complete state dump — all helices, strands, crossovers, issues, score
+- `suggestCrossovers(helix1, helix2, strand_type, min_spacing?)`: Annotated crossover positions (occupied, available, recommended)
+- `getNeighborPairs()`: All neighbor pairs in the design with direction labels
+
+**Level 2 — Batch Execution Tools** (each wraps in one undo macro for atomic undo):
+- `createHelicesWithStrands(positions, strand_type, length)`: Create multiple helices with strands. Auto-extends part size. strand_type can be "scaffold", "staple", or "both"
+- `addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?)`: Add crossovers between two helices. Auto-computes positions if not specified
+- `addAllNeighborCrossovers(strand_type, spacing?)`: Wire up all neighbor pairs with crossovers
+- `resizeAllStrands(strand_type, new_length?, delta?, helix_num?)`: Resize strands in bulk. Respects parity for which end to resize
+
+**Level 1 — Primitives** (fine-grained control):
 - **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHelixDirection`, `getHoneycombPositions`, `listHelices`, `getPartSize`
 - **Part Size**: `extendPartSize(min_length_needed)`
 - **Helix**: `createHelix(row, col)`
@@ -134,7 +149,8 @@ The DocumentController (`cadnano2/controllers/documentcontroller.py`) integrates
    - **Approve**: Logs positive signal, continues agent loop
    - **Approve All**: Sets auto-approve for remaining actions in this trajectory
    - **Reject & Correct**: Undoes the action (atomic undo for double crossovers), snapshots state, user demonstrates the correct action in GUI, describes it, agent infers the correct method call and logs it in the trajectory
-3. Query methods (listHelices, getStrandAt, etc.) auto-continue without approval
+3. Query methods (listHelices, getStrandAt, Level 2 queries, etc.) auto-continue without approval
+4. Batch methods (`createHelicesWithStrands`, `addCrossoversForPair`, etc.) use one undo macro — a single approval prompt covers the entire batch, and [Reject & Correct] undoes everything atomically
 
 ### Special Commands
 

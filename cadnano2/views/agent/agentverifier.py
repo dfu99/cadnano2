@@ -202,6 +202,128 @@ class DesignVerifier:
 
         return True, "Valid crossover position", []
 
+    # ==================== LEVEL 2 BATCH VALIDATION ====================
+
+    def _validate_createHelicesWithStrands(self, params):
+        """Validate batch helix+strand creation."""
+        positions = params.get('positions')
+        strand_type = params.get('strand_type')
+        length = params.get('length')
+
+        if positions is None or strand_type is None or length is None:
+            return False, "Missing required parameters (positions, strand_type, length)", []
+
+        if not isinstance(positions, list) or len(positions) == 0:
+            return False, "positions must be a non-empty list of [row, col] pairs", []
+
+        if strand_type.lower() not in ('scaffold', 'staple', 'both'):
+            return False, "strand_type must be 'scaffold', 'staple', or 'both'", []
+
+        if not isinstance(length, int) or length <= 0:
+            return False, "length must be a positive integer", []
+
+        if length > 10000:
+            return False, f"Requested length {length} exceeds maximum (10000)", []
+
+        part = self.activePart
+        if part is None:
+            return False, "No active part", []
+
+        suggestions = []
+
+        # Check positions are valid honeycomb coordinates
+        for pos in positions:
+            if not isinstance(pos, (list, tuple)) or len(pos) != 2:
+                return False, f"Invalid position format: {pos}. Expected [row, col]", []
+            row, col = pos[0], pos[1]
+            if row < 0 or row > 50 or col < 0 or col > 50:
+                return False, f"Position ({row}, {col}) is outside typical design area", []
+            existing = part.virtualHelixAtCoord((row, col))
+            if existing:
+                return False, f"Position ({row}, {col}) already has helix {existing.number()}", []
+
+        # Warn if length is not a multiple of step size
+        if length % self.STEP != 0:
+            aligned = (length // self.STEP) * self.STEP
+            suggestions.append(f"Consider length={aligned} (aligned to {self.STEP}bp steps)")
+            return True, f"Warning: length {length} not aligned to {self.STEP}bp step", suggestions
+
+        return True, "Valid batch helix creation", suggestions
+
+    def _validate_addCrossoversForPair(self, params):
+        """Validate batch crossover creation between a pair."""
+        helix1 = params.get('helix1')
+        helix2 = params.get('helix2')
+        strand_type = params.get('strand_type')
+
+        if helix1 is None or helix2 is None or strand_type is None:
+            return False, "Missing required parameters (helix1, helix2, strand_type)", []
+
+        part = self.activePart
+        if part is None:
+            return False, "No active part", []
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+
+        if vh1 is None:
+            return False, f"Helix {helix1} does not exist", []
+        if vh2 is None:
+            return False, f"Helix {helix2} does not exist", []
+
+        neighbors = part.getVirtualHelixNeighbors(vh1)
+        if vh2 not in neighbors:
+            neighbor_nums = [n.number() if n else None for n in neighbors]
+            return False, f"Helix {helix2} is not a neighbor of helix {helix1}", [
+                f"Valid neighbors: {neighbor_nums}"
+            ]
+
+        return True, "Valid crossover pair", []
+
+    def _validate_addAllNeighborCrossovers(self, params):
+        """Validate bulk crossover creation."""
+        strand_type = params.get('strand_type')
+        if strand_type is None:
+            return False, "Missing required parameter: strand_type", []
+
+        part = self.activePart
+        if part is None:
+            return False, "No active part", []
+
+        vhs = part.getVirtualHelices()
+        if len(vhs) < 2:
+            return False, "Need at least 2 helices to create crossovers", []
+
+        return True, "Valid bulk crossover request", []
+
+    def _validate_resizeAllStrands(self, params):
+        """Validate bulk strand resize."""
+        strand_type = params.get('strand_type')
+        new_length = params.get('new_length')
+        delta = params.get('delta')
+
+        if strand_type is None:
+            return False, "Missing required parameter: strand_type", []
+
+        if new_length is None and delta is None:
+            return False, "Provide either new_length or delta", []
+
+        if new_length is not None and new_length <= 0:
+            return False, "new_length must be a positive integer", []
+
+        part = self.activePart
+        if part is None:
+            return False, "No active part", []
+
+        if new_length is not None and new_length - 1 > part.maxBaseIdx():
+            return False, (f"new_length {new_length} exceeds part size "
+                          f"(max index {part.maxBaseIdx()}). "
+                          f"Extend part size first."), [
+                f"Call extendPartSize with min_length_needed={new_length}"
+            ]
+
+        return True, "Valid bulk resize request", []
+
     # ==================== DESIGN VERIFICATION ====================
 
     def verifyDesign(self):

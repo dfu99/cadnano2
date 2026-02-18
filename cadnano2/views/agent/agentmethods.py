@@ -1627,6 +1627,767 @@ class AgentMethods:
         else:
             return self.createStapleStrand(helix_num, start_idx, length)
 
+    # ==================== LEVEL 2: CONSTRAINT-AWARE QUERY TOOLS ====================
+
+    def describeHelix(self, helix_num):
+        """
+        Rich single-call description of a helix: parity, strand directions,
+        neighbors with direction labels, all strands with crossover connections,
+        and valid crossover positions for each neighbor.
+
+        Args:
+            helix_num (int): The virtual helix number
+
+        Returns:
+            dict or str: Comprehensive helix description
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        row, col = vh.coord()
+        even = part.isEvenParity(row, col)
+        scafSS = vh.scaffoldStrandSet()
+        stapSS = vh.stapleStrandSet()
+
+        # Parity and directions
+        info = {
+            'helix_num': helix_num,
+            'row': row,
+            'col': col,
+            'parity': 'even' if even else 'odd',
+            'scaffold_5to3': 'left-to-right' if vh.isDrawn5to3(scafSS) else 'right-to-left',
+            'staple_5to3': 'left-to-right' if vh.isDrawn5to3(stapSS) else 'right-to-left',
+        }
+
+        # Neighbors with direction labels
+        neighbors = part.getVirtualHelixNeighbors(vh)
+        neighbor_info = []
+        for i, n in enumerate(neighbors):
+            if n is not None:
+                n_row, n_col = n.coord()
+                neighbor_info.append({
+                    'direction': f'p{i}',
+                    'helix_num': n.number(),
+                    'row': n_row,
+                    'col': n_col,
+                    'parity': 'even' if part.isEvenParity(n_row, n_col) else 'odd'
+                })
+        info['neighbors'] = neighbor_info
+
+        # All strands with crossover connections
+        def _strand_info(strand, stype):
+            lo, hi = strand.idxs()
+            s = {'type': stype, 'low': lo, 'high': hi, 'length': hi - lo + 1}
+            if strand.connectionLow():
+                conn = strand.connectionLow()
+                s['xover_low'] = {'helix': conn.virtualHelix().number()}
+            if strand.connectionHigh():
+                conn = strand.connectionHigh()
+                s['xover_high'] = {'helix': conn.virtualHelix().number()}
+            return s
+
+        strands = []
+        for strand in scafSS:
+            strands.append(_strand_info(strand, 'scaffold'))
+        for strand in stapSS:
+            strands.append(_strand_info(strand, 'staple'))
+        info['strands'] = strands
+
+        # Valid crossover positions for each neighbor
+        xover_positions = []
+        step = part._step
+        for i, n in enumerate(neighbors):
+            if n is None:
+                continue
+            direction = f'p{i}'
+            scaf_low = Crossovers.honeycombScafLow[i]
+            scaf_high = Crossovers.honeycombScafHigh[i]
+            stap_low = Crossovers.honeycombStapLow[i]
+            stap_high = Crossovers.honeycombStapHigh[i]
+            xover_positions.append({
+                'neighbor': n.number(),
+                'direction': direction,
+                'scaffold_positions_mod': sorted(scaf_low + scaf_high),
+                'staple_positions_mod': sorted(stap_low + stap_high),
+            })
+        info['crossover_rules'] = xover_positions
+
+        return info
+
+    def analyzeDesign(self):
+        """
+        Comprehensive one-call state dump of the entire design.
+        Returns all helices, strands, crossovers, potential crossover
+        positions, and verifier warnings.
+
+        Returns:
+            dict or str: Full design analysis
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part. Create a Honeycomb or Square part first."
+
+        vhs = part.getVirtualHelices()
+        if not vhs:
+            return {
+                'helix_count': 0,
+                'helices': [],
+                'strands': [],
+                'crossovers': [],
+                'potential_crossovers': [],
+                'issues': ['No helices in design'],
+                'part_size': f"0-{part.maxBaseIdx()}, step={part._step}"
+            }
+
+        # Helices
+        helices = []
+        for vh in vhs:
+            row, col = vh.coord()
+            helices.append({
+                'num': vh.number(),
+                'row': row,
+                'col': col,
+                'parity': 'even' if part.isEvenParity(row, col) else 'odd'
+            })
+
+        # Strands
+        strands = []
+        for vh in vhs:
+            h = vh.number()
+            for strand in vh.scaffoldStrandSet():
+                lo, hi = strand.idxs()
+                s = {'helix': h, 'type': 'scaffold', 'low': lo, 'high': hi}
+                if strand.connectionLow():
+                    s['xover_low'] = strand.connectionLow().virtualHelix().number()
+                if strand.connectionHigh():
+                    s['xover_high'] = strand.connectionHigh().virtualHelix().number()
+                strands.append(s)
+            for strand in vh.stapleStrandSet():
+                lo, hi = strand.idxs()
+                s = {'helix': h, 'type': 'staple', 'low': lo, 'high': hi}
+                if strand.connectionLow():
+                    s['xover_low'] = strand.connectionLow().virtualHelix().number()
+                if strand.connectionHigh():
+                    s['xover_high'] = strand.connectionHigh().virtualHelix().number()
+                strands.append(s)
+
+        # Existing crossovers (deduplicated)
+        crossovers = []
+        seen = set()
+        for vh in vhs:
+            h = vh.number()
+            for stype, ss in [('scaffold', vh.scaffoldStrandSet()),
+                              ('staple', vh.stapleStrandSet())]:
+                for strand in ss:
+                    lo, hi = strand.idxs()
+                    for end, conn_fn in [('low', strand.connectionLow),
+                                         ('high', strand.connectionHigh)]:
+                        conn = conn_fn()
+                        if conn is None:
+                            continue
+                        other_h = conn.virtualHelix().number()
+                        idx = lo if end == 'low' else hi
+                        key = tuple(sorted([(h, idx), (other_h, conn.idxs()[0 if conn.connectionLow() == strand else 1])]))
+                        if key not in seen:
+                            seen.add(key)
+                            crossovers.append({
+                                'helix1': h, 'idx1': idx,
+                                'helix2': other_h, 'strand_type': stype
+                            })
+
+        # Neighbor pairs with unused crossover positions
+        potential = []
+        for vh in vhs:
+            neighbors = part.getVirtualHelixNeighbors(vh)
+            for i, n in enumerate(neighbors):
+                if n is None or n.number() < vh.number():
+                    continue  # skip to avoid duplicates
+                potential.append({
+                    'helix1': vh.number(),
+                    'helix2': n.number(),
+                    'direction': f'p{i}'
+                })
+
+        # Verifier issues
+        verifier = DesignVerifier(self._documentController)
+        result = verifier.verifyDesign()
+
+        return {
+            'helix_count': len(vhs),
+            'helices': helices,
+            'strand_count': len(strands),
+            'strands': strands,
+            'crossover_count': len(crossovers),
+            'crossovers': crossovers,
+            'neighbor_pairs': potential,
+            'issues': result.get('issues', []),
+            'warnings': result.get('warnings', []),
+            'score': result.get('score', 0),
+            'part_size': f"0-{part.maxBaseIdx()}, step={part._step}"
+        }
+
+    def suggestCrossovers(self, helix1, helix2, strand_type, min_spacing=21):
+        """
+        Return valid crossover positions between two helices, annotated with
+        occupancy and spacing recommendations.
+
+        Args:
+            helix1 (int): First helix number
+            helix2 (int): Second helix number
+            strand_type (str): "scaffold" or "staple"
+            min_spacing (int): Minimum bp between crossovers (default 21)
+
+        Returns:
+            dict or str: Annotated crossover suggestions
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+        if vh1 is None:
+            return f"Error: Helix {helix1} not found"
+        if vh2 is None:
+            return f"Error: Helix {helix2} not found"
+
+        neighbors = part.getVirtualHelixNeighbors(vh1)
+        if vh2 not in neighbors:
+            return f"Error: Helix {helix2} is not a neighbor of helix {helix1}"
+
+        direction_idx = neighbors.index(vh2)
+        step = part._step
+
+        if strand_type.lower() == "scaffold":
+            low_offsets = Crossovers.honeycombScafLow[direction_idx]
+            high_offsets = Crossovers.honeycombScafHigh[direction_idx]
+            get_ss1 = vh1.scaffoldStrandSet
+            get_ss2 = vh2.scaffoldStrandSet
+        else:
+            low_offsets = Crossovers.honeycombStapLow[direction_idx]
+            high_offsets = Crossovers.honeycombStapHigh[direction_idx]
+            get_ss1 = vh1.stapleStrandSet
+            get_ss2 = vh2.stapleStrandSet
+
+        # Find strand ranges on both helices to know where crossovers are possible
+        ss1 = get_ss1()
+        ss2 = get_ss2()
+        strands1 = [(s.idxs()[0], s.idxs()[1]) for s in ss1]
+        strands2 = [(s.idxs()[0], s.idxs()[1]) for s in ss2]
+
+        if not strands1 or not strands2:
+            return {
+                'helix1': helix1, 'helix2': helix2,
+                'strand_type': strand_type,
+                'error': 'Both helices need strands before crossovers can be added',
+                'positions': []
+            }
+
+        # Determine the overlapping index range
+        max_lo = max(min(s[0] for s in strands1), min(s[0] for s in strands2))
+        min_hi = min(max(s[1] for s in strands1), max(s[1] for s in strands2))
+
+        # Collect existing crossovers between these two helices
+        occupied = set()
+        for strand in ss1:
+            lo, hi = strand.idxs()
+            if strand.connectionLow() and strand.connectionLow().virtualHelix() == vh2:
+                occupied.add(lo)
+            if strand.connectionHigh() and strand.connectionHigh().virtualHelix() == vh2:
+                occupied.add(hi)
+
+        # Generate all valid positions within strand ranges
+        positions = []
+        max_idx = part.maxBaseIdx()
+        for base in range(0, max_idx + 1, step):
+            for low_off, high_off in zip(low_offsets, high_offsets):
+                low_idx = base + low_off
+                high_idx = base + high_off
+                if low_idx < max_lo or high_idx > min_hi:
+                    continue
+                # Check both indices are within strands on both helices
+                in_strand1 = any(lo <= low_idx <= hi and lo <= high_idx <= hi for lo, hi in strands1)
+                in_strand2 = any(lo <= low_idx <= hi and lo <= high_idx <= hi for lo, hi in strands2)
+                if not in_strand1 or not in_strand2:
+                    continue
+                is_occupied = low_idx in occupied or high_idx in occupied
+                positions.append({
+                    'low_idx': low_idx,
+                    'high_idx': high_idx,
+                    'occupied': is_occupied
+                })
+
+        # Apply spacing filter for recommendations
+        available = [p for p in positions if not p['occupied']]
+        recommended = []
+        last_idx = -min_spacing
+        for p in available:
+            if p['low_idx'] - last_idx >= min_spacing:
+                recommended.append(p['low_idx'])
+                last_idx = p['low_idx']
+
+        for p in positions:
+            p['recommended'] = p['low_idx'] in recommended
+
+        return {
+            'helix1': helix1,
+            'helix2': helix2,
+            'strand_type': strand_type,
+            'direction': f'p{direction_idx}',
+            'min_spacing': min_spacing,
+            'positions': positions,
+            'available_count': len(available),
+            'recommended_count': len(recommended)
+        }
+
+    def getNeighborPairs(self):
+        """
+        Return all neighbor pairs in the current design with their direction.
+
+        Returns:
+            list or str: List of neighbor pairs with direction info
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vhs = part.getVirtualHelices()
+        if not vhs:
+            return "No helices in design"
+
+        pairs = []
+        seen = set()
+        for vh in vhs:
+            neighbors = part.getVirtualHelixNeighbors(vh)
+            for i, n in enumerate(neighbors):
+                if n is None:
+                    continue
+                key = tuple(sorted([vh.number(), n.number()]))
+                if key in seen:
+                    continue
+                seen.add(key)
+                pairs.append({
+                    'helix1': vh.number(),
+                    'helix2': n.number(),
+                    'direction': f'p{i}'
+                })
+
+        return {'neighbor_pairs': pairs, 'count': len(pairs)}
+
+    # ==================== LEVEL 2: BATCH EXECUTION TOOLS ====================
+
+    def createHelicesWithStrands(self, positions, strand_type, length):
+        """
+        Create multiple helices with strands in one batch operation.
+        Auto-extends part size if needed. Wraps in one undo macro.
+
+        Args:
+            positions (list): List of [row, col] pairs
+            strand_type (str): "scaffold", "staple", or "both"
+            length (int): Strand length in bases
+
+        Returns:
+            dict or str: Summary of created helices and strands
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part. Create a Honeycomb or Square part first."
+
+        part.undoStack().beginMacro("Create Helices With Strands")
+        try:
+            # Auto-extend part size if needed
+            if length - 1 > part.maxBaseIdx():
+                from math import ceil
+                step = part.stepSize()
+                delta_needed = (length - 1) - part.maxBaseIdx()
+                delta = int(ceil(delta_needed / step)) * step
+                part.resizeVirtualHelices(0, delta, useUndoStack=True)
+
+            created_helices = []
+            for pos in positions:
+                row, col = pos[0], pos[1]
+                existing = part.virtualHelixAtCoord((row, col))
+                if existing is not None:
+                    part.undoStack().endMacro()
+                    part.undoStack().undo()
+                    return f"Error: Helix already exists at ({row}, {col}) with number {existing.number()}"
+
+                part.createVirtualHelix(row, col, useUndoStack=True)
+                vh = part.virtualHelixAtCoord((row, col))
+                if vh is None:
+                    part.undoStack().endMacro()
+                    part.undoStack().undo()
+                    return f"Error: Failed to create helix at ({row}, {col})"
+
+                helix_num = vh.number()
+                start_idx = 0
+                end_idx = length - 1
+
+                # Create strands
+                strand_types_to_create = []
+                if strand_type.lower() in ("scaffold", "both"):
+                    strand_types_to_create.append(("scaffold", vh.scaffoldStrandSet()))
+                if strand_type.lower() in ("staple", "both"):
+                    strand_types_to_create.append(("staple", vh.stapleStrandSet()))
+
+                for stype, ss in strand_types_to_create:
+                    result = ss.createStrand(start_idx, end_idx, useUndoStack=True)
+                    if result < 0:
+                        part.undoStack().endMacro()
+                        part.undoStack().undo()
+                        return f"Error: Could not create {stype} strand on helix {helix_num}"
+
+                created_helices.append({
+                    'helix_num': helix_num,
+                    'row': row,
+                    'col': col,
+                    'strand_range': [start_idx, end_idx]
+                })
+
+            part.undoStack().endMacro()
+
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error creating helices with strands: {e}"
+
+        return {
+            'created': len(created_helices),
+            'helices': created_helices,
+            'strand_type': strand_type,
+            'length': length
+        }
+
+    def addCrossoversForPair(self, helix1, helix2, strand_type, positions=None, spacing=21):
+        """
+        Add double crossovers between two helices. If positions is None,
+        auto-computes valid positions with spacing constraint.
+
+        Args:
+            helix1 (int): First helix number
+            helix2 (int): Second helix number
+            strand_type (str): "scaffold" or "staple"
+            positions (list, optional): Specific crossover indices (low idx of each pair)
+            spacing (int): Minimum spacing between crossovers (default 21)
+
+        Returns:
+            dict or str: Summary of crossovers created
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+        if vh1 is None:
+            return f"Error: Helix {helix1} not found"
+        if vh2 is None:
+            return f"Error: Helix {helix2} not found"
+
+        neighbors = part.getVirtualHelixNeighbors(vh1)
+        if vh2 not in neighbors:
+            return f"Error: Helix {helix2} is not a neighbor of helix {helix1}"
+
+        direction_idx = neighbors.index(vh2)
+        step = part._step
+
+        if strand_type.lower() == "scaffold":
+            low_offsets = Crossovers.honeycombScafLow[direction_idx]
+            high_offsets = Crossovers.honeycombScafHigh[direction_idx]
+            get_ss = lambda vh: vh.scaffoldStrandSet()
+        else:
+            low_offsets = Crossovers.honeycombStapLow[direction_idx]
+            high_offsets = Crossovers.honeycombStapHigh[direction_idx]
+            get_ss = lambda vh: vh.stapleStrandSet()
+
+        if positions is None:
+            # Auto-compute: find all valid positions with spacing
+            suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
+            if isinstance(suggestions, str):
+                return suggestions  # error message
+            positions = [p['low_idx'] for p in suggestions.get('positions', [])
+                        if p.get('recommended') and not p.get('occupied')]
+
+        if not positions:
+            return {
+                'helix1': helix1, 'helix2': helix2,
+                'strand_type': strand_type,
+                'created': 0,
+                'message': 'No valid positions found for crossovers'
+            }
+
+        # Validate all positions before creating any
+        for pos in positions:
+            mod = pos % step
+            if mod not in low_offsets and mod not in high_offsets:
+                valid_mods = sorted(low_offsets + high_offsets)
+                return (f"Error: Position {pos} (mod {step} = {mod}) is not a valid "
+                        f"{strand_type} crossover for direction p{direction_idx}. "
+                        f"Valid mods: {valid_mods}")
+
+        part.undoStack().beginMacro(f"Add Crossovers {helix1}-{helix2}")
+        try:
+            created = []
+            for pos in positions:
+                # Find the paired index
+                paired_idx = self._getDoubleCrossoverPair(part, vh1, vh2, pos, strand_type)
+                if paired_idx is None:
+                    continue
+
+                low_idx = min(pos, paired_idx)
+                high_idx = max(pos, paired_idx)
+
+                # Verify strands exist at both indices on both helices
+                ss1 = get_ss(vh1)
+                ss2 = get_ss(vh2)
+
+                # Create the double crossover (low: vh2→vh1, high: vh1→vh2)
+                xover_pairs = [
+                    (vh2, vh1, low_idx),
+                    (vh1, vh2, high_idx),
+                ]
+
+                skip = False
+                for vh_5p, vh_3p, idx in xover_pairs:
+                    s5p = get_ss(vh_5p).getStrand(idx)
+                    s3p = get_ss(vh_3p).getStrand(idx)
+                    if s5p is None or s3p is None:
+                        skip = True
+                        break
+                if skip:
+                    continue
+
+                for vh_5p, vh_3p, idx in xover_pairs:
+                    s5p = get_ss(vh_5p).getStrand(idx)
+                    s3p = get_ss(vh_3p).getStrand(idx)
+                    part.createXover(s5p, idx, s3p, idx, useUndoStack=True)
+
+                created.append({'low_idx': low_idx, 'high_idx': high_idx})
+
+            part.undoStack().endMacro()
+
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error creating crossovers: {e}"
+
+        return {
+            'helix1': helix1,
+            'helix2': helix2,
+            'strand_type': strand_type,
+            'created': len(created),
+            'crossovers': created
+        }
+
+    def addAllNeighborCrossovers(self, strand_type, spacing=21):
+        """
+        Add crossovers between all neighbor pairs in the design.
+        One undo macro for the whole operation.
+
+        Args:
+            strand_type (str): "scaffold" or "staple"
+            spacing (int): Minimum spacing between crossovers (default 21)
+
+        Returns:
+            dict or str: Summary with per-pair breakdown
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        pairs_info = self.getNeighborPairs()
+        if isinstance(pairs_info, str):
+            return pairs_info
+
+        pairs = pairs_info.get('neighbor_pairs', [])
+        if not pairs:
+            return "Error: No neighbor pairs found"
+
+        part.undoStack().beginMacro("Add All Neighbor Crossovers")
+        try:
+            total_created = 0
+            pair_results = []
+
+            for pair in pairs:
+                h1, h2 = pair['helix1'], pair['helix2']
+                result = self._addCrossoversForPairInternal(
+                    part, h1, h2, strand_type, spacing
+                )
+                count = result.get('created', 0) if isinstance(result, dict) else 0
+                total_created += count
+                pair_results.append({
+                    'helix1': h1,
+                    'helix2': h2,
+                    'created': count
+                })
+
+            part.undoStack().endMacro()
+
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error adding all neighbor crossovers: {e}"
+
+        return {
+            'strand_type': strand_type,
+            'total_created': total_created,
+            'pairs': pair_results
+        }
+
+    def _addCrossoversForPairInternal(self, part, helix1, helix2, strand_type, spacing):
+        """
+        Internal helper for addAllNeighborCrossovers — creates crossovers
+        between a pair without its own undo macro (caller wraps).
+        """
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+        if vh1 is None or vh2 is None:
+            return {'created': 0}
+
+        neighbors = part.getVirtualHelixNeighbors(vh1)
+        if vh2 not in neighbors:
+            return {'created': 0}
+
+        direction_idx = neighbors.index(vh2)
+
+        if strand_type.lower() == "scaffold":
+            low_offsets = Crossovers.honeycombScafLow[direction_idx]
+            high_offsets = Crossovers.honeycombScafHigh[direction_idx]
+            get_ss = lambda vh: vh.scaffoldStrandSet()
+        else:
+            low_offsets = Crossovers.honeycombStapLow[direction_idx]
+            high_offsets = Crossovers.honeycombStapHigh[direction_idx]
+            get_ss = lambda vh: vh.stapleStrandSet()
+
+        # Auto-compute positions
+        suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
+        if isinstance(suggestions, str):
+            return {'created': 0}
+        positions = [p['low_idx'] for p in suggestions.get('positions', [])
+                    if p.get('recommended') and not p.get('occupied')]
+
+        created = []
+        for pos in positions:
+            paired_idx = self._getDoubleCrossoverPair(part, vh1, vh2, pos, strand_type)
+            if paired_idx is None:
+                continue
+
+            low_idx = min(pos, paired_idx)
+            high_idx = max(pos, paired_idx)
+
+            xover_pairs = [
+                (vh2, vh1, low_idx),
+                (vh1, vh2, high_idx),
+            ]
+
+            skip = False
+            for vh_5p, vh_3p, idx in xover_pairs:
+                s5p = get_ss(vh_5p).getStrand(idx)
+                s3p = get_ss(vh_3p).getStrand(idx)
+                if s5p is None or s3p is None:
+                    skip = True
+                    break
+            if skip:
+                continue
+
+            for vh_5p, vh_3p, idx in xover_pairs:
+                s5p = get_ss(vh_5p).getStrand(idx)
+                s3p = get_ss(vh_3p).getStrand(idx)
+                part.createXover(s5p, idx, s3p, idx, useUndoStack=True)
+
+            created.append({'low_idx': low_idx, 'high_idx': high_idx})
+
+        return {'created': len(created), 'crossovers': created}
+
+    def resizeAllStrands(self, strand_type, new_length=None, delta=None, helix_num=None):
+        """
+        Resize all strands of a type in bulk. Respects parity for which end
+        to resize. Wraps in one undo macro.
+
+        Args:
+            strand_type (str): "scaffold" or "staple"
+            new_length (int, optional): Absolute new length
+            delta (int, optional): Relative change in length
+            helix_num (int, optional): Filter to one helix
+
+        Returns:
+            dict or str: Summary of resized strands
+        """
+        from cadnano2.model.strand import Strand
+
+        if new_length is None and delta is None:
+            return "Error: Provide either new_length or delta"
+
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vhs = [part.virtualHelix(helix_num)] if helix_num is not None else part.getVirtualHelices()
+
+        # Collect strands to resize
+        to_resize = []
+        for vh in vhs:
+            if vh is None:
+                continue
+            row, col = vh.coord()
+            even = part.isEvenParity(row, col)
+
+            if strand_type.lower() == "scaffold":
+                ss = vh.scaffoldStrandSet()
+            else:
+                ss = vh.stapleStrandSet()
+
+            for strand in ss:
+                lo, hi = strand.idxs()
+                old_len = hi - lo + 1
+                target_len = new_length if new_length is not None else old_len + delta
+
+                if target_len < 1:
+                    continue
+
+                # Even parity: scaffold goes left→right, resize high end
+                # Odd parity: scaffold goes right→left, resize low end
+                if even:
+                    new_lo = lo
+                    new_hi = lo + target_len - 1
+                else:
+                    new_hi = hi
+                    new_lo = hi - target_len + 1
+
+                to_resize.append((strand, lo, hi, new_lo, new_hi, vh.number()))
+
+        if not to_resize:
+            return "No strands found to resize"
+
+        part.undoStack().beginMacro("Resize All Strands")
+        try:
+            resized = []
+            for strand, old_lo, old_hi, new_lo, new_hi, h_num in to_resize:
+                if new_lo < part.minBaseIdx() or new_hi > part.maxBaseIdx():
+                    continue
+                Strand.resize(strand, (new_lo, new_hi), useUndoStack=True)
+                resized.append({
+                    'helix': h_num,
+                    'old_range': [old_lo, old_hi],
+                    'new_range': [new_lo, new_hi]
+                })
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error resizing strands: {e}"
+
+        return {
+            'strand_type': strand_type,
+            'resized': len(resized),
+            'strands': resized
+        }
+
     # ==================== VERIFICATION METHODS ====================
 
     def verifyDesign(self):
