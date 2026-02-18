@@ -167,56 +167,35 @@ class AgentMethods:
 
     def getHoneycombPositions(self, num_helices):
         """
-        Get (row, col) positions for a honeycomb bundle.
+        Get (row, col) positions for a standard honeycomb bundle.
+
+        Use these positions directly with createHelicesWithStrands, or just
+        pass num_helices to createHelicesWithStrands and skip this call.
 
         Args:
-            num_helices (int): Number of helices (2, 6, 7, 19, etc.)
+            num_helices (int): Number of helices (1, 2, 3, 4, 6, 7, 19, …)
 
         Returns:
-            list: List of (row, col) tuples
+            dict: positions list and a tip to use num_helices directly
         """
-        # Standard honeycomb bundle positions centered around (20, 20)
-        # These form hexagonal patterns
-        positions = {
-            1: [(20, 20)],
-            2: [(20, 20), (20, 21)],
-            3: [(20, 20), (20, 21), (21, 20)],
-            4: [(20, 20), (20, 21), (21, 20), (21, 21)],
-            6: [
-                (20, 20), (20, 21),  # top row
-                (21, 20), (21, 21),  # middle row
-                (22, 20), (22, 21)   # bottom row
-            ],
-            7: [
-                (20, 21),            # top
-                (21, 20), (21, 21), (21, 22),  # middle row
-                (22, 20), (22, 21), (22, 22)   # bottom row
-            ],
-            19: [
-                # 19-helix bundle (3 rows of increasing size)
-                (19, 20), (19, 21), (19, 22),
-                (20, 19), (20, 20), (20, 21), (20, 22), (20, 23),
-                (21, 19), (21, 20), (21, 21), (21, 22), (21, 23),
-                (22, 20), (22, 21), (22, 22), (22, 23),
-                (23, 21), (23, 22)
-            ]
+        if num_helices in self._HONEYCOMB_BUNDLE_POSITIONS:
+            pos = self._HONEYCOMB_BUNDLE_POSITIONS[num_helices]
+        else:
+            # Fallback: pack into a compact 2-column grid
+            pos = []
+            for i in range(num_helices):
+                row = 20 + i // 2
+                col = 20 + (i % 2)
+                pos.append((row, col))
+
+        return {
+            'num_helices': num_helices,
+            'positions': pos,
+            'tip': (
+                f'Pass num_helices={num_helices} directly to createHelicesWithStrands '
+                f'to skip this step.'
+            )
         }
-
-        if num_helices in positions:
-            return f"Positions for {num_helices}-helix bundle: {positions[num_helices]}"
-
-        # For arbitrary numbers, generate a simple rectangular arrangement
-        cols = min(num_helices, 3)
-        rows = (num_helices + cols - 1) // cols
-        result = []
-        count = 0
-        for r in range(rows):
-            for c in range(cols):
-                if count >= num_helices:
-                    break
-                result.append((20 + r, 20 + c))
-                count += 1
-        return f"Positions for {num_helices}-helix bundle: {result}"
 
     def listHelices(self):
         """List all helices with their numbers and positions."""
@@ -1981,19 +1960,59 @@ class AgentMethods:
 
     # ==================== LEVEL 2: BATCH EXECUTION TOOLS ====================
 
-    def createHelicesWithStrands(self, positions, strand_type, length):
+    # Canonical honeycomb bundle positions, centered around (20, 20).
+    # These are the same positions as getHoneycombPositions but returned as
+    # raw lists so createHelicesWithStrands can use them directly.
+    _HONEYCOMB_BUNDLE_POSITIONS = {
+        1:  [(20, 20)],
+        2:  [(20, 20), (20, 21)],
+        3:  [(20, 20), (20, 21), (21, 21)],
+        4:  [(20, 20), (20, 21), (21, 21), (21, 20)],
+        6:  [(20, 20), (20, 21),
+             (21, 21), (21, 20),
+             (22, 20), (22, 21)],
+        7:  [(21, 21),
+             (20, 21), (21, 20), (22, 21), (22, 20), (20, 20), (21, 22)],
+        19: [(19, 20), (19, 21), (19, 22),
+             (20, 19), (20, 20), (20, 21), (20, 22), (20, 23),
+             (21, 19), (21, 20), (21, 21), (21, 22), (21, 23),
+             (22, 20), (22, 21), (22, 22), (22, 23),
+             (23, 21), (23, 22)],
+    }
+
+    def createHelicesWithStrands(self, strand_type, length,
+                                 positions=None, num_helices=None):
         """
         Create multiple helices with strands in one batch operation.
         Auto-extends part size if needed. Wraps in one undo macro.
 
+        Provide EITHER num_helices (preferred — positions computed automatically)
+        OR an explicit positions list of [row, col] pairs.
+
         Args:
-            positions (list): List of [row, col] pairs
             strand_type (str): "scaffold", "staple", or "both"
             length (int): Strand length in bases
+            positions (list): Optional list of [row, col] pairs
+            num_helices (int): Number of helices for a standard bundle (2, 6, 7, 19 …)
 
         Returns:
             dict or str: Summary of created helices and strands
         """
+        # Resolve positions
+        if positions is None:
+            if num_helices is None:
+                return "Error: Provide either num_helices or positions"
+            if num_helices in self._HONEYCOMB_BUNDLE_POSITIONS:
+                positions = self._HONEYCOMB_BUNDLE_POSITIONS[num_helices]
+            else:
+                # Fallback: pack into a compact 2-column grid
+                result = []
+                for i in range(num_helices):
+                    row = 20 + i // 2
+                    col = 20 + (i % 2)
+                    result.append((row, col))
+                positions = result
+
         part = self.activePart
         if part is None:
             return "Error: No active part. Create a Honeycomb or Square part first."

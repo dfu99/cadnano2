@@ -202,7 +202,7 @@ UNDERSTAND THE DESIGN (call these first):
 - getNeighborPairs(): All neighbor pairs with direction info
 
 BUILD (batch operations — preferred for multi-step tasks):
-- createHelicesWithStrands(positions, strand_type, length): Create multiple helices with strands in one step. positions is a list of [row, col] pairs. strand_type can be "scaffold", "staple", or "both". Auto-extends part size.
+- createHelicesWithStrands(num_helices, strand_type, length): Create multiple helices with strands in one step. Pass num_helices (e.g. 6) for a standard bundle — positions are computed automatically. Standard sizes: 2, 6, 7, 19. strand_type can be "scaffold", "staple", or "both". Auto-extends part size. You may also pass an explicit positions list of [row, col] pairs instead of num_helices.
 - addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?): Add crossovers between two helices. Auto-computes positions if not specified.
 - addAllNeighborCrossovers(strand_type, spacing?): Wire up all neighbor pairs with crossovers
 - resizeAllStrands(strand_type, new_length?, delta?, helix_num?): Resize strands in bulk. Respects parity for which end to resize.
@@ -234,11 +234,10 @@ VERIFICATION:
 HONEYCOMB STEP SIZE: 21bp. Common lengths: 84bp (4 steps), 126bp (6 steps).
 
 EXAMPLE — Create a 6-helix bundle with 84bp scaffold:
-1. {"method": "getHoneycombPositions", "params": {"num_helices": 6}}
-2. {"method": "createHelicesWithStrands", "params": {"positions": [[20,20],[20,21],[21,20],[21,21],[22,20],[22,21]], "strand_type": "scaffold", "length": 84}}
-3. {"method": "addAllNeighborCrossovers", "params": {"strand_type": "scaffold"}}
-4. {"method": "verifyDesign", "params": {}}
-5. {"done": true, "message": "Created 6-helix bundle with scaffold strands and crossovers."}
+1. {"method": "createHelicesWithStrands", "params": {"num_helices": 6, "strand_type": "scaffold", "length": 84}}
+2. {"method": "addAllNeighborCrossovers", "params": {"strand_type": "scaffold"}}
+3. {"method": "verifyDesign", "params": {}}
+4. {"done": true, "message": "Created 6-helix bundle with scaffold strands and crossovers."}
 
 RESPONSE FORMAT:
 - To call a method: {"method": "methodName", "params": {"param1": value1}}
@@ -249,6 +248,7 @@ RESPONSE FORMAT:
 Use the provided tools to inspect and modify the design.
 Always call analyzeDesign first if you don't know the current state.
 Honeycomb lattice step size is 21bp. Common lengths: 84bp (4×21), 126bp (6×21).
+For standard bundles, use createHelicesWithStrands with num_helices (e.g. num_helices=6) — never invent lattice coordinates yourself.
 When done, call the done tool with a summary of what was accomplished."""
 
     MAX_ITERATIONS = 50  # Safety limit for agent loop

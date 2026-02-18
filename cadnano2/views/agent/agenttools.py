@@ -89,22 +89,15 @@ TOOL_SCHEMAS = [
         "name": "createHelicesWithStrands",
         "description": (
             "Create multiple helices with strands in one atomic operation. "
-            "Auto-extends part size as needed. Preferred over creating helices one at a time. "
-            "Use getHoneycombPositions first to get valid [row, col] positions."
+            "Auto-extends part size as needed. Preferred over creating helices one at a time.\n\n"
+            "PREFERRED: pass num_helices (e.g. num_helices=6) and let the tool compute "
+            "correct lattice positions automatically. Standard bundles supported: 1, 2, 3, 4, 6, 7, 19.\n\n"
+            "ADVANCED: pass an explicit positions list of [row, col] pairs if you need a "
+            "non-standard layout."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "positions": {
-                    "type": "array",
-                    "items": {
-                        "type": "array",
-                        "items": {"type": "integer"},
-                        "minItems": 2,
-                        "maxItems": 2
-                    },
-                    "description": "List of [row, col] pairs for helix positions."
-                },
                 "strand_type": {
                     "type": "string",
                     "enum": ["scaffold", "staple", "both"],
@@ -113,9 +106,31 @@ TOOL_SCHEMAS = [
                 "length": {
                     "type": "integer",
                     "description": "Strand length in base pairs. Use multiples of 21 (e.g. 84, 126)."
+                },
+                "num_helices": {
+                    "type": "integer",
+                    "description": (
+                        "Number of helices for a standard bundle (1, 2, 3, 4, 6, 7, 19). "
+                        "Positions are computed automatically — no need to know the lattice coordinates. "
+                        "Use this instead of positions whenever possible."
+                    )
+                },
+                "positions": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "minItems": 2,
+                        "maxItems": 2
+                    },
+                    "description": (
+                        "Explicit list of [row, col] pairs for helix positions. "
+                        "Only use this for non-standard layouts. "
+                        "Prefer num_helices for standard bundle sizes."
+                    )
                 }
             },
-            "required": ["positions", "strand_type", "length"]
+            "required": ["strand_type", "length"]
         }
     },
     {
