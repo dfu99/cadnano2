@@ -1960,19 +1960,29 @@ class AgentMethods:
 
     # ==================== LEVEL 2: BATCH EXECUTION TOOLS ====================
 
-    # Canonical honeycomb bundle positions, centered around (20, 20).
-    # These are the same positions as getHoneycombPositions but returned as
-    # raw lists so createHelicesWithStrands can use them directly.
+    # Canonical honeycomb bundle positions, centered around (21, 21).
+    # The 6-helix bundle (and all larger bundles) use a 3-wide × 2-tall
+    # arrangement so the slice view renders as a hexagon, not a vertical line.
+    #
+    # Rendering math  (scaleFactor = 15/1.125 = 13.33 px/nm, root3 = 1.732):
+    #   x_screen = col × 25.98 px
+    #   y_screen = row × 45 px  (+ 15 px if odd parity)
+    #
+    # 6-helix ring [(21,20)…(22,22)]:
+    #   screen 52 px wide × 60 px tall  →  aspect ≈ 1.2 : 1  → hexagon ✓
+    #   (old 2-wide × 3-tall was 26 px × 105 px  →  4 : 1  → vertical line ✗)
     _HONEYCOMB_BUNDLE_POSITIONS = {
-        1:  [(20, 20)],
-        2:  [(20, 20), (20, 21)],
-        3:  [(20, 20), (20, 21), (21, 21)],
-        4:  [(20, 20), (20, 21), (21, 21), (21, 20)],
-        6:  [(20, 20), (20, 21),
-             (21, 21), (21, 20),
-             (22, 20), (22, 21)],
-        7:  [(21, 21),
-             (20, 21), (21, 20), (22, 21), (22, 20), (20, 20), (21, 22)],
+        1:  [(21, 21)],
+        2:  [(21, 21), (21, 22)],
+        3:  [(21, 21), (21, 22), (22, 22)],
+        4:  [(21, 21), (21, 22), (22, 22), (22, 21)],
+        # 3-wide × 2-tall closed hexagonal ring — 6 ring edges, aspect 1.2:1
+        6:  [(21, 20), (21, 21), (21, 22),
+             (22, 20), (22, 21), (22, 22)],
+        # 6-helix ring + 1 above-center spike at (20, 21)
+        7:  [(20, 21),
+             (21, 20), (21, 21), (21, 22),
+             (22, 20), (22, 21), (22, 22)],
         19: [(19, 20), (19, 21), (19, 22),
              (20, 19), (20, 20), (20, 21), (20, 22), (20, 23),
              (21, 19), (21, 20), (21, 21), (21, 22), (21, 23),
@@ -2005,11 +2015,11 @@ class AgentMethods:
             if num_helices in self._HONEYCOMB_BUNDLE_POSITIONS:
                 positions = self._HONEYCOMB_BUNDLE_POSITIONS[num_helices]
             else:
-                # Fallback: pack into a compact 2-column grid
+                # Fallback: pack into a 3-wide grid (matches hexagonal appearance)
                 result = []
                 for i in range(num_helices):
-                    row = 20 + i // 2
-                    col = 20 + (i % 2)
+                    row = 21 + i // 3
+                    col = 20 + (i % 3)
                     result.append((row, col))
                 positions = result
 
