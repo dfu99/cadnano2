@@ -163,7 +163,18 @@ class DocumentController():
             self._agentBackend.setBackend("openai", model="gpt-5")
             # If no API key is available, prompt for one
             if not self._agentBackend.openaiApiKey:
-                self._agentDialog.showApiKeyPrompt()
+                self._agentDialog.showApiKeyPrompt(
+                    label="OpenAI API Key:",
+                    status_msg="OpenAI API key required. Enter your key below."
+                )
+        elif backend == "claude":
+            self._agentBackend.setBackend("claude", model="claude-opus-4-6")
+            # If no Anthropic API key is available, prompt for one
+            if not self._agentBackend._claudeApiKey:
+                self._agentDialog.showApiKeyPrompt(
+                    label="Anthropic API Key:",
+                    status_msg="Anthropic API key required. Enter your key below."
+                )
         else:
             self._agentBackend.setBackend("ollama", model="qwen3:1.7b")
 
@@ -174,9 +185,14 @@ class DocumentController():
     def _onApiKeySubmitted(self, api_key):
         """Handle API key submitted from dialog."""
         from cadnano2.views.agent.agentbackend import AgentBackend
-        AgentBackend.saveApiKey(api_key)
-        self._agentBackend.openaiApiKey = api_key
-        self._agentDialog.setStatus("API key saved. You can now use the OpenAI backend.")
+        if self._agentBackend.backendType == "claude":
+            AgentBackend.saveAnthropicApiKey(api_key)
+            self._agentBackend._claudeApiKey = api_key
+            self._agentDialog.setStatus("Anthropic API key saved. You can now use the Claude backend.")
+        else:
+            AgentBackend.saveApiKey(api_key)
+            self._agentBackend.openaiApiKey = api_key
+            self._agentDialog.setStatus("API key saved. You can now use the OpenAI backend.")
 
     def _listTrajectories(self):
         """List available trajectories."""

@@ -58,7 +58,7 @@ class AgentDialog(QWidget):
         if savedMode in ("edit", "developer"):
             self._mode = savedMode
         savedBackend = settings.value("backend", "ollama")
-        if savedBackend in ("ollama", "openai"):
+        if savedBackend in ("ollama", "openai", "claude"):
             self._backend = savedBackend
         settings.endGroup()
 
@@ -122,6 +122,7 @@ class AgentDialog(QWidget):
         self._backendSelector = QComboBox()
         self._backendSelector.addItem("Ollama (Local)", "ollama")
         self._backendSelector.addItem("OpenAI API", "openai")
+        self._backendSelector.addItem("Claude API", "claude")
         self._backendSelector.setStyleSheet("""
             QComboBox {
                 background-color: #f0f0f0;
@@ -284,8 +285,8 @@ class AgentDialog(QWidget):
         apiKeyLayout.setContentsMargins(0, 4, 0, 4)
         apiKeyLayout.setSpacing(8)
 
-        apiKeyLabel = QLabel("OpenAI API Key:")
-        apiKeyLabel.setStyleSheet("color: #666; font-size: 11px;")
+        self._apiKeyLabel = QLabel("API Key:")
+        self._apiKeyLabel.setStyleSheet("color: #666; font-size: 11px;")
 
         self._apiKeyInput = QLineEdit()
         self._apiKeyInput.setPlaceholderText("sk-...")
@@ -323,7 +324,7 @@ class AgentDialog(QWidget):
         """)
         self._apiKeySaveButton.clicked.connect(self._onApiKeySubmit)
 
-        apiKeyLayout.addWidget(apiKeyLabel)
+        apiKeyLayout.addWidget(self._apiKeyLabel)
         apiKeyLayout.addWidget(self._apiKeyInput, 1)
         apiKeyLayout.addWidget(self._apiKeySaveButton)
 
@@ -426,12 +427,16 @@ class AgentDialog(QWidget):
             self._inputField.setEnabled(True)
             self.apiKeySubmitted.emit(key)
 
-    def showApiKeyPrompt(self):
+    def showApiKeyPrompt(self, label="API Key:", status_msg=None):
         """Show the API key input row."""
+        self._apiKeyLabel.setText(label)
         self._apiKeyRow.show()
         self._apiKeyInput.setFocus()
         self._inputField.setEnabled(False)
-        self.setStatus("OpenAI API key required. Enter your key below.")
+        if status_msg:
+            self.setStatus(status_msg)
+        else:
+            self.setStatus(f"{label.rstrip(':')} required. Enter your key below.")
 
     def hideApiKeyPrompt(self):
         """Hide the API key input row."""

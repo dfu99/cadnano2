@@ -1,7 +1,7 @@
 """
 agentbackend.py
 
-Backend for agent processing with Ollama and OpenAI integration.
+Backend for agent processing with Ollama, OpenAI, and Claude (Anthropic) integration.
 Supports multi-turn agentic conversations.
 """
 
@@ -114,6 +114,61 @@ class OpenAIWorker(QThread):
             self.error.emit(f"Error: {type(e).__name__}: {str(e)}")
 
 
+class ClaudeWorker(QThread):
+    """Worker thread for Anthropic Claude API calls with native tool use."""
+
+    finished = pyqtSignal(object)   # Emits full response dict
+    error = pyqtSignal(str)
+
+    def __init__(self, api_key, model, messages, tools, system_prompt):
+        super().__init__()
+        self._api_key = api_key
+        self._model = model
+        self._messages = messages
+        self._tools = tools
+        self._system_prompt = system_prompt
+
+    def run(self):
+        try:
+            url = "https://api.anthropic.com/v1/messages"
+
+            payload = {
+                "model": self._model,
+                "max_tokens": 4096,
+                "system": self._system_prompt,
+                "tools": self._tools,
+                "messages": self._messages
+            }
+
+            data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                url,
+                data=data,
+                headers={
+                    'Content-Type': 'application/json',
+                    'x-api-key': self._api_key,
+                    'anthropic-version': '2023-06-01'
+                }
+            )
+
+            with urllib.request.urlopen(req, timeout=120) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                self.finished.emit(result)
+
+        except urllib.error.HTTPError as e:
+            body = e.read().decode('utf-8') if e.fp else ''
+            try:
+                error_data = json.loads(body)
+                error_msg = error_data.get('error', {}).get('message', body)
+            except Exception:
+                error_msg = body
+            self.error.emit(f"Claude API Error (HTTP {e.code}): {error_msg}")
+        except urllib.error.URLError as e:
+            self.error.emit(f"Connection error: {e.reason}")
+        except Exception as e:
+            self.error.emit(f"Error: {type(e).__name__}: {str(e)}")
+
+
 class AgentBackend(QObject):
     """
     Backend for processing agent commands with Ollama.
@@ -190,11 +245,18 @@ RESPONSE FORMAT:
 - When done: {"done": true, "message": "Summary"}
 """
 
+    CLAUDE_SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant.
+Use the provided tools to inspect and modify the design.
+Always call analyzeDesign first if you don't know the current state.
+Honeycomb lattice step size is 21bp. Common lengths: 84bp (4×21), 126bp (6×21).
+When done, call the done tool with a summary of what was accomplished."""
+
     MAX_ITERATIONS = 50  # Safety limit for agent loop
 
     # Available backend types
     BACKEND_OLLAMA = "ollama"
     BACKEND_OPENAI = "openai"
+    BACKEND_CLAUDE = "claude"
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -209,8 +271,17 @@ RESPONSE FORMAT:
         self._openaiApiKey = self._loadApiKey()
         self._openaiModel = "gpt-5"  # Default to GPT-5
 
+        # Claude settings
+        self._claudeApiKey = self._loadAnthropicApiKey()
+        self._claudeModel = "claude-opus-4-6"
+
+        # Claude conversation state
+        self._claudeConversation = []   # Claude-format messages
+        self._pendingToolUses = []      # Queue of {id, name, input} blocks
+        self._toolResultsForTurn = []   # Accumulated tool_results for current turn
+
         self._worker = None
-        self._conversation = []  # Multi-turn conversation history
+        self._conversation = []  # Multi-turn conversation history (Ollama/OpenAI)
         self._isAgentLoop = False  # Whether we're in an agent loop
         self._iterationCount = 0  # Track iterations for safety
 
@@ -220,7 +291,7 @@ RESPONSE FORMAT:
 
     @backendType.setter
     def backendType(self, value):
-        if value in (self.BACKEND_OLLAMA, self.BACKEND_OPENAI):
+        if value in (self.BACKEND_OLLAMA, self.BACKEND_OPENAI, self.BACKEND_CLAUDE):
             self._backendType = value
         else:
             raise ValueError(f"Unknown backend type: {value}")
@@ -238,6 +309,8 @@ RESPONSE FORMAT:
         """Return the current model based on backend type."""
         if self._backendType == self.BACKEND_OPENAI:
             return self._openaiModel
+        if self._backendType == self.BACKEND_CLAUDE:
+            return self._claudeModel
         return self._ollamaModel
 
     @model.setter
@@ -245,6 +318,8 @@ RESPONSE FORMAT:
         """Set the model for the current backend type."""
         if self._backendType == self.BACKEND_OPENAI:
             self._openaiModel = value
+        elif self._backendType == self.BACKEND_CLAUDE:
+            self._claudeModel = value
         else:
             self._ollamaModel = value
 
@@ -261,15 +336,18 @@ RESPONSE FORMAT:
         Configure the backend.
 
         Args:
-            backend_type (str): 'ollama' or 'openai'
+            backend_type (str): 'ollama', 'openai', or 'claude'
             model (str): Model name (optional)
-            api_key (str): API key for OpenAI (optional, can also use OPENAI_API_KEY env var)
+            api_key (str): API key for OpenAI or Claude (optional)
         """
         self.backendType = backend_type
         if model:
             self.model = model
         if api_key:
-            self._openaiApiKey = api_key
+            if backend_type == self.BACKEND_CLAUDE:
+                self._claudeApiKey = api_key
+            else:
+                self._openaiApiKey = api_key
         print(f"[Agent] Backend set to: {backend_type}, model: {self.model}")
 
     @staticmethod
@@ -326,6 +404,51 @@ RESPONSE FORMAT:
             f.writelines(lines)
         print(f"[Agent] API key saved to {env_path}")
 
+    @staticmethod
+    def _loadAnthropicApiKey():
+        """Load the Anthropic API key from ANTHROPIC_API_KEY env var or .env.cadnano."""
+        key = os.environ.get('ANTHROPIC_API_KEY', '')
+        if key:
+            return key
+        env_path = AgentBackend._envFilePath()
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('ANTHROPIC_API_KEY=') and not line.startswith('#'):
+                            return line.split('=', 1)[1].strip()
+            except OSError:
+                pass
+        return ''
+
+    @staticmethod
+    def saveAnthropicApiKey(api_key):
+        """Save the Anthropic API key to ~/.cadnano2/.env.cadnano."""
+        config_dir = os.path.expanduser("~/.cadnano2")
+        os.makedirs(config_dir, exist_ok=True)
+        env_path = AgentBackend._envFilePath()
+
+        lines = []
+        found = False
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        if line.strip().startswith('ANTHROPIC_API_KEY='):
+                            lines.append(f'ANTHROPIC_API_KEY={api_key}\n')
+                            found = True
+                        else:
+                            lines.append(line)
+            except OSError:
+                pass
+        if not found:
+            lines.append(f'ANTHROPIC_API_KEY={api_key}\n')
+
+        with open(env_path, 'w') as f:
+            f.writelines(lines)
+        print(f"[Agent] Anthropic API key saved to {env_path}")
+
     def processCommand(self, command, mode="edit"):
         """
         Process a command from the agent dialog.
@@ -340,13 +463,21 @@ RESPONSE FORMAT:
             self._handleDeveloperCommand(command)
             return
 
-        # Start new conversation with user command
-        self._conversation = [
-            {"role": "system", "content": self.SYSTEM_PROMPT},
-            {"role": "user", "content": command}
-        ]
         self._isAgentLoop = True
         self._iterationCount = 0
+
+        if self._backendType == self.BACKEND_CLAUDE:
+            # Claude uses native tool use — no system prompt in messages
+            self._claudeConversation = [{"role": "user", "content": command}]
+            self._pendingToolUses = []
+            self._toolResultsForTurn = []
+        else:
+            # Ollama/OpenAI: system prompt in messages list
+            self._conversation = [
+                {"role": "system", "content": self.SYSTEM_PROMPT},
+                {"role": "user", "content": command}
+            ]
+
         self._continueAgentLoop()
 
     def _continueAgentLoop(self):
@@ -361,7 +492,23 @@ RESPONSE FORMAT:
             return
 
         # Create appropriate worker based on backend type
-        if self._backendType == self.BACKEND_OPENAI:
+        if self._backendType == self.BACKEND_CLAUDE:
+            if not self._claudeApiKey:
+                self._isAgentLoop = False
+                self.apiKeyNeeded.emit()
+                self.processingFinished.emit()
+                return
+            from .agenttools import TOOL_SCHEMAS
+            self._worker = ClaudeWorker(
+                self._claudeApiKey,
+                self._claudeModel,
+                self._claudeConversation,
+                TOOL_SCHEMAS,
+                self.CLAUDE_SYSTEM_PROMPT
+            )
+            self._worker.finished.connect(self._handleClaudeResponse)
+            self._worker.error.connect(self._handleError)
+        elif self._backendType == self.BACKEND_OPENAI:
             if not self._openaiApiKey:
                 self._isAgentLoop = False
                 self.apiKeyNeeded.emit()
@@ -372,15 +519,17 @@ RESPONSE FORMAT:
                 self._openaiModel,
                 self._conversation
             )
+            self._worker.finished.connect(self._handleAgentResponse)
+            self._worker.error.connect(self._handleError)
         else:
             self._worker = OllamaWorker(
                 self._endpoint,
                 self._ollamaModel,
                 self._conversation
             )
+            self._worker.finished.connect(self._handleAgentResponse)
+            self._worker.error.connect(self._handleError)
 
-        self._worker.finished.connect(self._handleAgentResponse)
-        self._worker.error.connect(self._handleError)
         self._worker.start()
 
     def feedbackToAgent(self, result):
@@ -393,12 +542,101 @@ RESPONSE FORMAT:
         if not self._isAgentLoop:
             return
 
-        # Add the result as feedback
-        self._conversation.append({
-            "role": "user",
-            "content": f"Result: {result}"
-        })
-        self._continueAgentLoop()
+        if self._backendType == self.BACKEND_CLAUDE:
+            # Pop the tool that just completed and accumulate its result
+            if self._pendingToolUses:
+                tool = self._pendingToolUses.pop(0)
+                self._toolResultsForTurn.append({
+                    'type': 'tool_result',
+                    'tool_use_id': tool['id'],
+                    'content': str(result)
+                })
+            self._processNextPendingTool()
+        else:
+            # Ollama/OpenAI: add result as a user message
+            self._conversation.append({
+                "role": "user",
+                "content": f"Result: {result}"
+            })
+            self._continueAgentLoop()
+
+    def _handleClaudeResponse(self, response):
+        """Handle a native tool-use response from the Claude API."""
+        stop_reason = response.get('stop_reason')
+        content = response.get('content', [])  # list of content blocks
+
+        print(f"[Claude] stop_reason={stop_reason}, content blocks={len(content)}")
+
+        # Append assistant turn to conversation
+        self._claudeConversation.append({'role': 'assistant', 'content': content})
+
+        if stop_reason == 'end_turn':
+            # Extract any text from the response
+            text_parts = [b['text'] for b in content if b.get('type') == 'text']
+            text = ' '.join(text_parts).strip()
+            self._isAgentLoop = False
+            self.responseReceived.emit(text or "Done.")
+            self.processingFinished.emit()
+
+        elif stop_reason == 'tool_use':
+            # Queue all tool_use blocks for sequential processing
+            self._pendingToolUses = [b for b in content if b.get('type') == 'tool_use']
+            self._toolResultsForTurn = []
+
+            # Emit any text commentary first
+            for b in content:
+                if b.get('type') == 'text' and b.get('text', '').strip():
+                    self.responseReceived.emit(b['text'])
+
+            # Start processing the first tool
+            self._processNextPendingTool()
+
+        else:
+            # Unexpected stop reason (e.g. max_tokens)
+            self._isAgentLoop = False
+            text_parts = [b['text'] for b in content if b.get('type') == 'text']
+            text = ' '.join(text_parts).strip()
+            self.responseReceived.emit(text or f"Stopped: {stop_reason}")
+            self.processingFinished.emit()
+
+    def _processNextPendingTool(self):
+        """Process the next queued tool call, or send accumulated results to Claude."""
+        if not self._pendingToolUses:
+            # All tools in this turn are done — send results back and continue
+            self._claudeConversation.append({
+                'role': 'user',
+                'content': self._toolResultsForTurn
+            })
+            self._toolResultsForTurn = []
+            self._continueAgentLoop()
+            return
+
+        # Peek at next tool (don't pop — feedbackToAgent will pop it)
+        tool = self._pendingToolUses[0]
+        tool_name = tool.get('name', '')
+        tool_input = tool.get('input', {})
+
+        print(f"[Claude] Tool call: {tool_name}({tool_input})")
+
+        # Handle the done tool locally — it doesn't need method dispatch
+        if tool_name == 'done':
+            message = tool_input.get('message', 'Task complete.')
+            # Pop from pending and add a synthetic tool result
+            self._pendingToolUses.pop(0)
+            self._toolResultsForTurn.append({
+                'type': 'tool_result',
+                'tool_use_id': tool['id'],
+                'content': 'Done acknowledged.'
+            })
+            self._isAgentLoop = False
+            self.responseReceived.emit(f"Done: {message}")
+            self.processingFinished.emit()
+            return
+
+        self.responseReceived.emit(f"Calling: {tool_name}({tool_input})")
+        # Emit the method call — do NOT pop yet; feedbackToAgent will pop
+        self.methodCallRequested.emit(tool_name, tool_input)
+        # processingFinished is NOT emitted here — we wait for feedbackToAgent
 
     def _extractFirstJsonObject(self, text):
         """
@@ -686,6 +924,8 @@ Examples:
         """Test connection to the configured backend."""
         if self._backendType == self.BACKEND_OPENAI:
             return self._testOpenAIConnection()
+        elif self._backendType == self.BACKEND_CLAUDE:
+            return self._testClaudeConnection()
         else:
             return self._testOllamaConnection()
 
@@ -721,5 +961,39 @@ Examples:
             if e.code == 401:
                 return False, "Invalid API key"
             return False, f"HTTP {e.code}: {e.reason}"
+        except Exception as e:
+            return False, str(e)
+
+    def _testClaudeConnection(self):
+        """Test connection to Anthropic Claude API."""
+        if not self._claudeApiKey:
+            return False, "Anthropic API key not set"
+        try:
+            # Send a minimal messages request to verify the key works
+            url = "https://api.anthropic.com/v1/messages"
+            payload = {
+                "model": self._claudeModel,
+                "max_tokens": 16,
+                "messages": [{"role": "user", "content": "hi"}]
+            }
+            data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                url,
+                data=data,
+                headers={
+                    'Content-Type': 'application/json',
+                    'x-api-key': self._claudeApiKey,
+                    'anthropic-version': '2023-06-01'
+                }
+            )
+            with urllib.request.urlopen(req, timeout=15) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                model = result.get('model', self._claudeModel)
+                return True, [model]
+        except urllib.error.HTTPError as e:
+            if e.code == 401:
+                return False, "Invalid Anthropic API key"
+            body = e.read().decode('utf-8') if e.fp else ''
+            return False, f"HTTP {e.code}: {body[:200]}"
         except Exception as e:
             return False, str(e)
