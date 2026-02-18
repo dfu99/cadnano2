@@ -1092,13 +1092,17 @@ class AgentMethods:
         else:
             get_ss = lambda vh: vh.stapleStrandSet()
 
+        # Determine parity so xover direction is always even→odd at Low
+        # and odd→even at High, regardless of argument order.
+        vh_even = vh1 if vh1.isEvenParity() else vh2
+        vh_odd  = vh2 if vh1.isEvenParity() else vh1
+
         # Both half-crossovers in one undo macro so a single undo reverts both.
-        # The two halves cross in opposite directions:
-        #   Low:  helix2 → helix1
-        #   High: helix1 → helix2
+        # At Low:  even-parity helix is 5p (its 3' end arrives at the crossover)
+        # At High: odd-parity helix is 5p (its 3' end arrives at the crossover)
         xover_pairs = [
-            (vh2, vh1, low_idx),   # Low half-crossover
-            (vh1, vh2, high_idx),  # High half-crossover
+            (vh_even, vh_odd, low_idx),   # Low half-crossover: even → odd
+            (vh_odd, vh_even, high_idx),  # High half-crossover: odd → even
         ]
 
         part.undoStack().beginMacro("Create Double Crossover")
@@ -2175,10 +2179,12 @@ class AgentMethods:
                 ss1 = get_ss(vh1)
                 ss2 = get_ss(vh2)
 
-                # Create the double crossover (low: vh2→vh1, high: vh1→vh2)
+                # Parity-aware: even is 5p at Low, odd is 5p at High
+                vh_even = vh1 if vh1.isEvenParity() else vh2
+                vh_odd  = vh2 if vh1.isEvenParity() else vh1
                 xover_pairs = [
-                    (vh2, vh1, low_idx),
-                    (vh1, vh2, high_idx),
+                    (vh_even, vh_odd, low_idx),
+                    (vh_odd, vh_even, high_idx),
                 ]
 
                 skip = False
@@ -2309,9 +2315,11 @@ class AgentMethods:
             low_idx = min(pos, paired_idx)
             high_idx = max(pos, paired_idx)
 
+            vh_even = vh1 if vh1.isEvenParity() else vh2
+            vh_odd  = vh2 if vh1.isEvenParity() else vh1
             xover_pairs = [
-                (vh2, vh1, low_idx),
-                (vh1, vh2, high_idx),
+                (vh_even, vh_odd, low_idx),
+                (vh_odd, vh_even, high_idx),
             ]
 
             skip = False
