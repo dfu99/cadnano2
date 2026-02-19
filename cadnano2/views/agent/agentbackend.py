@@ -273,7 +273,7 @@ When done, call the done tool with a summary of what was accomplished."""
 
         # Claude settings
         self._claudeApiKey = self._loadAnthropicApiKey()
-        self._claudeModel = "claude-opus-4-6"
+        self._claudeModel = "claude-haiku-4-5"  # haiku: much higher rate limits, 25x cheaper
 
         # Claude conversation state
         self._claudeConversation = []   # Claude-format messages

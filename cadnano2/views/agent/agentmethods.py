@@ -2531,3 +2531,192 @@ class AgentMethods:
         ))
 
         return f"Valid {strand_type} crossover indices between helix {helix1} and {helix2}: {valid_indices}"
+
+    # ==================== TRAINING DATA EXTRACTION ====================
+
+    def extractTrajectoryFromJSON(self, json_path, task=""):
+        """
+        Extract a trajectory (sequence of method calls) from a cadnano JSON file.
+        Converts an expert design into an action sequence suitable for training data.
+
+        The JSON is parsed to find:
+        - Helix positions (row, col)
+        - Which strand types are used (scaffold, staple)
+        - All half-crossovers (the inter-helix connections)
+
+        Returns a dict with 'actions' (list of [method, params]) and metadata.
+        The actions recreate the design from scratch when executed in order.
+
+        Args:
+            json_path (str): Path to the cadnano JSON file (can use ~ for home)
+            task (str): Natural-language description of what this design accomplishes
+
+        Returns:
+            dict or str: Trajectory dict or error string
+        """
+        import json as _json
+        import os
+
+        json_path = os.path.expanduser(json_path)
+        try:
+            with open(json_path) as f:
+                data = _json.load(f)
+        except Exception as e:
+            return f"Error reading {json_path}: {e}"
+
+        vstrands = data.get('vstrands', [])
+        if not vstrands:
+            return "Error: No vstrands found in JSON"
+
+        part_size = len(vstrands[0]['scaf'])
+        positions = [[vs['row'], vs['col']] for vs in sorted(vstrands, key=lambda v: v['num'])]
+
+        def _has_content(strand_data):
+            return any(any(x != -1 for x in s) for s in strand_data)
+
+        has_scaf = any(_has_content(vs['scaf']) for vs in vstrands)
+        has_stap = any(_has_content(vs['stap']) for vs in vstrands)
+
+        actions = []
+
+        # Step 1: create helices with full-length strands
+        for stype in ([('scaffold')] if has_scaf else []) + ([('staple')] if has_stap else []):
+            if isinstance(stype, tuple):
+                stype = stype[0]
+            actions.append(['createHelicesWithStrands', {
+                'positions': positions,
+                'strand_type': stype,
+                'length': part_size - 1
+            }])
+
+        # Step 2: extract half-crossovers and add them in position order.
+        # We only record each crossover once (from the helix with the lower number,
+        # or from the helix where the outgoing index is lower — to get a stable order).
+        for stype, key in [('scaffold', 'scaf'), ('staple', 'stap')]:
+            if (stype == 'scaffold' and not has_scaf) or (stype == 'staple' and not has_stap):
+                continue
+
+            seen = set()
+            xovers = []
+            for vs in vstrands:
+                num = vs['num']
+                for i, s in enumerate(vs[key]):
+                    _, _, next_vh, next_idx = s
+                    if next_vh in (-1, num):
+                        continue
+                    # Canonical key: sorted pair so we don't double-add
+                    canon = tuple(sorted([(num, i), (next_vh, next_idx)]))
+                    if canon in seen:
+                        continue
+                    seen.add(canon)
+                    xovers.append({
+                        'helix1': num, 'idx1': i,
+                        'helix2': next_vh, 'idx2': next_idx,
+                        'sort_idx': min(i, next_idx)
+                    })
+
+            # Sort by position so crossovers are added low-to-high
+            xovers.sort(key=lambda x: x['sort_idx'])
+            for xo in xovers:
+                actions.append(['createHalfCrossover', {
+                    'helix1': xo['helix1'], 'idx1': xo['idx1'],
+                    'helix2': xo['helix2'], 'idx2': xo['idx2'],
+                    'strand_type': stype
+                }])
+
+        n_xovers = sum(1 for a in actions if a[0] == 'createHalfCrossover')
+        return {
+            'source_file': json_path,
+            'task': task or f'Recreate design from {os.path.basename(json_path)}',
+            'part_size': part_size,
+            'helix_count': len(vstrands),
+            'strand_types': (['scaffold'] if has_scaf else []) + (['staple'] if has_stap else []),
+            'crossover_count': n_xovers,
+            'action_count': len(actions),
+            'actions': actions
+        }
+
+    def exportTrainingExample(self, json_path, task="", output_path=""):
+        """
+        Export a training example in JSONL format for SFT fine-tuning.
+
+        Parses the expert JSON, extracts the action trajectory, and writes a
+        conversation record in the OpenAI messages format (compatible with
+        Unsloth / LlamaFactory fine-tuning pipelines).
+
+        Each action becomes an assistant tool_call followed by a tool result.
+        The conversation structure mirrors what the Claude API backend produces
+        during a real agent session, so the same data format works for both
+        SFT on expert examples and SFT on collected Claude trajectories.
+
+        Args:
+            json_path (str): Path to expert cadnano JSON
+            task (str): Natural-language task description (shown as user message)
+            output_path (str): JSONL file to append to. If empty, returns the JSON string.
+
+        Returns:
+            str: Success message or the JSONL string if output_path is empty
+        """
+        import json as _json
+        import os
+
+        traj = self.extractTrajectoryFromJSON(json_path, task)
+        if isinstance(traj, str):
+            return traj
+
+        messages = [
+            {"role": "system", "content": (
+                "You are a cadnano DNA nanostructure design assistant. "
+                "Use the provided tools to build the requested design."
+            )},
+            {"role": "user", "content": traj['task']}
+        ]
+
+        for method_name, params in traj['actions']:
+            # Assistant tool call
+            messages.append({
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [{
+                    "type": "function",
+                    "id": f"call_{method_name}_{params.get('helix1','')}{params.get('idx1','')}",
+                    "function": {
+                        "name": method_name,
+                        "arguments": _json.dumps(params)
+                    }
+                }]
+            })
+            # Simulated tool result (success — real trajectories have actual results)
+            messages.append({
+                "role": "tool",
+                "content": f"Success"
+            })
+
+        messages.append({
+            "role": "assistant",
+            "content": (
+                f"Done. Created a {traj['helix_count']}-helix design with "
+                f"{traj['crossover_count']} crossovers from {os.path.basename(json_path)}."
+            )
+        })
+
+        record = {
+            "messages": messages,
+            "metadata": {
+                "source": json_path,
+                "helix_count": traj['helix_count'],
+                "action_count": traj['action_count'],
+                "crossover_count": traj['crossover_count'],
+                "part_size": traj['part_size']
+            }
+        }
+
+        json_str = _json.dumps(record)
+        if output_path:
+            output_path = os.path.expanduser(output_path)
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            with open(output_path, 'a') as f:
+                f.write(json_str + '\n')
+            return f"Appended training example to {output_path} ({traj['action_count']} actions)"
+        return json_str
+

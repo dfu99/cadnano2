@@ -168,7 +168,7 @@ class DocumentController():
                     status_msg="OpenAI API key required. Enter your key below."
                 )
         elif backend == "claude":
-            self._agentBackend.setBackend("claude", model="claude-opus-4-6")
+            self._agentBackend.setBackend("claude", model="claude-haiku-4-5")
             # If no Anthropic API key is available, prompt for one
             if not self._agentBackend._claudeApiKey:
                 self._agentDialog.showApiKeyPrompt(
