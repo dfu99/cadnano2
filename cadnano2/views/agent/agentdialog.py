@@ -153,6 +153,7 @@ class AgentDialog(QWidget):
         self._toggleButton.setStyleSheet("""
             QPushButton {
                 background-color: #f0f0f0;
+                color: #333;
                 border: 1px solid #c0c0c0;
                 border-radius: 4px;
                 padding: 4px 8px;
