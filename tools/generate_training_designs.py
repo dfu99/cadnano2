@@ -157,8 +157,9 @@ def extract_trajectory(data: dict, task: str = "") -> dict:
     """Parse a cadnano JSON dict and return the action sequence to recreate it.
 
     Actions produced:
-      1. createHelicesWithStrands (once per strand type present)
-      2. createHalfCrossover     (once per unique half-crossover)
+      1. createHelicesWithStrands   (once per strand type present)
+      2. createHalfCrossover        (once per unique half-crossover)
+      3. deleteExposedFragments     (once per strand type, after all crossovers)
     """
     vstrands = data.get("vstrands", [])
     if not vstrands:
@@ -222,6 +223,7 @@ def extract_trajectory(data: dict, task: str = "") -> dict:
                 "idx2":       xo["idx2"],
                 "strand_type": stype,
             }])
+        actions.append(["deleteExposedFragments", {"strand_type": stype}])
 
     n_xovers   = sum(1 for a in actions if a[0] == "createHalfCrossover")
     helix_count = len(vstrands)

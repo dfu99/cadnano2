@@ -2425,6 +2425,65 @@ class AgentMethods:
             'strands': resized
         }
 
+    def deleteExposedFragments(self, strand_type="scaffold"):
+        """
+        Delete strand segments that have an exposed (unconnected) 5' or 3' end.
+
+        After createHelicesWithStrands + crossover placement, short fragments
+        remain outside the crossover region at each end of every helix.  These
+        have no biological meaning and must be removed so the scaffold (or
+        staple) forms a clean closed loop with no free ends.
+
+        Call this once after all crossovers for a routing are placed.  The
+        entire deletion is wrapped in one undo macro.
+
+        Args:
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: Report of how many fragments were deleted.
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        stype = strand_type.lower()
+        get_ss = (lambda vh: vh.scaffoldStrandSet()) if stype == "scaffold" \
+            else (lambda vh: vh.stapleStrandSet())
+
+        # Snapshot first — deletions change the strand sets in place
+        dangling = []
+        for vh in part.getVirtualHelices():
+            for strand in list(get_ss(vh)):
+                if strand.connectionLow() is None or strand.connectionHigh() is None:
+                    dangling.append((vh.number(), strand))
+
+        if not dangling:
+            return f"No exposed {strand_type} fragments found — design is clean."
+
+        part.undoStack().beginMacro(
+            f"Delete {len(dangling)} exposed {strand_type} fragment(s)"
+        )
+        deleted = 0
+        for vh_num, strand in dangling:
+            vh = part.virtualHelix(vh_num)
+            if vh is None:
+                continue
+            ss = get_ss(vh)
+            try:
+                lo, hi = strand.idxs()
+                if strand.connectionLow():
+                    strand.connectionLow().remove(useUndoStack=True)
+                if strand.connectionHigh():
+                    strand.connectionHigh().remove(useUndoStack=True)
+                ss.removeStrand(strand, useUndoStack=True)
+                deleted += 1
+            except Exception:
+                pass  # already removed as a side-effect of another deletion
+        part.undoStack().endMacro()
+
+        return f"Deleted {deleted} exposed {strand_type} fragment(s). Design should now have no free ends."
+
     # ==================== VERIFICATION METHODS ====================
 
     def verifyDesign(self):
@@ -2436,6 +2495,32 @@ class AgentMethods:
         """
         verifier = DesignVerifier(self._documentController)
         result = verifier.verifyDesign()
+
+        # Check for exposed 5'/3' ends — fragments left over from crossover placement
+        part = self.activePart
+        exposed_issues = []
+        if part is not None:
+            for stype_label, get_ss in [
+                ("scaffold", lambda vh: vh.scaffoldStrandSet()),
+                ("staple",   lambda vh: vh.stapleStrandSet()),
+            ]:
+                exposed = []
+                for vh in part.getVirtualHelices():
+                    for strand in get_ss(vh):
+                        if strand.connectionLow() is None or strand.connectionHigh() is None:
+                            lo, hi = strand.idxs()
+                            exposed.append(f"H{vh.number()}[{lo}-{hi}]")
+                if exposed:
+                    exposed_issues.append(
+                        f"{len(exposed)} exposed {stype_label} fragment(s) with free ends: "
+                        + ", ".join(exposed[:5])
+                        + (" …" if len(exposed) > 5 else "")
+                        + " — call deleteExposedFragments() to remove"
+                    )
+
+        if exposed_issues:
+            result['issues'] = result.get('issues', []) + exposed_issues
+            result['valid'] = False
 
         output = [f"Design Score: {result['score']:.2f}/1.00"]
 

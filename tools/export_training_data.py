@@ -88,6 +88,9 @@ def extract_trajectory(json_path: str, task: str = "") -> dict:
                 "helix2": xo["helix2"], "idx2": xo["idx2"],
                 "strand_type": stype
             }])
+        # After all crossovers for this strand type, delete fragments left
+        # outside the crossover region (exposed 5'/3' ends).
+        actions.append(["deleteExposedFragments", {"strand_type": stype}])
 
     n_xovers = sum(1 for a in actions if a[0] == "createHalfCrossover")
     return {
