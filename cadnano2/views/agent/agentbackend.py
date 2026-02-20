@@ -249,6 +249,13 @@ Use the provided tools to inspect and modify the design.
 Always call analyzeDesign first if you don't know the current state.
 Honeycomb lattice step size is 21bp. Common lengths: 84bp (4×21), 126bp (6×21).
 For standard bundles, use createHelicesWithStrands with num_helices (e.g. num_helices=6) — never invent lattice coordinates yourself.
+
+SCAFFOLD ROUTING for 2×N grids:
+1. createHelicesWithStrands(num_helices=2N, strand_type="scaffold", length=L)
+2. planScaffoldRouting()  ← routes the scaffold AND removes exposed fragments atomically
+3. verifyDesign()
+
+For non-2×N layouts (3×N, rings, etc.), use addCrossoversForPair or addAllNeighborCrossovers instead.
 When done, call the done tool with a summary of what was accomplished."""
 
     MAX_ITERATIONS = 50  # Safety limit for agent loop

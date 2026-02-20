@@ -2425,6 +2425,179 @@ class AgentMethods:
             'strands': resized
         }
 
+    def planScaffoldRouting(self, strand_type="scaffold"):
+        """
+        Plan and execute a complete scaffold routing for a 2×N grid design.
+
+        Creates a single closed loop visiting all helices using half-crossovers,
+        then removes exposed strand fragments. Everything is wrapped in one undo
+        macro for atomic undo.
+
+        Algorithm:
+          - Detects 2×N grid topology from current design helices
+          - Builds a serpentine path: top row L→R, cross, bottom row R→L, close
+          - For each turn picks the crossover position matching the helix parity:
+              * Even parity (scaffold L→R, exits HIGH end): pick highest valid position
+              * Odd parity  (scaffold R→L, exits LOW end):  pick lowest valid position
+          - Creates all planned half-crossovers
+          - Deletes exposed dangling fragments
+
+        Args:
+            strand_type (str): "scaffold" or "staple" (default "scaffold")
+
+        Returns:
+            dict with 'path', 'crossovers', 'fragments_deleted', 'description'
+            or {'error': ...} if the layout is unsupported
+        """
+        part = self.activePart
+        if part is None:
+            return {"error": "No active part"}
+
+        st = StrandType.Scaffold if strand_type.lower() == "scaffold" \
+            else StrandType.Staple
+        get_ss = (lambda vh: vh.scaffoldStrandSet()) \
+            if strand_type.lower() == "scaffold" \
+            else (lambda vh: vh.stapleStrandSet())
+
+        vhs = list(part.getVirtualHelices())
+        if not vhs:
+            return {"error": "No helices in design. Call createHelicesWithStrands first."}
+
+        # Group helices by row
+        rows = {}
+        for vh in vhs:
+            row, col = vh.coord()
+            rows.setdefault(row, []).append(vh)
+
+        if len(rows) != 2:
+            return {
+                "error": (
+                    f"planScaffoldRouting only supports 2×N grids. "
+                    f"Found {len(rows)} distinct rows: {sorted(rows.keys())}. "
+                    f"For other layouts, use addCrossoversForPair manually."
+                )
+            }
+
+        row_keys = sorted(rows.keys())
+        top_row, bot_row = row_keys[0], row_keys[1]
+
+        top_vhs = sorted(rows[top_row], key=lambda v: v.coord()[1])
+        bot_vhs = sorted(rows[bot_row], key=lambda v: v.coord()[1])
+
+        if len(top_vhs) != len(bot_vhs):
+            return {
+                "error": (
+                    f"Rows have unequal helix counts: "
+                    f"row {top_row} has {len(top_vhs)}, "
+                    f"row {bot_row} has {len(bot_vhs)}. "
+                    f"Cannot build a closed loop."
+                )
+            }
+
+        n_cols = len(top_vhs)
+
+        # Serpentine path: top row L→R then bottom row R→L (closed loop)
+        path = top_vhs + list(reversed(bot_vhs))
+        num_vhs = len(path)
+
+        def is_even_parity(vh):
+            row, col = vh.coord()
+            return (row % 2) == (col % 2)
+
+        def get_valid_positions(vh_a, vh_b):
+            """Sorted list of valid crossover indices between vh_a and vh_b."""
+            xovers = part.potentialCrossoverList(vh_a)
+            return sorted(
+                idx for neighborVh, idx, sType, isLowIdx in xovers
+                if sType == st and neighborVh is not None and neighborVh == vh_b
+            )
+
+        # Plan the crossovers before touching the undo stack
+        planned = []   # list of (idx, vh_a, vh_b)
+        for i in range(num_vhs):
+            vh_a = path[i]
+            vh_b = path[(i + 1) % num_vhs]
+
+            positions = get_valid_positions(vh_a, vh_b)
+            if not positions:
+                return {
+                    "error": (
+                        f"No valid {strand_type} crossover positions between "
+                        f"H{vh_a.number()} and H{vh_b.number()}. "
+                        f"These helices may not be neighbors, or strands may be missing. "
+                        f"Ensure createHelicesWithStrands was called first."
+                    )
+                }
+
+            # Even parity (scaffold L→R, exits HIGH end) → use highest valid position
+            # Odd parity  (scaffold R→L, exits LOW end)  → use lowest valid position
+            idx = max(positions) if is_even_parity(vh_a) else min(positions)
+            planned.append((idx, vh_a, vh_b))
+
+        # Execute atomically
+        part.undoStack().beginMacro(
+            f"Plan {strand_type.capitalize()} Routing ({num_vhs} helices)"
+        )
+        try:
+            created = []
+            for idx, vh_a, vh_b in planned:
+                s_a = get_ss(vh_a).getStrand(idx)
+                s_b = get_ss(vh_b).getStrand(idx)
+                if s_a is None:
+                    part.undoStack().endMacro()
+                    part.undoStack().undo()
+                    return {"error": f"No {strand_type} strand at H{vh_a.number()} idx {idx}"}
+                if s_b is None:
+                    part.undoStack().endMacro()
+                    part.undoStack().undo()
+                    return {"error": f"No {strand_type} strand at H{vh_b.number()} idx {idx}"}
+                part.createXover(s_a, idx, s_b, idx, useUndoStack=True)
+                created.append({
+                    "helix1": vh_a.number(), "idx1": idx,
+                    "helix2": vh_b.number(), "idx2": idx,
+                    "strand_type": strand_type
+                })
+
+            # Delete exposed fragments inside the same macro
+            dangling = []
+            for vh in part.getVirtualHelices():
+                for strand in list(get_ss(vh)):
+                    if strand.connectionLow() is None or strand.connectionHigh() is None:
+                        dangling.append((vh.number(), strand))
+
+            deleted = 0
+            for vh_num, strand in dangling:
+                vh = part.virtualHelix(vh_num)
+                if vh is None:
+                    continue
+                ss = get_ss(vh)
+                try:
+                    ss.removeStrand(strand, useUndoStack=True)
+                    deleted += 1
+                except Exception:
+                    pass  # already removed as side-effect of another deletion
+
+            part.undoStack().endMacro()
+
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return {"error": f"Error creating {strand_type} routing: {e}"}
+
+        path_nums = [vh.number() for vh in path]
+        return {
+            "path": path_nums,
+            "crossovers": created,
+            "fragments_deleted": deleted,
+            "description": (
+                f"Routed {num_vhs}-helix ({n_cols}×2) {strand_type} as a single "
+                f"closed loop. "
+                f"Path: {' → '.join(str(h) for h in path_nums + [path_nums[0]])}. "
+                f"{len(created)} half-crossovers created, "
+                f"{deleted} exposed fragment(s) removed."
+            )
+        }
+
     def deleteExposedFragments(self, strand_type="scaffold"):
         """
         Delete strand segments that have an exposed (unconnected) 5' or 3' end.

@@ -223,6 +223,53 @@ TOOL_SCHEMAS = [
         }
     },
 
+    {
+        "name": "planScaffoldRouting",
+        "description": (
+            "Plan AND execute a complete scaffold routing for a 2×N grid design "
+            "in one atomic operation. Creates a single closed loop visiting all "
+            "helices using half-crossovers, then removes dangling strand fragments. "
+            "Wrapped in one undo macro.\n\n"
+            "Use this instead of addCrossoversForPair when the goal is a single "
+            "contiguous scaffold routing. Works for any 2×N grid (2×2, 2×3, …, 2×N). "
+            "For non-2×N layouts, use addCrossoversForPair manually.\n\n"
+            "IMPORTANT: Call createHelicesWithStrands first to create the helices "
+            "and strands, then call planScaffoldRouting."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type to route (default: scaffold)."
+                }
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "deleteExposedFragments",
+        "description": (
+            "Delete strand segments that have an exposed (unconnected) 5' or 3' end. "
+            "After crossover placement, short fragments remain outside the crossover "
+            "region. Call this after placing all crossovers to clean up the design. "
+            "planScaffoldRouting already calls this automatically — only use "
+            "deleteExposedFragments separately if you placed crossovers manually."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type to clean up (default: scaffold)."
+                }
+            },
+            "required": []
+        }
+    },
+
     # ==================== LEVEL 1 — QUERY PRIMITIVES ====================
 
     {
