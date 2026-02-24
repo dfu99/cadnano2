@@ -549,6 +549,125 @@ class DesignVerifier:
 
         return max(0.0, min(1.0, score))
 
+    # ==================== SCAFFOLD ROUTING VERIFIERS ====================
+
+    def verifyScaffoldClosedLoop(self):
+        """
+        Verify that all scaffold strands form a single closed loop (no open termini,
+        no fragmented sub-loops).
+
+        Uses oligo.isLoop() — cadnano tracks circularity automatically when
+        crossovers are created/removed.
+
+        Returns:
+            dict with:
+              passed        (bool)   — True only if exactly one scaffold oligo and it is a loop
+              scaffold_oligos (int)  — total number of distinct scaffold oligos
+              loops         (int)    — how many of those are closed loops
+              open_strands  (int)    — how many are open (have free termini)
+              reward        (float)  — RLVR reward: 1.0=perfect, 0.5=all loops but fragmented,
+                                       0.0=any open terminus
+              message       (str)
+        """
+        part = self.activePart
+        if part is None:
+            return {"passed": False, "reward": 0.0, "message": "No active part"}
+
+        scaffold_oligos = [o for o in part.oligos() if not o.isStaple()]
+        n_total = len(scaffold_oligos)
+
+        if n_total == 0:
+            return {
+                "passed": False,
+                "scaffold_oligos": 0,
+                "loops": 0,
+                "open_strands": 0,
+                "reward": 0.0,
+                "message": "No scaffold strands found"
+            }
+
+        n_loops = sum(1 for o in scaffold_oligos if o.isLoop())
+        n_open = n_total - n_loops
+
+        if n_total == 1 and n_loops == 1:
+            reward = 1.0
+            passed = True
+            message = "Scaffold is a single closed loop — perfect routing"
+        elif n_open == 0:
+            # Multiple loops but no open ends — partial credit
+            reward = 0.5
+            passed = False
+            message = (f"Scaffold forms {n_loops} closed loops but should be 1. "
+                       f"Missing crossovers between loop segments.")
+        else:
+            reward = 0.0
+            passed = False
+            message = (f"{n_open} scaffold oligo(s) have exposed termini (free 5'/3' ends). "
+                       f"Fragment deletion or crossover creation failed.")
+
+        return {
+            "passed": passed,
+            "scaffold_oligos": n_total,
+            "loops": n_loops,
+            "open_strands": n_open,
+            "reward": reward,
+            "message": message
+        }
+
+    def verifyNoScaffoldTermini(self):
+        """
+        Verify that no scaffold strand has an exposed 5' or 3' terminus.
+
+        A terminus means connection5p() is None or connection3p() is None on some
+        scaffold strand, indicating a free end that is not part of any loop.
+
+        This is a fast check — O(strands) — and is a prerequisite for a valid
+        scaffold routing. If this fails, verifyScaffoldClosedLoop will also fail.
+
+        Returns:
+            dict with:
+              passed        (bool)   — True if zero exposed ends found
+              exposed_ends  (list)   — list of dicts describing each exposed strand
+                                       [{"helix": N, "low": lo, "high": hi,
+                                         "free_5p": bool, "free_3p": bool}, ...]
+              reward        (float)  — 1.0 if clean, 0.0 if any free end
+              message       (str)
+        """
+        part = self.activePart
+        if part is None:
+            return {"passed": False, "reward": 0.0, "message": "No active part"}
+
+        exposed = []
+        for vh in part.getVirtualHelices():
+            for strand in vh.scaffoldStrandSet():
+                free5 = strand.connection5p() is None
+                free3 = strand.connection3p() is None
+                if free5 or free3:
+                    lo, hi = strand.idxs()
+                    exposed.append({
+                        "helix": vh.number(),
+                        "low": lo,
+                        "high": hi,
+                        "free_5p": free5,
+                        "free_3p": free3
+                    })
+
+        if not exposed:
+            return {
+                "passed": True,
+                "exposed_ends": [],
+                "reward": 1.0,
+                "message": "No exposed scaffold termini — all strands are connected"
+            }
+
+        return {
+            "passed": False,
+            "exposed_ends": exposed,
+            "reward": 0.0,
+            "message": (f"Found {len(exposed)} scaffold strand(s) with exposed termini. "
+                        f"Run deleteExposedFragments or fix planScaffoldRouting.")
+        }
+
     # ==================== REWARD SIGNAL FOR RLVR ====================
 
     def getRewardSignal(self, structure_type=None):
@@ -561,7 +680,54 @@ class DesignVerifier:
         Returns:
             dict: Reward signal with score and breakdown
         """
-        if structure_type == '6-helix':
+        if structure_type == 'scaffold_routing':
+            loop_result = self.verifyScaffoldClosedLoop()
+            term_result = self.verifyNoScaffoldTermini()
+
+            n_total = loop_result.get('scaffold_oligos', 0)
+            n_loops = loop_result.get('loops', 0)
+            n_open  = loop_result.get('open_strands', n_total - n_loops)
+
+            # Shaped intermediate reward — avoids the 0% success rate wall.
+            #
+            # Two-tier range enforces the invariant that ANY all-closed state
+            # always ranks above ANY state with open termini:
+            #
+            #   Open termini → reward ∈ [0.0, 0.5)
+            #     reward = 0.5 × (n_loops / n_total)
+            #     (approaches 0.5 as open ends are eliminated, never reaches it)
+            #
+            #   All closed   → reward ∈ [0.5, 1.0]
+            #     reward = 0.5 + 0.5 / n_loops
+            #     1 loop → 1.0, 2 loops → 0.75, 10 loops → 0.55
+            #
+            # "2 loops is better than 10 loops" is reflected at every level.
+            if n_total == 0:
+                reward = 0.0
+            elif n_open == 0 and n_loops == 1:
+                reward = 1.0
+            elif n_open == 0:
+                # All loops, but fragmented — upper tier
+                reward = 0.5 + 0.5 / n_loops
+            else:
+                # Open termini — lower tier, credit for closed fraction
+                closed_fraction = n_loops / n_total if n_total else 0.0
+                reward = 0.5 * closed_fraction
+
+            passed = (n_total == 1 and n_loops == 1 and n_open == 0)
+            return {
+                'reward': reward,
+                'valid': passed,
+                'breakdown': {
+                    'closed_loop': loop_result,
+                    'no_termini': term_result,
+                    'scaffold_oligos': n_total,
+                    'loops': n_loops,
+                    'open_strands': n_open,
+                },
+                'feedback': (loop_result['message'] + '\n' + term_result['message']).strip()
+            }
+        elif structure_type == '6-helix':
             result = self.verify6HelixBundle()
         else:
             result = self.verifyDesign()

@@ -157,6 +157,10 @@ The DocumentController (`cadnano2/controllers/documentcontroller.py`) integrates
 In the agent dialog:
 - `/list` or `/trajectories` - List saved trajectories
 - `/replay <trajectory_id>` - Replay a saved trajectory step-by-step
+- `/rlvr [episodes] [max_steps] [update_every]` - Start RLVR training loop (local model)
+  - `/rlvr 20 15 1` — 20 episodes, 15 steps max, train after every episode (default)
+  - `/rlvr 20 15 4` — train after every 4 episodes (batch update)
+- `/rlvr-stop` - Halt RLVR after current episode
 
 ### Crossover Nomenclature
 In DNA origami, "crossover" means **double crossover** (two half-crossovers at adjacent Low/High positions). `createCrossover` creates a double crossover by default. Use `createHalfCrossover` only when a single half-crossover is explicitly needed. Double crossovers are wrapped in a single undo macro for atomic undo.
@@ -260,3 +264,55 @@ Consider a hybrid approach for production:
 - **Tier 3 (Review):** Human approval for critical decisions
 
 This balances cost, latency, and quality.
+
+---
+
+## RLVR Architecture Decisions (Do Not Re-Litigate)
+
+### The RLVR loop does actual in-process weight updates
+`RLVRRunner` uses `LocalTrainableBackend` (rlvr_local_backend.py) which loads a local
+HuggingFace model (default: Qwen/Qwen2.5-1.5B-Instruct) with a LoRA adapter and handles
+BOTH inference and gradient steps in the same process. Weights update after each episode
+(or every N episodes, configurable). LoRA checkpoint saved to `~/.cadnano2/rlvr_lora/`.
+
+`LocalTrainableBackend` is swapped in as `dc._agentBackend` during the loop so all
+existing DocumentController wiring (method dispatch, feedbackToAgent) works unchanged.
+
+Default model: `Qwen/Qwen3-1.7B` (HuggingFace). This is the same weights as the
+`qwen3:1.7b` Ollama model — Ollama uses GGUF format which cannot be trained with
+transformers/peft. Download once with `AutoModelForCausalLM.from_pretrained('Qwen/Qwen3-1.7B')`.
+
+Cloud APIs (Claude, OpenAI) are for expert trajectory collection only — they cannot be
+trained. Do not use them as the RLVR inference backend.
+
+### Cloud APIs cannot succeed at scaffold routing without sufficient domain knowledge
+Even with the best prompt, Claude/OpenAI API models hit a ~0% success rate on scaffold routing
+because the agentic methods do not encode enough domain knowledge for the model to reason
+through the full solution. Cloud APIs are not the right target for the RLVR training loop.
+The correct target is a local model that can be iteratively fine-tuned.
+
+### Shaped intermediate reward — avoids the 0% success rate wall
+Binary reward (0 or 1) gives no learning signal when success rate is 0%.
+The reward for `scaffold_routing` is shaped continuously (implemented in `getRewardSignal`).
+Two tiers ensure any all-closed state always ranks above any open-terminus state:
+- Single closed loop → 1.0 (perfect)
+- K closed loops, no open ends → 0.5 + 0.5/K  (2→0.75, 10→0.55) — range [0.5, 1.0]
+- Open termini → 0.5 × (n_loops / n_total) — range [0, 0.5)
+
+This ensures "2 loops is better than 10 loops" and any all-closed state (floor 0.5)
+always outranks any open-terminus state (ceiling approaches 0.5 but never reaches it),
+giving a gradient signal even at 0% full success.
+
+### Active learning: update frequently, not after N failures
+Do NOT collect 1000 episodes against a 0% success rate wall and then fine-tune.
+Instead, update the local model **after every episode** (`update_every=1`, the default).
+More frequent weight updates → model explores more effectively → success rate rises faster.
+This is online RL, not offline batch distillation.
+
+`/rlvr [episodes] [max_steps] [update_every]` — update_every defaults to 1.
+Current algorithm: Reward-Weighted Regression (RWR). GRPO (group-relative advantages
+across K rollouts per starting state) is the upgrade path when RWR plateaus.
+
+### Required ML dependencies (cn24-agentic env)
+torch (CUDA), transformers, peft, accelerate, bitsandbytes
+Install: `pip install torch --index-url https://download.pytorch.org/whl/cu121 && pip install transformers peft accelerate bitsandbytes`

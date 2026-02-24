@@ -17,7 +17,7 @@ util.qtWrapImport('QtCore', globals(), ['QObject', 'pyqtSignal', 'QThread'])
 class OllamaWorker(QThread):
     """Worker thread for Ollama API calls."""
 
-    finished = pyqtSignal(str)
+    resultReady = pyqtSignal(str)
     error = pyqtSignal(str)
 
     def __init__(self, endpoint, model, messages):
@@ -46,7 +46,7 @@ class OllamaWorker(QThread):
             with urllib.request.urlopen(req, timeout=120) as response:
                 result = json.loads(response.read().decode('utf-8'))
                 message = result.get('message', {})
-                self.finished.emit(message.get('content', ''))
+                self.resultReady.emit(message.get('content', ''))
 
         except urllib.error.HTTPError as e:
             body = e.read().decode('utf-8') if e.fp else ''
@@ -60,7 +60,7 @@ class OllamaWorker(QThread):
 class OpenAIWorker(QThread):
     """Worker thread for OpenAI API calls."""
 
-    finished = pyqtSignal(str)
+    resultReady = pyqtSignal(str)
     error = pyqtSignal(str)
 
     def __init__(self, api_key, model, messages):
@@ -96,7 +96,7 @@ class OpenAIWorker(QThread):
                 if choices:
                     message = choices[0].get('message', {})
                     content = message.get('content', '')
-                    self.finished.emit(content)
+                    self.resultReady.emit(content)
                 else:
                     self.error.emit("No response choices returned from OpenAI")
 
@@ -117,7 +117,7 @@ class OpenAIWorker(QThread):
 class ClaudeWorker(QThread):
     """Worker thread for Anthropic Claude API calls with native tool use."""
 
-    finished = pyqtSignal(object)   # Emits full response dict
+    resultReady = pyqtSignal(object)   # Emits full response dict
     error = pyqtSignal(str)
 
     def __init__(self, api_key, model, messages, tools, system_prompt):
@@ -153,7 +153,7 @@ class ClaudeWorker(QThread):
 
             with urllib.request.urlopen(req, timeout=120) as response:
                 result = json.loads(response.read().decode('utf-8'))
-                self.finished.emit(result)
+                self.resultReady.emit(result)
 
         except urllib.error.HTTPError as e:
             body = e.read().decode('utf-8') if e.fp else ''
@@ -235,14 +235,20 @@ HONEYCOMB STEP SIZE: 21bp. Common lengths: 84bp (4 steps), 126bp (6 steps).
 
 EXAMPLE — Create a 6-helix bundle with 84bp scaffold:
 1. {"method": "createHelicesWithStrands", "params": {"num_helices": 6, "strand_type": "scaffold", "length": 84}}
-2. {"method": "addAllNeighborCrossovers", "params": {"strand_type": "scaffold"}}
+2. {"method": "planScaffoldRouting", "params": {"strand_type": "scaffold"}}
 3. {"method": "verifyDesign", "params": {}}
-4. {"done": true, "message": "Created 6-helix bundle with scaffold strands and crossovers."}
+4. {"done": true, "message": "Created 6-helix bundle with a single closed scaffold routing."}
 
 RESPONSE FORMAT:
 - To call a method: {"method": "methodName", "params": {"param1": value1}}
 - When done: {"done": true, "message": "Summary"}
 """
+
+    RLVR_SYSTEM_PROMPT = """You are a DNA nanostructure design agent doing scaffold routing.
+Use tools to inspect and modify the cadnano design.
+Goal: connect all scaffold strands into ONE CLOSED LOOP.
+Check progress with verifyScaffoldRouting() — reward=1.0 = success.
+Be methodical: inspect first, then act, then verify."""
 
     CLAUDE_SYSTEM_PROMPT = """You are a cadnano DNA nanostructure design assistant.
 Use the provided tools to inspect and modify the design.
@@ -250,12 +256,14 @@ Always call analyzeDesign first if you don't know the current state.
 Honeycomb lattice step size is 21bp. Common lengths: 84bp (4×21), 126bp (6×21).
 For standard bundles, use createHelicesWithStrands with num_helices (e.g. num_helices=6) — never invent lattice coordinates yourself.
 
-SCAFFOLD ROUTING for 2×N grids:
+SCAFFOLD ROUTING for 2×N grids (STRICT):
 1. createHelicesWithStrands(num_helices=2N, strand_type="scaffold", length=L)
-2. planScaffoldRouting()  ← routes the scaffold AND removes exposed fragments atomically
+2. planScaffoldRouting()  ← required for scaffold routing; also removes exposed fragments
 3. verifyDesign()
 
-For non-2×N layouts (3×N, rings, etc.), use addCrossoversForPair or addAllNeighborCrossovers instead.
+NEVER use addAllNeighborCrossovers or addCrossoversForPair for scaffold routing on 2×N bundles.
+Those methods create DX motifs and over-connect the scaffold.
+Use addCrossoversForPair/addAllNeighborCrossovers only for non-2×N layouts or non-routing tasks.
 When done, call the done tool with a summary of what was accomplished."""
 
     MAX_ITERATIONS = 50  # Safety limit for agent loop
@@ -288,9 +296,14 @@ When done, call the done tool with a summary of what was accomplished."""
         self._toolResultsForTurn = []   # Accumulated tool_results for current turn
 
         self._worker = None
+        self._liveWorkers = []
         self._conversation = []  # Multi-turn conversation history (Ollama/OpenAI)
         self._isAgentLoop = False  # Whether we're in an agent loop
         self._iterationCount = 0  # Track iterations for safety
+
+        # Active tool set and system prompt (overridden per-call for RLVR mode)
+        self._activeTools = None        # None → use default TOOL_SCHEMAS
+        self._activeSystemPrompt = None  # None → use CLAUDE_SYSTEM_PROMPT
 
     @property
     def backendType(self):
@@ -456,19 +469,26 @@ When done, call the done tool with a summary of what was accomplished."""
             f.writelines(lines)
         print(f"[Agent] Anthropic API key saved to {env_path}")
 
-    def processCommand(self, command, mode="edit"):
+    def processCommand(self, command, mode="edit", tools=None):
         """
         Process a command from the agent dialog.
 
         Args:
             command (str): The user's command/query
-            mode (str): Either "edit" or "developer"
+            mode (str): "edit", "developer", or "rlvr"
+            tools (list|None): Tool schema list override; None → default TOOL_SCHEMAS
         """
         self.processingStarted.emit()
 
         if mode == "developer":
             self._handleDeveloperCommand(command)
             return
+
+        # Store active overrides for this session
+        self._activeTools = tools  # None → _continueAgentLoop uses TOOL_SCHEMAS
+        self._activeSystemPrompt = (
+            self.RLVR_SYSTEM_PROMPT if mode == "rlvr" else self.CLAUDE_SYSTEM_PROMPT
+        )
 
         self._isAgentLoop = True
         self._iterationCount = 0
@@ -506,14 +526,16 @@ When done, call the done tool with a summary of what was accomplished."""
                 self.processingFinished.emit()
                 return
             from .agenttools import TOOL_SCHEMAS
+            tool_schemas = self._activeTools if self._activeTools is not None else TOOL_SCHEMAS
+            system_prompt = self._activeSystemPrompt or self.CLAUDE_SYSTEM_PROMPT
             self._worker = ClaudeWorker(
                 self._claudeApiKey,
                 self._claudeModel,
                 self._claudeConversation,
-                TOOL_SCHEMAS,
-                self.CLAUDE_SYSTEM_PROMPT
+                tool_schemas,
+                system_prompt
             )
-            self._worker.finished.connect(self._handleClaudeResponse)
+            self._worker.resultReady.connect(self._handleClaudeResponse)
             self._worker.error.connect(self._handleError)
         elif self._backendType == self.BACKEND_OPENAI:
             if not self._openaiApiKey:
@@ -526,7 +548,7 @@ When done, call the done tool with a summary of what was accomplished."""
                 self._openaiModel,
                 self._conversation
             )
-            self._worker.finished.connect(self._handleAgentResponse)
+            self._worker.resultReady.connect(self._handleAgentResponse)
             self._worker.error.connect(self._handleError)
         else:
             self._worker = OllamaWorker(
@@ -534,10 +556,21 @@ When done, call the done tool with a summary of what was accomplished."""
                 self._ollamaModel,
                 self._conversation
             )
-            self._worker.finished.connect(self._handleAgentResponse)
+            self._worker.resultReady.connect(self._handleAgentResponse)
             self._worker.error.connect(self._handleError)
 
-        self._worker.start()
+        worker = self._worker
+        self._liveWorkers.append(worker)
+        worker.finished.connect(lambda: self._retireWorker(worker))
+        worker.start()
+
+    def _retireWorker(self, worker):
+        """Retire a worker only after its QThread has actually finished."""
+        if worker in self._liveWorkers:
+            self._liveWorkers.remove(worker)
+        if worker is self._worker:
+            self._worker = None
+        worker.deleteLater()
 
     def feedbackToAgent(self, result):
         """
@@ -923,8 +956,11 @@ Examples:
     def stopAgentLoop(self):
         """Stop the current agent loop."""
         self._isAgentLoop = False
-        if self._worker and self._worker.isRunning():
-            self._worker.terminate()
+        for worker in list(self._liveWorkers):
+            if worker.isRunning():
+                worker.terminate()
+                worker.wait(500)
+            self._retireWorker(worker)
         self.processingFinished.emit()
 
     def testConnection(self):

@@ -1209,29 +1209,33 @@ class AgentMethods:
 
         lo, hi = strand.idxs()
 
-        # Check which end has the crossover
-        removed = False
-        if idx == lo and strand.connectionLow():
+        # Check which endpoint was targeted and remove the crossover via Part API
+        conn = None
+        if idx == lo:
             conn = strand.connectionLow()
-            other_vh = conn.virtualHelix().number()
-            try:
-                strand.connectionLow().remove(useUndoStack=True)
-                removed = True
-                return f"Removed crossover at helix {helix_num}[{idx}] (was connected to helix {other_vh})"
-            except Exception as e:
-                return f"Error removing crossover: {e}"
-        elif idx == hi and strand.connectionHigh():
+        elif idx == hi:
             conn = strand.connectionHigh()
-            other_vh = conn.virtualHelix().number()
-            try:
-                strand.connectionHigh().remove(useUndoStack=True)
-                removed = True
-                return f"Removed crossover at helix {helix_num}[{idx}] (was connected to helix {other_vh})"
-            except Exception as e:
-                return f"Error removing crossover: {e}"
 
-        if not removed:
+        if conn is None:
             return f"No crossover found at helix {helix_num} index {idx}"
+
+        other_vh = conn.virtualHelix().number()
+        try:
+            if strand.connection3p() == conn:
+                part.removeXover(strand, conn, useUndoStack=True)
+            elif strand.connection5p() == conn:
+                part.removeXover(conn, strand, useUndoStack=True)
+            else:
+                return (
+                    f"Error: endpoint at helix {helix_num}[{idx}] is not "
+                    f"part of a valid crossover"
+                )
+            return (
+                f"Removed crossover at helix {helix_num}[{idx}] "
+                f"(was connected to helix {other_vh})"
+            )
+        except Exception as e:
+            return f"Error removing crossover: {e}"
 
     def moveCrossover(self, helix1, helix2, idx, strand_type, delta):
         """
@@ -1810,7 +1814,7 @@ class AgentMethods:
             'neighbor_pairs': potential,
             'issues': result.get('issues', []),
             'warnings': result.get('warnings', []),
-            'score': result.get('score', 0),
+            'design_quality': result.get('score', 0),
             'part_size': f"0-{part.maxBaseIdx()}, step={part._step}"
         }
 
@@ -2463,41 +2467,74 @@ class AgentMethods:
         if not vhs:
             return {"error": "No helices in design. Call createHelicesWithStrands first."}
 
-        # Group helices by row
-        rows = {}
+        # Build neighbor graph from cadnano's own crossover geometry —
+        # do NOT use row/col coordinates to infer topology.
+        vh_set = set(vhs)
+        adj = {vh: [] for vh in vhs}
         for vh in vhs:
-            row, col = vh.coord()
-            rows.setdefault(row, []).append(vh)
+            for neighbor_vh, idx, sType, isLowIdx in part.potentialCrossoverList(vh):
+                if (sType == st and neighbor_vh is not None
+                        and neighbor_vh in vh_set
+                        and neighbor_vh not in adj[vh]):
+                    adj[vh].append(neighbor_vh)
 
-        if len(rows) != 2:
-            return {
-                "error": (
-                    f"planScaffoldRouting only supports 2×N grids. "
-                    f"Found {len(rows)} distinct rows: {sorted(rows.keys())}. "
-                    f"For other layouts, use addCrossoversForPair manually."
-                )
-            }
+        # ── 2-helix special case ─────────────────────────────────────────────
+        if len(vhs) == 2:
+            vh_a, vh_b = vhs[0], vhs[1]
+            if vh_b not in adj[vh_a]:
+                return {
+                    "error": (
+                        f"H{vh_a.number()} and H{vh_b.number()} are not neighbors "
+                        f"(no valid {strand_type} crossover positions between them)."
+                    )
+                }
+            path = [vh_a, vh_b]
+            n_cols = 1
 
-        row_keys = sorted(rows.keys())
-        top_row, bot_row = row_keys[0], row_keys[1]
+        # ── 2×N grid: detect from neighbor graph, not row coordinates ────────
+        else:
+            # Partition helices into two "sides" using a BFS 2-colouring of the
+            # neighbour graph.  In a 2×N honeycomb bundle every helix has exactly
+            # one "across" neighbour (the other side) and at most one "along"
+            # neighbour (the next column on the same side).
+            # We detect "across" pairs as those whose neighbour lists contain each
+            # other AND whose mutual neighbour count is exactly 2 (or boundary 1).
+            # Simpler heuristic: 2-colour by BFS; if the graph is bipartite with
+            # two equal-size colour classes → valid 2×N grid.
+            color = {}
+            queue = [vhs[0]]
+            color[vhs[0]] = 0
+            while queue:
+                cur = queue.pop()
+                for nb in adj[cur]:
+                    if nb not in color:
+                        color[nb] = 1 - color[cur]
+                        queue.append(nb)
+                    elif color[nb] == color[cur]:
+                        return {
+                            "error": (
+                                "planScaffoldRouting requires a 2×N grid topology "
+                                "(bipartite neighbour graph). This design has an "
+                                "odd cycle in the neighbour graph. Use "
+                                "addCrossoversForPair for non-standard layouts."
+                            )
+                        }
 
-        top_vhs = sorted(rows[top_row], key=lambda v: v.coord()[1])
-        bot_vhs = sorted(rows[bot_row], key=lambda v: v.coord()[1])
+            side0 = sorted([v for v in vhs if color.get(v, 0) == 0], key=lambda v: v.coord()[1])
+            side1 = sorted([v for v in vhs if color.get(v, 0) == 1], key=lambda v: v.coord()[1])
 
-        if len(top_vhs) != len(bot_vhs):
-            return {
-                "error": (
-                    f"Rows have unequal helix counts: "
-                    f"row {top_row} has {len(top_vhs)}, "
-                    f"row {bot_row} has {len(bot_vhs)}. "
-                    f"Cannot build a closed loop."
-                )
-            }
+            if len(side0) != len(side1):
+                return {
+                    "error": (
+                        f"Unequal helix counts on each side: "
+                        f"{len(side0)} vs {len(side1)}. Cannot form a closed loop."
+                    )
+                }
 
-        n_cols = len(top_vhs)
+            n_cols = len(side0)
+            # Serpentine: side0 L→R, then side1 R→L
+            path = side0 + list(reversed(side1))
 
-        # Serpentine path: top row L→R then bottom row R→L (closed loop)
-        path = top_vhs + list(reversed(bot_vhs))
         num_vhs = len(path)
 
         def is_even_parity(vh):
@@ -2505,12 +2542,17 @@ class AgentMethods:
             return (row % 2) == (col % 2)
 
         def get_valid_positions(vh_a, vh_b):
-            """Sorted list of valid crossover indices between vh_a and vh_b."""
+            """Valid crossover indices between vh_a and vh_b where strands exist."""
             xovers = part.potentialCrossoverList(vh_a)
-            return sorted(
-                idx for neighborVh, idx, sType, isLowIdx in xovers
-                if sType == st and neighborVh is not None and neighborVh == vh_b
-            )
+            positions = []
+            for neighborVh, idx, sType, isLowIdx in xovers:
+                if sType != st or neighborVh is None or neighborVh != vh_b:
+                    continue
+                # Only include positions where strands actually reach
+                if (get_ss(vh_a).getStrand(idx) is not None and
+                        get_ss(vh_b).getStrand(idx) is not None):
+                    positions.append(idx)
+            return sorted(positions)
 
         # Plan the crossovers before touching the undo stack
         planned = []   # list of (idx, vh_a, vh_b)
@@ -2551,7 +2593,13 @@ class AgentMethods:
                     part.undoStack().endMacro()
                     part.undoStack().undo()
                     return {"error": f"No {strand_type} strand at H{vh_b.number()} idx {idx}"}
-                part.createXover(s_a, idx, s_b, idx, useUndoStack=True)
+                # Skip if crossover already exists at this endpoint
+                lo_a, hi_a = s_a.idxs()
+                already = ((idx == lo_a and s_a.connectionLow() is not None) or
+                           (idx == hi_a and s_a.connectionHigh() is not None))
+                if already:
+                    continue
+                part.createXover(s_b, idx, s_a, idx, useUndoStack=True)
                 created.append({
                     "helix1": vh_a.number(), "idx1": idx,
                     "helix2": vh_b.number(), "idx2": idx,
@@ -2562,7 +2610,7 @@ class AgentMethods:
             dangling = []
             for vh in part.getVirtualHelices():
                 for strand in list(get_ss(vh)):
-                    if strand.connectionLow() is None or strand.connectionHigh() is None:
+                    if strand.connection5p() is None or strand.connection3p() is None:
                         dangling.append((vh.number(), strand))
 
             deleted = 0
@@ -2572,6 +2620,12 @@ class AgentMethods:
                     continue
                 ss = get_ss(vh)
                 try:
+                    conn3p = strand.connection3p()
+                    if conn3p is not None:
+                        part.removeXover(strand, conn3p, useUndoStack=True)
+                    conn5p = strand.connection5p()
+                    if conn5p is not None:
+                        part.removeXover(conn5p, strand, useUndoStack=True)
                     ss.removeStrand(strand, useUndoStack=True)
                     deleted += 1
                 except Exception:
@@ -2628,7 +2682,7 @@ class AgentMethods:
         dangling = []
         for vh in part.getVirtualHelices():
             for strand in list(get_ss(vh)):
-                if strand.connectionLow() is None or strand.connectionHigh() is None:
+                if strand.connection5p() is None or strand.connection3p() is None:
                     dangling.append((vh.number(), strand))
 
         if not dangling:
@@ -2644,11 +2698,12 @@ class AgentMethods:
                 continue
             ss = get_ss(vh)
             try:
-                lo, hi = strand.idxs()
-                if strand.connectionLow():
-                    strand.connectionLow().remove(useUndoStack=True)
-                if strand.connectionHigh():
-                    strand.connectionHigh().remove(useUndoStack=True)
+                conn3p = strand.connection3p()
+                if conn3p is not None:
+                    part.removeXover(strand, conn3p, useUndoStack=True)
+                conn5p = strand.connection5p()
+                if conn5p is not None:
+                    part.removeXover(conn5p, strand, useUndoStack=True)
                 ss.removeStrand(strand, useUndoStack=True)
                 deleted += 1
             except Exception:
@@ -2656,6 +2711,64 @@ class AgentMethods:
         part.undoStack().endMacro()
 
         return f"Deleted {deleted} exposed {strand_type} fragment(s). Design should now have no free ends."
+
+    def deleteOrphanFragments(self, strand_type="scaffold"):
+        """
+        Delete strand segments that have BOTH their 5' and 3' termini exposed
+        on the same helix — i.e. the strand has no crossover connections anywhere.
+
+        This is the correct cleanup step after planScaffoldRouting().  After
+        crossovers are placed at valid positions (e.g. index 5 and 68 on an
+        84 bp helix), short edge fragments remain at positions 0-4 and 69-83.
+        These fragments were never connected via crossover and should be removed.
+
+        Contrast with deleteExposedFragments() which uses OR (deletes any strand
+        with at least one free end) — that is too aggressive and would remove
+        strands that are part of an incomplete but in-progress routing.
+
+        Args:
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            str: Report of how many orphan fragments were deleted.
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        stype = strand_type.lower()
+        get_ss = (lambda vh: vh.scaffoldStrandSet()) if stype == "scaffold" \
+            else (lambda vh: vh.stapleStrandSet())
+
+        # Only delete strands where BOTH ends are unconnected (AND, not OR)
+        orphans = []
+        for vh in part.getVirtualHelices():
+            for strand in list(get_ss(vh)):
+                if strand.connection5p() is None and strand.connection3p() is None:
+                    orphans.append((vh.number(), strand))
+
+        if not orphans:
+            return (f"No orphan {strand_type} fragments found "
+                    f"(strands with both ends unconnected).")
+
+        part.undoStack().beginMacro(
+            f"Delete {len(orphans)} orphan {strand_type} fragment(s)"
+        )
+        deleted = 0
+        for vh_num, strand in orphans:
+            vh = part.virtualHelix(vh_num)
+            if vh is None:
+                continue
+            ss = get_ss(vh)
+            try:
+                ss.removeStrand(strand, useUndoStack=True)
+                deleted += 1
+            except Exception:
+                pass  # already removed as side-effect
+        part.undoStack().endMacro()
+
+        return (f"Deleted {deleted} orphan {strand_type} fragment(s) "
+                f"(both ends unconnected — edge fragments outside crossover region).")
 
     # ==================== VERIFICATION METHODS ====================
 
@@ -2719,6 +2832,42 @@ class AgentMethods:
                          f"staple_oligos={metrics.get('staple_oligo_count', 0)}")
 
         return '\n'.join(output)
+
+    def verifyScaffoldRouting(self):
+        """
+        Verify scaffold routing: checks for a single closed loop with no exposed termini.
+
+        Two independent checks (both must pass for reward=1.0):
+          1. verifyNoScaffoldTermini  — no strand has a free 5' or 3' end (O(strands))
+          2. verifyScaffoldClosedLoop — scaffold oligos form exactly one closed loop
+
+        These checks are valid RLVR reward signals:
+          - reward=1.0  → scaffold is a single closed loop, trajectory succeeded
+          - reward=0.5  → multiple closed loops, partial credit (missing crossovers)
+          - reward=0.0  → exposed termini, trajectory failed
+
+        Returns:
+            str: Human-readable result with reward score
+        """
+        verifier = DesignVerifier(self._documentController)
+        signal = verifier.getRewardSignal(structure_type='scaffold_routing')
+
+        lines = [
+            f"Scaffold routing verification (reward={signal['reward']:.2f}):",
+            f"  Closed loop: {signal['breakdown']['closed_loop']['message']}",
+            f"  No termini:  {signal['breakdown']['no_termini']['message']}",
+        ]
+
+        if signal['breakdown']['no_termini']['exposed_ends']:
+            for e in signal['breakdown']['no_termini']['exposed_ends'][:5]:
+                lines.append(f"    H{e['helix']} [{e['low']}-{e['high']}] "
+                             f"free_5p={e['free_5p']} free_3p={e['free_3p']}")
+            rem = len(signal['breakdown']['no_termini']['exposed_ends']) - 5
+            if rem > 0:
+                lines.append(f"    ... and {rem} more")
+
+        lines.append(f"PASSED" if signal['valid'] else "FAILED")
+        return '\n'.join(lines)
 
     def verify6HelixBundle(self):
         """
@@ -2977,4 +3126,3 @@ class AgentMethods:
                 f.write(json_str + '\n')
             return f"Appended training example to {output_path} ({traj['action_count']} actions)"
         return json_str
-

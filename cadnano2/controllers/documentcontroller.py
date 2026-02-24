@@ -300,6 +300,20 @@ class DocumentController():
         elif command == "/list" or command == "/trajectories":
             self._listTrajectories()
             return
+        elif command.startswith("/rlvr"):
+            parts = command.split()
+            if parts[0] == "/rlvr-stop":
+                if hasattr(self, '_rlvrRunner'):
+                    self._rlvrRunner.stop()
+                    self._agentDialog.appendStatus("RLVR stopped.")
+                else:
+                    self._agentDialog.appendStatus("No RLVR session running.")
+            else:
+                n = int(parts[1]) if len(parts) > 1 else 10
+                s = int(parts[2]) if len(parts) > 2 else 15
+                u = int(parts[3]) if len(parts) > 3 else 1
+                self._startRLVR(n, s, u)
+            return
 
         # Reset auto-approve for new trajectory
         self._autoApproveAll = False
@@ -395,6 +409,7 @@ class DocumentController():
             'getHelixInfo', 'getHelixDirection', 'getHoneycombPositions',
             'getPotentialCrossovers', 'getValidCrossoverPositions',
             'getSelectedStrands', 'verifyDesign', 'verify6HelixBundle',
+            'verifyScaffoldRouting',
             'getPartSize', 'listCrossovers',
             'selectStrand', 'selectEndpoint', 'selectCrossover', 'clearSelection',
             # Level 2 query tools
@@ -458,6 +473,28 @@ class DocumentController():
             trajectory = self._trajectoryLogger.endTrajectory(success=False, error=error_msg)
             if trajectory:
                 print(f"Trajectory ended with error: {error_msg}")
+
+    def _startRLVR(self, num_episodes=10, max_steps=15, update_every=1):
+        """Initialize and start an RLVR training loop with a local trainable model."""
+        from cadnano2.views.agent.rlvr_runner import RLVRRunner
+        if not hasattr(self, '_rlvrRunner'):
+            self._rlvrRunner = RLVRRunner(
+                self,
+                self._trajectoryLogger,
+                self._agentVerifier,
+            )
+            self._rlvrRunner.progressUpdate.connect(self._agentDialog.appendStatus)
+            self._rlvrRunner.rlvrFinished.connect(
+                lambda n, ok: self._agentDialog.appendStatus(
+                    f"\nRLVR done: {ok}/{n} successes ({100 * ok // n if n else 0}%)"
+                )
+            )
+        self._agentDialog.appendStatus(
+            f"RLVR: {num_episodes} episodes × {max_steps} steps, "
+            f"train every {update_every} episode(s).\n"
+            f"Current design = starting state.  (/rlvr-stop to halt early)"
+        )
+        self._rlvrRunner.start(num_episodes, max_steps, update_every)
 
     def _onActionApproved(self):
         """Handle user approving an action."""

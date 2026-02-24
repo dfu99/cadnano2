@@ -270,6 +270,33 @@ TOOL_SCHEMAS = [
         }
     },
 
+    {
+        "name": "deleteOrphanFragments",
+        "description": (
+            "Delete strand segments where BOTH the 5' and 3' termini are exposed "
+            "(unconnected) on the same helix — i.e. the strand has no crossover "
+            "connections anywhere. "
+            "These are edge fragments left over after planScaffoldRouting() places "
+            "crossovers at valid interior positions (e.g. at index 5 and 68 on an "
+            "84 bp helix, leaving fragments at 0-4 and 69-83). "
+            "Call this after planScaffoldRouting() and before verifyScaffoldRouting(). "
+            "Unlike deleteExposedFragments(), this will NOT remove strands that are "
+            "part of an incomplete routing — those have at least one crossover "
+            "connection, so only one end is free."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type to clean up (default: scaffold)."
+                }
+            },
+            "required": []
+        }
+    },
+
     # ==================== LEVEL 1 — QUERY PRIMITIVES ====================
 
     {
@@ -321,6 +348,24 @@ TOOL_SCHEMAS = [
     {
         "name": "verifyDesign",
         "description": "Run design verification and return a quality score with any issues found.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
+        "name": "verifyScaffoldRouting",
+        "description": (
+            "Verify scaffold routing quality. Returns a reward score (0.0–1.0) and "
+            "diagnostic info for two checks:\n"
+            "  1. verifyNoScaffoldTermini — no scaffold strand has a free 5' or 3' end.\n"
+            "  2. verifyScaffoldClosedLoop — scaffold forms exactly ONE closed loop.\n"
+            "reward=1.0: perfect (single closed loop, no termini) → trajectory PASSED.\n"
+            "reward=0.5: multiple closed loops, no open ends → missing crossovers between segments.\n"
+            "reward=0.0: any exposed terminus → fragment deletion or crossover placement failed.\n"
+            "Call this after planScaffoldRouting to confirm success."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {},
@@ -574,3 +619,20 @@ TOOL_SCHEMAS = [
         }
     }
 ]
+
+# ==================== RLVR TOOL SUBSETS ====================
+
+RLVR_SCAFFOLD_TOOL_NAMES = {
+    'analyzeDesign', 'describeHelix', 'getNeighborPairs', 'listHelices',
+    'verifyScaffoldRouting',
+    'planScaffoldRouting',
+    'deleteOrphanFragments',   # safe: AND condition (both ends free, no crossover)
+    'done',
+}
+# deleteExposedFragments (OR condition) is intentionally excluded from RLVR tools.
+# It deletes any strand with at least one free end, which destroys strands that are
+# part of an incomplete but in-progress routing.
+# deleteOrphanFragments (AND condition) is safe: only removes edge fragments that
+# were never connected via crossover anywhere — exactly the cleanup needed after
+# planScaffoldRouting() places crossovers at interior positions.
+RLVR_SCAFFOLD_TOOLS = [t for t in TOOL_SCHEMAS if t['name'] in RLVR_SCAFFOLD_TOOL_NAMES]
