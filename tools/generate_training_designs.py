@@ -901,7 +901,7 @@ def main():
                     )
 
     # ── 2×N bundles (4HB, 6HB, 8HB, 10HB) ──────────────────────────────────
-    grid_sizes = [2, 3, 4, 5]   # N columns → 4, 6, 8, 10 helices
+    grid_sizes = [2, 3, 4, 5, 6, 7]   # N columns → 4, 6, 8, 10, 12, 14 helices
     grid_count = len(TWO_XN_STARTS) * len(grid_sizes) * len(args.lengths)
     print(
         f"Generating 2×N designs: {len(TWO_XN_STARTS)} positions × "
