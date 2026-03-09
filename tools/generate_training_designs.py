@@ -60,6 +60,20 @@ TWO_HB_STARTS = [
 ]
 
 
+# ─── Honeycomb crossover tables (from cadnano2/model/parts/honeycombpart.py) ──
+
+# Scaffold crossover positions (mod 21 offsets) for each of 3 neighbor directions.
+# Low and High form adjacent pairs for double crossovers.
+SCAF_LOW  = [[1, 11], [8, 18], [4, 15]]   # direction p0, p1, p2
+SCAF_HIGH = [[2, 12], [9, 19], [5, 16]]
+
+# Neighbor directions: given a helix at (row, col),
+# Even parity: p0=(r,c+1), p1=(r-1,c), p2=(r,c-1)
+# Odd  parity: p0=(r,c-1), p1=(r+1,c), p2=(r,c+1)
+
+STEP = 21   # honeycomb step size
+
+
 # ─── Honeycomb helpers ────────────────────────────────────────────────────────
 
 def is_even_parity(row: int, col: int) -> bool:
@@ -83,6 +97,63 @@ def make_vstrand(row: int, col: int, num: int, scaf: list, stap: list, length: i
         "stap_colors": [],
         "scaf_colors": [],
     }
+
+
+def _neighbor_direction(r_a: int, c_a: int, r_b: int, c_b: int) -> int:
+    """Return the neighbor direction index (0, 1, or 2) from helix A to B.
+
+    Returns -1 if B is not a honeycomb neighbor of A.
+    """
+    if is_even_parity(r_a, c_a):
+        # Even: p0=(r,c+1), p1=(r-1,c), p2=(r,c-1)
+        if (r_b, c_b) == (r_a, c_a + 1):
+            return 0
+        if (r_b, c_b) == (r_a - 1, c_a):
+            return 1
+        if (r_b, c_b) == (r_a, c_a - 1):
+            return 2
+    else:
+        # Odd: p0=(r,c-1), p1=(r+1,c), p2=(r,c+1)
+        if (r_b, c_b) == (r_a, c_a - 1):
+            return 0
+        if (r_b, c_b) == (r_a + 1, c_a):
+            return 1
+        if (r_b, c_b) == (r_a, c_a + 1):
+            return 2
+    return -1
+
+
+def _valid_positions(direction: int, L: int, use_low: bool) -> list[int]:
+    """Return all valid scaffold crossover positions for a direction and type.
+
+    Args:
+        direction: neighbor direction index (0, 1, or 2)
+        L: total helix length (number of bases)
+        use_low: True for Low positions, False for High positions
+    """
+    offsets = SCAF_LOW[direction] if use_low else SCAF_HIGH[direction]
+    positions = []
+    for base in range(0, L, STEP):
+        for off in offsets:
+            idx = base + off
+            if 0 <= idx < L:
+                positions.append(idx)
+    return sorted(positions)
+
+
+def _pick_crossover_position(positions: list[int], near_high: bool) -> int:
+    """Pick the crossover position nearest to one end of the helix.
+
+    Args:
+        positions: sorted list of valid positions
+        near_high: True to pick the highest position, False for lowest
+    """
+    return positions[-1] if near_high else positions[0]
+
+
+def _pick_crossover_position_near(positions: list[int], target: int) -> int:
+    """Pick the valid position closest to a target index."""
+    return min(positions, key=lambda p: abs(p - target))
 
 
 # ─── 2-Helix Bundle generator ─────────────────────────────────────────────────
@@ -149,6 +220,347 @@ def generate_2hb(row: int = 0, col: int = 0, length: int = 84) -> dict:
         "vstrands": vstrands,
         "_task":    task,
     }
+
+
+# ─── 2×N Bundle generator ────────────────────────────────────────────────────
+
+def _build_neighbor_graph(positions: list[tuple[int, int]]) -> dict:
+    """Build adjacency list from honeycomb neighbor relationships."""
+    pos_set = {(r, c) for r, c in positions}
+    adj = {(r, c): [] for r, c in positions}
+    for r, c in positions:
+        if is_even_parity(r, c):
+            neighbors = [(r, c + 1), (r - 1, c), (r, c - 1)]
+        else:
+            neighbors = [(r, c - 1), (r + 1, c), (r, c + 1)]
+        for nb in neighbors:
+            if nb in pos_set and nb not in adj[(r, c)]:
+                adj[(r, c)].append(nb)
+    return adj
+
+
+def _find_hamiltonian_path(adj: dict, positions: list[tuple[int, int]]) -> list:
+    """Find a Hamiltonian path through the neighbor graph using DFS backtracking.
+
+    Returns a list of (row, col) tuples visiting every position exactly once.
+    Starts from degree-1 nodes (endpoints) for efficiency.
+    """
+    pos_set = set(positions)
+    # Prefer starting from degree-1 nodes (chain endpoints)
+    starts = [p for p in positions if len(adj[p]) == 1]
+    if not starts:
+        starts = list(positions)
+
+    for start in starts:
+        path = [start]
+        visited = {start}
+
+        def dfs():
+            if len(path) == len(positions):
+                return True
+            for nb in adj[path[-1]]:
+                if nb not in visited:
+                    path.append(nb)
+                    visited.add(nb)
+                    if dfs():
+                        return True
+                    path.pop()
+                    visited.remove(nb)
+            return False
+
+        if dfs():
+            return path
+
+    return []
+
+
+def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
+    """Generate a 2×N grid bundle with full scaffold routing.
+
+    Places helices in a 2-row grid at the given starting position.  The scaffold
+    follows an out-and-back serpentine path through the linear chain of neighbor
+    helices, forming a single closed loop.
+
+    Crossover positions use the honeycomb Crossovers tables (mod 21 offsets).
+    For each pair of consecutive helices in the chain:
+      - Even-parity helix exits outbound at a Low crossover position
+      - Odd-parity helix exits outbound at a High crossover position
+      - Return crossovers use the complementary type (High/Low)
+
+    Args:
+        N: number of columns (total helices = 2*N)
+        row: starting row
+        col: starting column
+        length: scaffold length per helix (should be multiple of 21)
+    """
+    L = length
+    num_helices = 2 * N
+
+    # Place helices in 2 rows
+    positions = []
+    for c in range(N):
+        positions.append((row, col + c))        # top row
+    for c in range(N):
+        positions.append((row + 1, col + c))    # bottom row
+
+    # Build neighbor graph and find Hamiltonian path
+    adj = _build_neighbor_graph(positions)
+    chain = _find_hamiltonian_path(adj, positions)
+    if len(chain) != num_helices:
+        raise ValueError(
+            f"Cannot find Hamiltonian path for 2×{N} grid at ({row},{col}). "
+            f"Try a different starting position (need odd-parity columns for "
+            f"cross-row connections)."
+        )
+
+    # Assign helix numbers: chain[0] = H0, chain[1] = H1, etc.
+    pos_to_num = {pos: i for i, pos in enumerate(chain)}
+
+    # ── Compute crossover positions for each consecutive pair ────────────
+    # The scaffold goes: chain[0] → ... → chain[M-1] (outbound)
+    # then: chain[M-1] → ... → chain[0] (return), forming a closed loop.
+    #
+    # Each pair has 2 crossovers: outbound (Low/High by parity) and return
+    # (complement). Segment ordering on each interior helix depends on the
+    # relative positions of the previous pair's crossovers.
+
+    M = num_helices
+    pair_out = [0] * (M - 1)
+    pair_ret = [0] * (M - 1)
+
+    # Precompute valid positions for each pair
+    pair_out_valid = []
+    pair_ret_valid = []
+    for i in range(M - 1):
+        r_a, c_a = chain[i]
+        r_b, c_b = chain[i + 1]
+        d = _neighbor_direction(r_a, c_a, r_b, c_b)
+        assert d >= 0, f"Helices {chain[i]} and {chain[i+1]} are not neighbors"
+        even_a = is_even_parity(r_a, c_a)
+        pair_out_valid.append(_valid_positions(d, L, use_low=even_a))
+        pair_ret_valid.append(_valid_positions(d, L, use_low=not even_a))
+
+    # Pair 0: end pair for h_0
+    even_0 = is_even_parity(*chain[0])
+    if even_0:
+        # Even h_0 (L→R): enter at LOW (return), exit at HIGH (outbound)
+        pair_out[0] = pair_out_valid[0][-1]   # highest
+        pair_ret[0] = pair_ret_valid[0][0]    # lowest
+    else:
+        # Odd h_0 (R→L): enter at HIGH (return), exit at LOW (outbound)
+        pair_out[0] = pair_out_valid[0][0]    # lowest
+        pair_ret[0] = pair_ret_valid[0][-1]   # highest
+
+    # Greedy: for each subsequent pair, determine constraints from h_k
+    for k in range(1, M - 1):
+        even_k = is_even_parity(*chain[k])
+        out_prev = pair_out[k - 1]  # outbound entry/exit on h_k from pair k-1
+        ret_prev = pair_ret[k - 1]  # return entry/exit on h_k from pair k-1
+        is_last = (k == M - 2)
+
+        if even_k:
+            if out_prev < ret_prev:
+                # Outbound segment below, return above on h_k
+                # out_prev < pair_out[k] < pair_ret[k] < ret_prev
+                cands_out = [p for p in pair_out_valid[k]
+                             if out_prev < p < ret_prev]
+                cands_ret = [p for p in pair_ret_valid[k]
+                             if out_prev < p < ret_prev]
+                if not cands_out or not cands_ret:
+                    raise ValueError(
+                        f"No room for pair {k} on even h_k={chain[k]} "
+                        f"between out_prev={out_prev} and ret_prev={ret_prev}"
+                    )
+                mid = (out_prev + ret_prev) // 2
+                pair_out[k] = _pick_crossover_position_near(cands_out, mid)
+                # ret must be above out
+                cands_ret = [p for p in cands_ret if p > pair_out[k]]
+                if not cands_ret:
+                    raise ValueError(
+                        f"No valid ret position above out={pair_out[k]} "
+                        f"for pair {k}"
+                    )
+                pair_ret[k] = _pick_crossover_position_near(cands_ret, mid)
+            else:
+                # Return segment below, outbound above on h_k
+                # pair_ret[k] < ret_prev < out_prev < pair_out[k]
+                cands_ret = [p for p in pair_ret_valid[k] if p < ret_prev]
+                cands_out = [p for p in pair_out_valid[k] if p > out_prev]
+                if not cands_ret or not cands_out:
+                    raise ValueError(
+                        f"No room for pair {k} on even h_k={chain[k]} "
+                        f"outside ret_prev={ret_prev}, out_prev={out_prev}"
+                    )
+                pair_ret[k] = cands_ret[0] if is_last else \
+                    _pick_crossover_position_near(cands_ret, ret_prev // 2)
+                pair_out[k] = cands_out[-1] if is_last else \
+                    _pick_crossover_position_near(cands_out, (out_prev + L) // 2)
+        else:
+            if out_prev > ret_prev:
+                # Outbound segment above, return below on h_k
+                # ret_prev < pair_ret[k] < pair_out[k] < out_prev
+                cands_out = [p for p in pair_out_valid[k]
+                             if ret_prev < p < out_prev]
+                cands_ret = [p for p in pair_ret_valid[k]
+                             if ret_prev < p < out_prev]
+                if not cands_out or not cands_ret:
+                    raise ValueError(
+                        f"No room for pair {k} on odd h_k={chain[k]} "
+                        f"between ret_prev={ret_prev} and out_prev={out_prev}"
+                    )
+                mid = (ret_prev + out_prev) // 2
+                pair_out[k] = _pick_crossover_position_near(cands_out, mid)
+                cands_ret = [p for p in cands_ret if p < pair_out[k]]
+                if not cands_ret:
+                    raise ValueError(
+                        f"No valid ret position below out={pair_out[k]} "
+                        f"for pair {k}"
+                    )
+                pair_ret[k] = _pick_crossover_position_near(cands_ret, mid)
+            else:
+                # Return segment above, outbound below on h_k
+                # pair_out[k] < out_prev < ret_prev < pair_ret[k]
+                cands_out = [p for p in pair_out_valid[k] if p < out_prev]
+                cands_ret = [p for p in pair_ret_valid[k] if p > ret_prev]
+                if not cands_out or not cands_ret:
+                    raise ValueError(
+                        f"No room for pair {k} on odd h_k={chain[k]} "
+                        f"outside out_prev={out_prev}, ret_prev={ret_prev}"
+                    )
+                pair_out[k] = cands_out[0] if is_last else \
+                    _pick_crossover_position_near(cands_out, out_prev // 2)
+                pair_ret[k] = cands_ret[-1] if is_last else \
+                    _pick_crossover_position_near(cands_ret, (ret_prev + L) // 2)
+
+    # ── Build scaffold arrays for each helix ────────────────────────────
+    scaf_arrays = {}
+    for idx in range(M):
+        r_i, c_i = chain[idx]
+        num_i = pos_to_num[(r_i, c_i)]
+        even_i = is_even_parity(r_i, c_i)
+        scaf = [[-1, -1, -1, -1] for _ in range(L)]
+
+        if idx == 0:
+            # First helix: single segment between pair_ret[0] and pair_out[0]
+            num_next = pos_to_num[chain[1]]
+            lo = min(pair_ret[0], pair_out[0])
+            hi = max(pair_ret[0], pair_out[0])
+            if even_i:
+                # Even L→R: enter at lo (return from H1), exit at hi (outbound to H1)
+                scaf[lo] = [num_next, lo, num_i, lo + 1]
+                for j in range(lo + 1, hi):
+                    scaf[j] = [num_i, j - 1, num_i, j + 1]
+                scaf[hi] = [num_i, hi - 1, num_next, hi]
+            else:
+                # Odd R→L: enter at hi (return from H1), exit at lo (outbound to H1)
+                scaf[hi] = [num_next, hi, num_i, hi - 1]
+                for j in range(hi - 1, lo, -1):
+                    scaf[j] = [num_i, j + 1, num_i, j - 1]
+                scaf[lo] = [num_i, lo + 1, num_next, lo]
+
+        elif idx == M - 1:
+            # Last helix: single segment between pair_out[M-2] and pair_ret[M-2]
+            num_prev = pos_to_num[chain[M - 2]]
+            lo = min(pair_out[M - 2], pair_ret[M - 2])
+            hi = max(pair_out[M - 2], pair_ret[M - 2])
+            if even_i:
+                # Even L→R: enter at lo, exit at hi
+                scaf[lo] = [num_prev, lo, num_i, lo + 1]
+                for j in range(lo + 1, hi):
+                    scaf[j] = [num_i, j - 1, num_i, j + 1]
+                scaf[hi] = [num_i, hi - 1, num_prev, hi]
+            else:
+                # Odd R→L: enter at hi, exit at lo
+                scaf[hi] = [num_prev, hi, num_i, hi - 1]
+                for j in range(hi - 1, lo, -1):
+                    scaf[j] = [num_i, j + 1, num_i, j - 1]
+                scaf[lo] = [num_i, lo + 1, num_prev, lo]
+
+        else:
+            # Interior helix: two segments (outbound and return)
+            num_prev = pos_to_num[chain[idx - 1]]
+            num_next = pos_to_num[chain[idx + 1]]
+
+            # The 4 crossover positions on this helix
+            xo_prev_out = pair_out[idx - 1]  # from pair with prev helix
+            xo_prev_ret = pair_ret[idx - 1]
+            xo_next_out = pair_out[idx]       # from pair with next helix
+            xo_next_ret = pair_ret[idx]
+
+            # Outbound segment: enters from prev, exits to next
+            # Return segment: enters from next, exits to prev
+            # Both flow in the helix's natural direction.
+            # Sort all 4 positions to determine segment layout.
+            positions_on_helix = sorted([
+                (xo_prev_out, 'out_prev', num_prev),
+                (xo_prev_ret, 'ret_prev', num_prev),
+                (xo_next_out, 'out_next', num_next),
+                (xo_next_ret, 'ret_next', num_next),
+            ])
+            # The 4 sorted positions form 2 segments: [p0,p1] and [p2,p3]
+            p0_idx, p0_type, p0_nbr = positions_on_helix[0]
+            p1_idx, p1_type, p1_nbr = positions_on_helix[1]
+            p2_idx, p2_type, p2_nbr = positions_on_helix[2]
+            p3_idx, p3_type, p3_nbr = positions_on_helix[3]
+
+            # Build each segment: scaffold flows from entry to exit
+            def _build_segment_lr(lo_idx, lo_nbr, hi_idx, hi_nbr):
+                """Build a L→R segment: enter at lo from lo_nbr, exit at hi to hi_nbr."""
+                scaf[lo_idx] = [lo_nbr, lo_idx, num_i, lo_idx + 1]
+                for j in range(lo_idx + 1, hi_idx):
+                    scaf[j] = [num_i, j - 1, num_i, j + 1]
+                scaf[hi_idx] = [num_i, hi_idx - 1, hi_nbr, hi_idx]
+
+            def _build_segment_rl(hi_idx, hi_nbr, lo_idx, lo_nbr):
+                """Build a R→L segment: enter at hi from hi_nbr, exit at lo to lo_nbr."""
+                scaf[hi_idx] = [hi_nbr, hi_idx, num_i, hi_idx - 1]
+                for j in range(hi_idx - 1, lo_idx, -1):
+                    scaf[j] = [num_i, j + 1, num_i, j - 1]
+                scaf[lo_idx] = [num_i, lo_idx + 1, lo_nbr, lo_idx]
+
+            # Determine entry/exit for each segment pair
+            # Segment 1: [p0, p1], Segment 2: [p2, p3]
+            # For the outbound segment, entry is from prev, exit is to next
+            # For the return segment, entry is from next, exit is to prev
+            if even_i:
+                # L→R: entry at low, exit at high for each segment
+                # Segment at [p0,p1]: entry=p0 (from p0_nbr), exit=p1 (to p1_nbr)
+                _build_segment_lr(p0_idx, p0_nbr, p1_idx, p1_nbr)
+                _build_segment_lr(p2_idx, p2_nbr, p3_idx, p3_nbr)
+            else:
+                # R→L: entry at high, exit at low for each segment
+                _build_segment_rl(p1_idx, p1_nbr, p0_idx, p0_nbr)
+                _build_segment_rl(p3_idx, p3_nbr, p2_idx, p2_nbr)
+
+        scaf_arrays[(r_i, c_i)] = scaf
+
+    # ── Assemble vstrands ────────────────────────────────────────────────
+    vstrands = [None] * num_helices
+    for pos, num in pos_to_num.items():
+        r, c = pos
+        stap = [[-1, -1, -1, -1] for _ in range(L)]
+        vstrands[num] = make_vstrand(r, c, num, scaf_arrays[pos], stap, L)
+
+    task = (
+        f"Create a {num_helices}-helix bundle (2×{N}) with a {L}bp scaffold strand. "
+        f"Place the helices starting at row {row}, column {col}."
+    )
+
+    return {
+        "name":     f"2x{N}_r{row}c{col}_L{L}",
+        "vstrands": vstrands,
+        "_task":    task,
+    }
+
+
+# Starting positions for 2×N grids — each must have cross-row connections.
+# Cross-row connections require odd-parity columns at the grid endpoints.
+# Starting at odd-parity positions (r%2 != c%2) ensures both end columns connect.
+TWO_XN_STARTS = [
+    (0, 1),   # odd parity start
+    (1, 0),   # odd parity start
+    (2, 1),   # odd parity start
+]
 
 
 # ─── Trajectory extraction (mirrors export_training_data.py) ─────────────────
@@ -458,6 +870,29 @@ def main():
             traj   = extract_trajectory(design, task=design["_task"])
             examples.append(to_training_example(traj))
             raw_designs.append((design, traj))
+
+    # ── 2×N bundles (4HB, 6HB, 8HB, 10HB) ──────────────────────────────────
+    grid_sizes = [2, 3, 4, 5]   # N columns → 4, 6, 8, 10 helices
+    grid_count = len(TWO_XN_STARTS) * len(grid_sizes) * len(args.lengths)
+    print(
+        f"Generating 2×N designs: {len(TWO_XN_STARTS)} positions × "
+        f"{len(grid_sizes)} sizes × {len(args.lengths)} lengths = "
+        f"{grid_count} examples …",
+        file=sys.stderr,
+    )
+    for row, col in TWO_XN_STARTS:
+        for N in grid_sizes:
+            for length in args.lengths:
+                try:
+                    design = generate_2xN(N=N, row=row, col=col, length=length)
+                    traj = extract_trajectory(design, task=design["_task"])
+                    examples.append(to_training_example(traj))
+                    raw_designs.append((design, traj))
+                except (ValueError, AssertionError) as e:
+                    print(
+                        f"Skip 2×{N} at ({row},{col}) L={length}: {e}",
+                        file=sys.stderr,
+                    )
 
     # ── Expert JSON files ─────────────────────────────────────────────────────
     for json_path in (args.expert or []):

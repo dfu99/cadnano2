@@ -316,3 +316,10 @@ across K rollouts per starting state) is the upgrade path when RWR plateaus.
 ### Required ML dependencies (cn24-agentic env)
 torch (CUDA), transformers, peft, accelerate, bitsandbytes
 Install: `pip install torch --index-url https://download.pytorch.org/whl/cu121 && pip install transformers peft accelerate bitsandbytes`
+
+## Task Files
+
+| File | When to consult |
+|------|----------------|
+| `tasks/planning.md` | Starting any session, checking priorities |
+| `tasks/lessons.md` | Before touching subsystems they cover |
