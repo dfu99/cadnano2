@@ -45,7 +45,7 @@ SYSTEM_PROMPT = (
 )
 
 # Default lengths to generate (multiples of 21 = valid honeycomb scaffold lengths)
-DEFAULT_LENGTHS = [42, 63, 84, 105, 126]
+DEFAULT_LENGTHS = [42, 63, 84, 105, 126, 147, 168]
 
 # Starting positions (row, col) for the first helix of each 2HB.
 # Second helix is placed at (row, col+1).
@@ -222,7 +222,7 @@ def generate_2hb(row: int = 0, col: int = 0, length: int = 84) -> dict:
     }
 
 
-# ─── 2×N Bundle generator ────────────────────────────────────────────────────
+# ─── General bundle generator ─────────────────────────────────────────────────
 
 def _build_neighbor_graph(positions: list[tuple[int, int]]) -> dict:
     """Build adjacency list from honeycomb neighbor relationships."""
@@ -274,56 +274,39 @@ def _find_hamiltonian_path(adj: dict, positions: list[tuple[int, int]]) -> list:
     return []
 
 
-def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
-    """Generate a 2×N grid bundle with full scaffold routing.
+def _route_and_build(helix_positions: list[tuple[int, int]], length: int,
+                     name: str, task: str) -> dict:
+    """Route scaffold through arbitrary honeycomb helix positions.
 
-    Places helices in a 2-row grid at the given starting position.  The scaffold
-    follows an out-and-back serpentine path through the linear chain of neighbor
-    helices, forming a single closed loop.
-
-    Crossover positions use the honeycomb Crossovers tables (mod 21 offsets).
-    For each pair of consecutive helices in the chain:
-      - Even-parity helix exits outbound at a Low crossover position
-      - Odd-parity helix exits outbound at a High crossover position
-      - Return crossovers use the complementary type (High/Low)
+    Core routing engine: finds a Hamiltonian path through the neighbor graph,
+    computes crossover positions using honeycomb tables, builds scaffold arrays
+    with out-and-back serpentine routing forming a single closed loop.
 
     Args:
-        N: number of columns (total helices = 2*N)
-        row: starting row
-        col: starting column
+        helix_positions: list of (row, col) tuples for each helix
         length: scaffold length per helix (should be multiple of 21)
+        name: design name for output
+        task: natural language task description
+
+    Returns:
+        cadnano JSON dict with '_task' key
     """
     L = length
-    num_helices = 2 * N
-
-    # Place helices in 2 rows
-    positions = []
-    for c in range(N):
-        positions.append((row, col + c))        # top row
-    for c in range(N):
-        positions.append((row + 1, col + c))    # bottom row
+    num_helices = len(helix_positions)
 
     # Build neighbor graph and find Hamiltonian path
-    adj = _build_neighbor_graph(positions)
-    chain = _find_hamiltonian_path(adj, positions)
+    adj = _build_neighbor_graph(helix_positions)
+    chain = _find_hamiltonian_path(adj, helix_positions)
     if len(chain) != num_helices:
         raise ValueError(
-            f"Cannot find Hamiltonian path for 2×{N} grid at ({row},{col}). "
-            f"Try a different starting position (need odd-parity columns for "
-            f"cross-row connections)."
+            f"Cannot find Hamiltonian path for {num_helices} helices. "
+            f"Check that positions form a connected chain."
         )
 
     # Assign helix numbers: chain[0] = H0, chain[1] = H1, etc.
     pos_to_num = {pos: i for i, pos in enumerate(chain)}
 
     # ── Compute crossover positions for each consecutive pair ────────────
-    # The scaffold goes: chain[0] → ... → chain[M-1] (outbound)
-    # then: chain[M-1] → ... → chain[0] (return), forming a closed loop.
-    #
-    # Each pair has 2 crossovers: outbound (Low/High by parity) and return
-    # (complement). Segment ordering on each interior helix depends on the
-    # relative positions of the previous pair's crossovers.
-
     M = num_helices
     pair_out = [0] * (M - 1)
     pair_ret = [0] * (M - 1)
@@ -343,25 +326,21 @@ def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
     # Pair 0: end pair for h_0
     even_0 = is_even_parity(*chain[0])
     if even_0:
-        # Even h_0 (L→R): enter at LOW (return), exit at HIGH (outbound)
-        pair_out[0] = pair_out_valid[0][-1]   # highest
-        pair_ret[0] = pair_ret_valid[0][0]    # lowest
+        pair_out[0] = pair_out_valid[0][-1]
+        pair_ret[0] = pair_ret_valid[0][0]
     else:
-        # Odd h_0 (R→L): enter at HIGH (return), exit at LOW (outbound)
-        pair_out[0] = pair_out_valid[0][0]    # lowest
-        pair_ret[0] = pair_ret_valid[0][-1]   # highest
+        pair_out[0] = pair_out_valid[0][0]
+        pair_ret[0] = pair_ret_valid[0][-1]
 
     # Greedy: for each subsequent pair, determine constraints from h_k
     for k in range(1, M - 1):
         even_k = is_even_parity(*chain[k])
-        out_prev = pair_out[k - 1]  # outbound entry/exit on h_k from pair k-1
-        ret_prev = pair_ret[k - 1]  # return entry/exit on h_k from pair k-1
+        out_prev = pair_out[k - 1]
+        ret_prev = pair_ret[k - 1]
         is_last = (k == M - 2)
 
         if even_k:
             if out_prev < ret_prev:
-                # Outbound segment below, return above on h_k
-                # out_prev < pair_out[k] < pair_ret[k] < ret_prev
                 cands_out = [p for p in pair_out_valid[k]
                              if out_prev < p < ret_prev]
                 cands_ret = [p for p in pair_ret_valid[k]
@@ -373,7 +352,6 @@ def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
                     )
                 mid = (out_prev + ret_prev) // 2
                 pair_out[k] = _pick_crossover_position_near(cands_out, mid)
-                # ret must be above out
                 cands_ret = [p for p in cands_ret if p > pair_out[k]]
                 if not cands_ret:
                     raise ValueError(
@@ -382,8 +360,6 @@ def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
                     )
                 pair_ret[k] = _pick_crossover_position_near(cands_ret, mid)
             else:
-                # Return segment below, outbound above on h_k
-                # pair_ret[k] < ret_prev < out_prev < pair_out[k]
                 cands_ret = [p for p in pair_ret_valid[k] if p < ret_prev]
                 cands_out = [p for p in pair_out_valid[k] if p > out_prev]
                 if not cands_ret or not cands_out:
@@ -397,8 +373,6 @@ def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
                     _pick_crossover_position_near(cands_out, (out_prev + L) // 2)
         else:
             if out_prev > ret_prev:
-                # Outbound segment above, return below on h_k
-                # ret_prev < pair_ret[k] < pair_out[k] < out_prev
                 cands_out = [p for p in pair_out_valid[k]
                              if ret_prev < p < out_prev]
                 cands_ret = [p for p in pair_ret_valid[k]
@@ -418,8 +392,6 @@ def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
                     )
                 pair_ret[k] = _pick_crossover_position_near(cands_ret, mid)
             else:
-                # Return segment above, outbound below on h_k
-                # pair_out[k] < out_prev < ret_prev < pair_ret[k]
                 cands_out = [p for p in pair_out_valid[k] if p < out_prev]
                 cands_ret = [p for p in pair_ret_valid[k] if p > ret_prev]
                 if not cands_out or not cands_ret:
@@ -441,94 +413,71 @@ def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
         scaf = [[-1, -1, -1, -1] for _ in range(L)]
 
         if idx == 0:
-            # First helix: single segment between pair_ret[0] and pair_out[0]
             num_next = pos_to_num[chain[1]]
             lo = min(pair_ret[0], pair_out[0])
             hi = max(pair_ret[0], pair_out[0])
             if even_i:
-                # Even L→R: enter at lo (return from H1), exit at hi (outbound to H1)
                 scaf[lo] = [num_next, lo, num_i, lo + 1]
                 for j in range(lo + 1, hi):
                     scaf[j] = [num_i, j - 1, num_i, j + 1]
                 scaf[hi] = [num_i, hi - 1, num_next, hi]
             else:
-                # Odd R→L: enter at hi (return from H1), exit at lo (outbound to H1)
                 scaf[hi] = [num_next, hi, num_i, hi - 1]
                 for j in range(hi - 1, lo, -1):
                     scaf[j] = [num_i, j + 1, num_i, j - 1]
                 scaf[lo] = [num_i, lo + 1, num_next, lo]
 
         elif idx == M - 1:
-            # Last helix: single segment between pair_out[M-2] and pair_ret[M-2]
             num_prev = pos_to_num[chain[M - 2]]
             lo = min(pair_out[M - 2], pair_ret[M - 2])
             hi = max(pair_out[M - 2], pair_ret[M - 2])
             if even_i:
-                # Even L→R: enter at lo, exit at hi
                 scaf[lo] = [num_prev, lo, num_i, lo + 1]
                 for j in range(lo + 1, hi):
                     scaf[j] = [num_i, j - 1, num_i, j + 1]
                 scaf[hi] = [num_i, hi - 1, num_prev, hi]
             else:
-                # Odd R→L: enter at hi, exit at lo
                 scaf[hi] = [num_prev, hi, num_i, hi - 1]
                 for j in range(hi - 1, lo, -1):
                     scaf[j] = [num_i, j + 1, num_i, j - 1]
                 scaf[lo] = [num_i, lo + 1, num_prev, lo]
 
         else:
-            # Interior helix: two segments (outbound and return)
             num_prev = pos_to_num[chain[idx - 1]]
             num_next = pos_to_num[chain[idx + 1]]
 
-            # The 4 crossover positions on this helix
-            xo_prev_out = pair_out[idx - 1]  # from pair with prev helix
+            xo_prev_out = pair_out[idx - 1]
             xo_prev_ret = pair_ret[idx - 1]
-            xo_next_out = pair_out[idx]       # from pair with next helix
+            xo_next_out = pair_out[idx]
             xo_next_ret = pair_ret[idx]
 
-            # Outbound segment: enters from prev, exits to next
-            # Return segment: enters from next, exits to prev
-            # Both flow in the helix's natural direction.
-            # Sort all 4 positions to determine segment layout.
             positions_on_helix = sorted([
                 (xo_prev_out, 'out_prev', num_prev),
                 (xo_prev_ret, 'ret_prev', num_prev),
                 (xo_next_out, 'out_next', num_next),
                 (xo_next_ret, 'ret_next', num_next),
             ])
-            # The 4 sorted positions form 2 segments: [p0,p1] and [p2,p3]
             p0_idx, p0_type, p0_nbr = positions_on_helix[0]
             p1_idx, p1_type, p1_nbr = positions_on_helix[1]
             p2_idx, p2_type, p2_nbr = positions_on_helix[2]
             p3_idx, p3_type, p3_nbr = positions_on_helix[3]
 
-            # Build each segment: scaffold flows from entry to exit
             def _build_segment_lr(lo_idx, lo_nbr, hi_idx, hi_nbr):
-                """Build a L→R segment: enter at lo from lo_nbr, exit at hi to hi_nbr."""
                 scaf[lo_idx] = [lo_nbr, lo_idx, num_i, lo_idx + 1]
                 for j in range(lo_idx + 1, hi_idx):
                     scaf[j] = [num_i, j - 1, num_i, j + 1]
                 scaf[hi_idx] = [num_i, hi_idx - 1, hi_nbr, hi_idx]
 
             def _build_segment_rl(hi_idx, hi_nbr, lo_idx, lo_nbr):
-                """Build a R→L segment: enter at hi from hi_nbr, exit at lo to lo_nbr."""
                 scaf[hi_idx] = [hi_nbr, hi_idx, num_i, hi_idx - 1]
                 for j in range(hi_idx - 1, lo_idx, -1):
                     scaf[j] = [num_i, j + 1, num_i, j - 1]
                 scaf[lo_idx] = [num_i, lo_idx + 1, lo_nbr, lo_idx]
 
-            # Determine entry/exit for each segment pair
-            # Segment 1: [p0, p1], Segment 2: [p2, p3]
-            # For the outbound segment, entry is from prev, exit is to next
-            # For the return segment, entry is from next, exit is to prev
             if even_i:
-                # L→R: entry at low, exit at high for each segment
-                # Segment at [p0,p1]: entry=p0 (from p0_nbr), exit=p1 (to p1_nbr)
                 _build_segment_lr(p0_idx, p0_nbr, p1_idx, p1_nbr)
                 _build_segment_lr(p2_idx, p2_nbr, p3_idx, p3_nbr)
             else:
-                # R→L: entry at high, exit at low for each segment
                 _build_segment_rl(p1_idx, p1_nbr, p0_idx, p0_nbr)
                 _build_segment_rl(p3_idx, p3_nbr, p2_idx, p2_nbr)
 
@@ -541,17 +490,74 @@ def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
         stap = [[-1, -1, -1, -1] for _ in range(L)]
         vstrands[num] = make_vstrand(r, c, num, scaf_arrays[pos], stap, L)
 
-    task = (
-        f"Create a {num_helices}-helix bundle (2×{N}) with a {L}bp scaffold strand. "
-        f"Place the helices starting at row {row}, column {col}."
-    )
-
     return {
-        "name":     f"2x{N}_r{row}c{col}_L{L}",
+        "name":     name,
         "vstrands": vstrands,
         "_task":    task,
     }
 
+
+# ─── Layout-specific generators ──────────────────────────────────────────────
+
+def generate_1xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
+    """Generate a 1×N linear chain bundle with full scaffold routing.
+
+    Places N helices in a single row. Requires even N >= 4 (for N=2 use
+    generate_2hb). Odd N is geometrically impossible: the honeycomb crossover
+    table ordering (High = Low + 1) makes the interior helix constraint
+    incompatible with the end helix parity constraint.
+
+    Args:
+        N: number of helices (even, >= 4)
+        row: starting row
+        col: starting column
+        length: scaffold length per helix
+    """
+    if N < 4 or N % 2 != 0:
+        raise ValueError("1×N requires even N >= 4 (use generate_2hb for N=2)")
+
+    positions = [(row, col + c) for c in range(N)]
+    name = f"1x{N}_r{row}c{col}_L{length}"
+    task = (
+        f"Create a {N}-helix linear chain with a {length}bp scaffold strand. "
+        f"Place the helices at row {row}, columns {col} to {col + N - 1}."
+    )
+    return _route_and_build(positions, length, name, task)
+
+
+def generate_2xN(N: int, row: int = 0, col: int = 0, length: int = 84) -> dict:
+    """Generate a 2×N grid bundle with full scaffold routing.
+
+    Places helices in a 2-row grid at the given starting position.
+
+    Args:
+        N: number of columns (total helices = 2*N)
+        row: starting row
+        col: starting column
+        length: scaffold length per helix (should be multiple of 21)
+    """
+    num_helices = 2 * N
+    positions = []
+    for c in range(N):
+        positions.append((row, col + c))
+    for c in range(N):
+        positions.append((row + 1, col + c))
+
+    name = f"2x{N}_r{row}c{col}_L{length}"
+    task = (
+        f"Create a {num_helices}-helix bundle (2×{N}) with a {length}bp scaffold strand. "
+        f"Place the helices starting at row {row}, column {col}."
+    )
+    return _route_and_build(positions, length, name, task)
+
+
+# Starting positions for 1×N linear chains — any row works.
+ONE_XN_STARTS = [
+    (0, 0),   # even parity start
+    (0, 1),   # odd parity start
+    (1, 0),   # odd parity start
+    (2, 0),   # even parity start
+]
 
 # Starting positions for 2×N grids — each must have cross-row connections.
 # Cross-row connections require odd-parity columns at the grid endpoints.
@@ -870,6 +876,29 @@ def main():
             traj   = extract_trajectory(design, task=design["_task"])
             examples.append(to_training_example(traj))
             raw_designs.append((design, traj))
+
+    # ── 1×N linear chains (4HB, 6HB, 8HB) ──────────────────────────────────
+    linear_sizes = [4, 6, 8]   # N helices in a row (must be even)
+    linear_count = len(ONE_XN_STARTS) * len(linear_sizes) * len(args.lengths)
+    print(
+        f"Generating 1×N designs: {len(ONE_XN_STARTS)} positions × "
+        f"{len(linear_sizes)} sizes × {len(args.lengths)} lengths = "
+        f"{linear_count} examples …",
+        file=sys.stderr,
+    )
+    for row, col in ONE_XN_STARTS:
+        for N in linear_sizes:
+            for length in args.lengths:
+                try:
+                    design = generate_1xN(N=N, row=row, col=col, length=length)
+                    traj = extract_trajectory(design, task=design["_task"])
+                    examples.append(to_training_example(traj))
+                    raw_designs.append((design, traj))
+                except (ValueError, AssertionError) as e:
+                    print(
+                        f"Skip 1×{N} at ({row},{col}) L={length}: {e}",
+                        file=sys.stderr,
+                    )
 
     # ── 2×N bundles (4HB, 6HB, 8HB, 10HB) ──────────────────────────────────
     grid_sizes = [2, 3, 4, 5]   # N columns → 4, 6, 8, 10 helices
