@@ -2,13 +2,12 @@
 
 ## Current Priorities
 
-1. **Pattern automation focus** — Shift from long-form reasoning (6-helix bundle from scratch) to automating tedious repetitive user interactions: crossover patterns, insertion/deletion patterns, bulk strand operations
-2. **Export training data in fine-tuning format** — Phase 4 requires (state, action) pairs for LoRA/QLoRA training
-3. **Set up fine-tuning pipeline** — LoRA fine-tune on Qwen3-1.7B using generated + expert trajectories
+1. **Test pattern automation methods in GUI** — Verify addInsertionPattern, removeCrossoversForPair, etc. work correctly in live cadnano sessions
+2. **Add staple break pattern automation** — Auto-place staple breaks at standard intervals (e.g., every 7 or 8 bases)
+3. **Export training data in fine-tuning format** — Phase 4 requires (state, action) pairs for LoRA/QLoRA training
 
 ## Next Steps
 
-- Test new pattern automation methods in the GUI (addInsertionPattern, removeCrossoversForPair, etc.)
 - Add staple break pattern automation methods
 - Add sequence assignment methods
 - Export training examples in HuggingFace datasets format for SFT

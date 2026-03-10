@@ -18,3 +18,25 @@ objectives:
   - results/obj-002-2-n-grid-bundle-generator----2026-03-0.png
   conclusions: ''
   completed_date: '2026-03-10'
+- id: obj-003
+  status: completed
+  statement: Add 6 pattern automation batch methods for repetitive design tasks
+  methodology: >-
+    Added removeCrossoversForPair, removeAllCrossovers, addInsertionPattern,
+    removeInsertionPattern, addInsertionPatternAll, listInsertions to agentmethods.py.
+    Added Claude API tool schemas in agenttools.py. Updated README with agentic
+    fork overview. All methods wrap in single undo macros.
+  metrics:
+    new_methods: 6
+    new_tool_schemas: 6
+    total_agent_methods: 34
+    lines_added: 688
+    files_changed: 5
+  figures:
+  - results/obj-003-pattern-automation-methods-2026-03-10.png
+  conclusions: >-
+    Pattern automation reduces repetitive GUI interactions (10-60 clicks) to single
+    method calls. Shifts agent focus from complex multi-step reasoning to practical
+    automation of tedious daily tasks.
+  connects_to: obj-004
+  completed_date: '2026-03-10'
