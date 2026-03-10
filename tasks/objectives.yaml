@@ -1,0 +1,20 @@
+objectives:
+- id: obj-001
+  status: completed
+  statement: '**Scaled to 252 training examples** (2026-03-09): Added 1×N linear chain generator (even N: 4,6,8), expanded
+    2×N to N=2..7 (up to...'
+  methodology: ''
+  figures:
+  - results/obj-001-scaled-to-252-training-examples----202.png
+  conclusions: ''
+  connects_to: obj-002
+  completed_date: '2026-03-10'
+- id: obj-002
+  status: completed
+  statement: '**2×N grid bundle generator** (2026-03-09): Added `generate_2xN()` to `tools/generate_training_designs.py`.
+    Uses Hamiltonian path through honeycomb neighbor graph, greedy constrained crossover placement.'
+  methodology: ''
+  figures:
+  - results/obj-002-2-n-grid-bundle-generator----2026-03-0.png
+  conclusions: ''
+  completed_date: '2026-03-10'
