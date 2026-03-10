@@ -2429,6 +2429,457 @@ class AgentMethods:
             'strands': resized
         }
 
+    def removeCrossoversForPair(self, helix1, helix2, strand_type):
+        """
+        Remove all crossovers between two helices for a given strand type.
+        Wrapped in one undo macro for atomic undo.
+
+        Args:
+            helix1 (int): First helix number
+            helix2 (int): Second helix number
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            dict or str: Summary with count removed
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh1 = part.virtualHelix(helix1)
+        vh2 = part.virtualHelix(helix2)
+        if vh1 is None:
+            return f"Error: Helix {helix1} not found"
+        if vh2 is None:
+            return f"Error: Helix {helix2} not found"
+
+        if strand_type.lower() == "scaffold":
+            get_ss = lambda vh: vh.scaffoldStrandSet()
+        else:
+            get_ss = lambda vh: vh.stapleStrandSet()
+
+        # Find all crossovers between the pair
+        xovers_to_remove = []  # list of (strand_5p, strand_3p) tuples
+        seen = set()
+
+        for vh, other_num in [(vh1, helix2), (vh2, helix1)]:
+            ss = get_ss(vh)
+            for strand in ss:
+                lo, hi = strand.idxs()
+                for idx, conn_func in [(lo, strand.connectionLow), (hi, strand.connectionHigh)]:
+                    conn = conn_func()
+                    if conn is None:
+                        continue
+                    if conn.virtualHelix().number() != other_num:
+                        continue
+                    key = tuple(sorted([(vh.number(), idx),
+                                        (conn.virtualHelix().number(),
+                                         conn.idxs()[0] if conn.connectionLow() == strand else conn.idxs()[1])]))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    if strand.connection3p() == conn:
+                        xovers_to_remove.append((strand, conn))
+                    elif strand.connection5p() == conn:
+                        xovers_to_remove.append((conn, strand))
+
+        if not xovers_to_remove:
+            return {
+                'helix1': helix1, 'helix2': helix2,
+                'strand_type': strand_type,
+                'removed': 0,
+                'message': 'No crossovers found between this pair'
+            }
+
+        part.undoStack().beginMacro(f"Remove Crossovers {helix1}-{helix2}")
+        try:
+            removed = 0
+            for s5p, s3p in xovers_to_remove:
+                part.removeXover(s5p, s3p, useUndoStack=True)
+                removed += 1
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error removing crossovers: {e}"
+
+        return {
+            'helix1': helix1,
+            'helix2': helix2,
+            'strand_type': strand_type,
+            'removed': removed
+        }
+
+    def removeAllCrossovers(self, strand_type):
+        """
+        Remove all crossovers of a given strand type from the entire design.
+        Wrapped in one undo macro for atomic undo.
+
+        Args:
+            strand_type (str): "scaffold" or "staple"
+
+        Returns:
+            dict or str: Summary with count removed
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        if strand_type.lower() == "scaffold":
+            get_ss = lambda vh: vh.scaffoldStrandSet()
+        else:
+            get_ss = lambda vh: vh.stapleStrandSet()
+
+        # Collect all crossovers of this type
+        xovers_to_remove = []  # list of (strand_5p, strand_3p) tuples
+        seen = set()
+
+        for vh in part.getVirtualHelices():
+            vh_num = vh.number()
+            ss = get_ss(vh)
+            for strand in ss:
+                lo, hi = strand.idxs()
+                for idx, conn_func in [(lo, strand.connectionLow), (hi, strand.connectionHigh)]:
+                    conn = conn_func()
+                    if conn is None:
+                        continue
+                    partner_vh = conn.virtualHelix().number()
+                    partner_lo, partner_hi = conn.idxs()
+                    if conn.connectionLow() == strand:
+                        partner_idx = partner_lo
+                    else:
+                        partner_idx = partner_hi
+                    key = tuple(sorted([(vh_num, idx), (partner_vh, partner_idx)]))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    if strand.connection3p() == conn:
+                        xovers_to_remove.append((strand, conn))
+                    elif strand.connection5p() == conn:
+                        xovers_to_remove.append((conn, strand))
+
+        if not xovers_to_remove:
+            return {
+                'strand_type': strand_type,
+                'removed': 0,
+                'message': 'No crossovers found'
+            }
+
+        part.undoStack().beginMacro(f"Remove All {strand_type} Crossovers")
+        try:
+            removed = 0
+            for s5p, s3p in xovers_to_remove:
+                part.removeXover(s5p, s3p, useUndoStack=True)
+                removed += 1
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error removing crossovers: {e}"
+
+        return {
+            'strand_type': strand_type,
+            'removed': removed
+        }
+
+    def addInsertionPattern(self, helix_num, length, spacing=21,
+                            start_idx=None, end_idx=None, strand_type=None):
+        """
+        Add insertions at regular intervals along a helix.
+        Wrapped in one undo macro for atomic undo.
+
+        Args:
+            helix_num (int): Which helix
+            length (int): Insertion length (positive) or deletion (-1)
+            spacing (int): Interval between insertions (default 21)
+            start_idx (int, optional): Starting index, defaults to first strand start
+            end_idx (int, optional): Ending index, defaults to last strand end
+            strand_type (str, optional): "scaffold" or "staple", defaults to
+                whichever strand exists at each position
+
+        Returns:
+            dict or str: Summary with list of positions where insertions were added
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        scafSS = vh.scaffoldStrandSet()
+        stapSS = vh.stapleStrandSet()
+
+        # Determine range from existing strands if not specified
+        if start_idx is None or end_idx is None:
+            all_strands = []
+            if strand_type is None or strand_type.lower() == "scaffold":
+                all_strands.extend(list(scafSS))
+            if strand_type is None or strand_type.lower() == "staple":
+                all_strands.extend(list(stapSS))
+            if not all_strands:
+                return f"Error: No strands on helix {helix_num}"
+            if start_idx is None:
+                start_idx = min(s.idxs()[0] for s in all_strands)
+            if end_idx is None:
+                end_idx = max(s.idxs()[1] for s in all_strands)
+
+        part.undoStack().beginMacro(f"Add Insertion Pattern h{helix_num}")
+        try:
+            added = []
+            idx = start_idx
+            while idx <= end_idx:
+                # Find a strand at this position
+                strand = None
+                if strand_type is None or strand_type.lower() == "scaffold":
+                    strand = scafSS.getStrand(idx)
+                if strand is None and (strand_type is None or strand_type.lower() == "staple"):
+                    strand = stapSS.getStrand(idx)
+
+                if strand is None:
+                    idx += spacing
+                    continue
+
+                # Skip if a crossover is at this exact position
+                lo, hi = strand.idxs()
+                if (idx == lo and strand.connectionLow()) or \
+                   (idx == hi and strand.connectionHigh()):
+                    idx += spacing
+                    continue
+
+                # Skip if there's already an insertion here
+                if strand.hasInsertionAt(idx):
+                    idx += spacing
+                    continue
+
+                strand.addInsertion(idx, length, useUndoStack=True)
+                added.append(idx)
+                idx += spacing
+
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error adding insertion pattern: {e}"
+
+        label = "deletions" if length < 0 else f"{length}-base insertions"
+        return {
+            'helix_num': helix_num,
+            'length': length,
+            'spacing': spacing,
+            'added': len(added),
+            'positions': added,
+            'message': f"Added {len(added)} {label} on helix {helix_num}"
+        }
+
+    def removeInsertionPattern(self, helix_num, strand_type=None):
+        """
+        Remove ALL insertions/deletions from a helix.
+        Wrapped in one undo macro for atomic undo.
+
+        Args:
+            helix_num (int): Which helix
+            strand_type (str, optional): "scaffold" or "staple", or None for both
+
+        Returns:
+            dict or str: Summary with count removed
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        scafSS = vh.scaffoldStrandSet()
+        stapSS = vh.stapleStrandSet()
+
+        # Collect all strands and their insertions
+        insertions_to_remove = []  # list of (strand, idx)
+        strand_sets = []
+        if strand_type is None or strand_type.lower() == "scaffold":
+            strand_sets.append(scafSS)
+        if strand_type is None or strand_type.lower() == "staple":
+            strand_sets.append(stapSS)
+
+        for ss in strand_sets:
+            for strand in ss:
+                for insertion in strand.insertionsOnStrand():
+                    insertions_to_remove.append((strand, insertion.idx()))
+
+        if not insertions_to_remove:
+            return {
+                'helix_num': helix_num,
+                'removed': 0,
+                'message': f'No insertions found on helix {helix_num}'
+            }
+
+        part.undoStack().beginMacro(f"Remove Insertions h{helix_num}")
+        try:
+            removed = 0
+            for strand, idx in insertions_to_remove:
+                strand.removeInsertion(idx, useUndoStack=True)
+                removed += 1
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error removing insertions: {e}"
+
+        return {
+            'helix_num': helix_num,
+            'removed': removed
+        }
+
+    def addInsertionPatternAll(self, length, spacing=21, strand_type=None):
+        """
+        Add insertions/deletions across ALL helices in the design.
+        Wrapped in one undo macro for atomic undo.
+
+        Args:
+            length (int): Insertion length (positive) or deletion (-1)
+            spacing (int): Interval between insertions (default 21)
+            strand_type (str, optional): "scaffold" or "staple", or None for
+                whichever strand exists at each position
+
+        Returns:
+            dict or str: Summary with per-helix breakdown
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vhs = part.getVirtualHelices()
+        if not vhs:
+            return "Error: No helices in design"
+
+        part.undoStack().beginMacro("Add Insertion Pattern All Helices")
+        try:
+            total_added = 0
+            per_helix = []
+
+            for vh in vhs:
+                vh_num = vh.number()
+                scafSS = vh.scaffoldStrandSet()
+                stapSS = vh.stapleStrandSet()
+
+                # Determine range from existing strands
+                all_strands = []
+                if strand_type is None or strand_type.lower() == "scaffold":
+                    all_strands.extend(list(scafSS))
+                if strand_type is None or strand_type.lower() == "staple":
+                    all_strands.extend(list(stapSS))
+                if not all_strands:
+                    continue
+
+                start_idx = min(s.idxs()[0] for s in all_strands)
+                end_idx = max(s.idxs()[1] for s in all_strands)
+
+                added = []
+                idx = start_idx
+                while idx <= end_idx:
+                    strand = None
+                    if strand_type is None or strand_type.lower() == "scaffold":
+                        strand = scafSS.getStrand(idx)
+                    if strand is None and (strand_type is None or strand_type.lower() == "staple"):
+                        strand = stapSS.getStrand(idx)
+
+                    if strand is None:
+                        idx += spacing
+                        continue
+
+                    lo, hi = strand.idxs()
+                    if (idx == lo and strand.connectionLow()) or \
+                       (idx == hi and strand.connectionHigh()):
+                        idx += spacing
+                        continue
+
+                    if strand.hasInsertionAt(idx):
+                        idx += spacing
+                        continue
+
+                    strand.addInsertion(idx, length, useUndoStack=True)
+                    added.append(idx)
+                    idx += spacing
+
+                if added:
+                    total_added += len(added)
+                    per_helix.append({
+                        'helix_num': vh_num,
+                        'added': len(added),
+                        'positions': added
+                    })
+
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error adding insertion pattern: {e}"
+
+        label = "deletions" if length < 0 else f"{length}-base insertions"
+        return {
+            'length': length,
+            'spacing': spacing,
+            'total_added': total_added,
+            'per_helix': per_helix,
+            'message': f"Added {total_added} {label} across {len(per_helix)} helices"
+        }
+
+    def listInsertions(self, helix_num=None, strand_type=None):
+        """
+        List all insertions/deletions in the design or on a specific helix.
+
+        Args:
+            helix_num (int, optional): Filter to a specific helix
+            strand_type (str, optional): Filter to "scaffold" or "staple"
+
+        Returns:
+            dict or str: List of insertions with helix_num, idx, length
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vhs = part.getVirtualHelices()
+        insertions = []
+
+        for vh in vhs:
+            vh_num = vh.number()
+            if helix_num is not None and vh_num != helix_num:
+                continue
+
+            strand_sets = []
+            if strand_type is None or strand_type.lower() == "scaffold":
+                strand_sets.append(("scaffold", vh.scaffoldStrandSet()))
+            if strand_type is None or strand_type.lower() == "staple":
+                strand_sets.append(("staple", vh.stapleStrandSet()))
+
+            for stype, ss in strand_sets:
+                for strand in ss:
+                    for ins in strand.insertionsOnStrand():
+                        insertions.append({
+                            'helix_num': vh_num,
+                            'idx': ins.idx(),
+                            'length': ins.length(),
+                            'strand_type': stype
+                        })
+
+        insertions.sort(key=lambda x: (x['helix_num'], x['idx']))
+
+        filter_desc = ""
+        if helix_num is not None:
+            filter_desc += f" on helix {helix_num}"
+        if strand_type is not None:
+            filter_desc += f" ({strand_type})"
+
+        return {
+            'count': len(insertions),
+            'insertions': insertions,
+            'message': f"Found {len(insertions)} insertions{filter_desc}"
+        }
+
     def planScaffoldRouting(self, strand_type="scaffold"):
         """
         Plan and execute a complete scaffold routing for a 2×N grid design.

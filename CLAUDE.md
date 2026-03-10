@@ -107,7 +107,13 @@ Methods are organized in two tiers. **Level 2 tools are preferred** — they enc
 - `createHelicesWithStrands(positions, strand_type, length)`: Create multiple helices with strands. Auto-extends part size. strand_type can be "scaffold", "staple", or "both"
 - `addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?)`: Add crossovers between two helices. Auto-computes positions if not specified
 - `addAllNeighborCrossovers(strand_type, spacing?)`: Wire up all neighbor pairs with crossovers
+- `removeCrossoversForPair(helix1, helix2, strand_type)`: Remove all crossovers between two helices
+- `removeAllCrossovers(strand_type)`: Remove all crossovers of a given strand type
 - `resizeAllStrands(strand_type, new_length?, delta?, helix_num?)`: Resize strands in bulk. Respects parity for which end to resize
+- `addInsertionPattern(helix_num, length, spacing?, start_idx?, end_idx?, strand_type?)`: Add insertions/deletions at regular intervals along a helix
+- `addInsertionPatternAll(length, spacing?, strand_type?)`: Add insertions/deletions across all helices
+- `removeInsertionPattern(helix_num, strand_type?)`: Remove all insertions/deletions from a helix
+- `listInsertions(helix_num?, strand_type?)`: List all insertions/deletions in the design
 
 **Level 1 — Primitives** (fine-grained control):
 - **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHelixDirection`, `getHoneycombPositions`, `listHelices`, `getPartSize`

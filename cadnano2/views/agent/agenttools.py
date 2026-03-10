@@ -224,6 +224,160 @@ TOOL_SCHEMAS = [
     },
 
     {
+        "name": "removeCrossoversForPair",
+        "description": (
+            "Remove all crossovers between two helices for a given strand type. "
+            "Wrapped in one undo macro for atomic undo."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "helix1": {
+                    "type": "integer",
+                    "description": "First helix number."
+                },
+                "helix2": {
+                    "type": "integer",
+                    "description": "Second helix number."
+                },
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type's crossovers to remove."
+                }
+            },
+            "required": ["helix1", "helix2", "strand_type"]
+        }
+    },
+    {
+        "name": "removeAllCrossovers",
+        "description": (
+            "Remove all crossovers of a given strand type from the entire design. "
+            "Wrapped in one undo macro for atomic undo."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type's crossovers to remove."
+                }
+            },
+            "required": ["strand_type"]
+        }
+    },
+    {
+        "name": "addInsertionPattern",
+        "description": (
+            "Add insertions or deletions at regular intervals along a helix. "
+            "Skips positions where no strand exists or where a crossover is present. "
+            "Wrapped in one undo macro for atomic undo."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "helix_num": {
+                    "type": "integer",
+                    "description": "Which helix to add insertions on."
+                },
+                "length": {
+                    "type": "integer",
+                    "description": "Insertion length (positive) or -1 for deletion."
+                },
+                "spacing": {
+                    "type": "integer",
+                    "description": "Interval between insertions in base pairs (optional, default 21)."
+                },
+                "start_idx": {
+                    "type": "integer",
+                    "description": "Starting index (optional, defaults to first strand start)."
+                },
+                "end_idx": {
+                    "type": "integer",
+                    "description": "Ending index (optional, defaults to last strand end)."
+                },
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type to target (optional, defaults to whichever exists)."
+                }
+            },
+            "required": ["helix_num", "length"]
+        }
+    },
+    {
+        "name": "removeInsertionPattern",
+        "description": (
+            "Remove ALL insertions and deletions from a helix. "
+            "Wrapped in one undo macro for atomic undo."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "helix_num": {
+                    "type": "integer",
+                    "description": "Which helix to remove insertions from."
+                },
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type (optional, defaults to both)."
+                }
+            },
+            "required": ["helix_num"]
+        }
+    },
+    {
+        "name": "addInsertionPatternAll",
+        "description": (
+            "Add insertions or deletions across ALL helices in the design at regular intervals. "
+            "Skips crossover positions. Wrapped in one undo macro for atomic undo."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "length": {
+                    "type": "integer",
+                    "description": "Insertion length (positive) or -1 for deletion."
+                },
+                "spacing": {
+                    "type": "integer",
+                    "description": "Interval between insertions in base pairs (optional, default 21)."
+                },
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type to target (optional, defaults to whichever exists)."
+                }
+            },
+            "required": ["length"]
+        }
+    },
+    {
+        "name": "listInsertions",
+        "description": (
+            "List all insertions and deletions in the design, optionally filtered "
+            "by helix number and/or strand type."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "helix_num": {
+                    "type": "integer",
+                    "description": "Filter to a specific helix (optional)."
+                },
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Filter by strand type (optional)."
+                }
+            },
+            "required": []
+        }
+    },
+
+    {
         "name": "planScaffoldRouting",
         "description": (
             "Plan AND execute a complete scaffold routing for a 2×N grid design "
