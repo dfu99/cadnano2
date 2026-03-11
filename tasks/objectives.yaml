@@ -276,5 +276,28 @@ objectives:
     and higher planarity RMS (1.28 nm) due to the bend. Wide 10-helix sheet
     scales width to 18.0 nm (vs 10.5 nm for 6-helix) while maintaining flatness.
     Pipeline distinguishes 6 distinct geometric classes reliably.
+  connects_to: obj-014
+  completed_date: '2026-03-11'
+- id: obj-014
+  status: completed
+  statement: Add 2×3 grid screenshots, expand to 43 pairs and 212 augmented examples
+  methodology: >-
+    Added setup_grid_2x3_design() and gen_grid_operations() for multi-row
+    designs. 4 new operations: add scaffold crossovers, add both types,
+    remove cross-row pair, insertion pattern. Re-exported base and augmented
+    HuggingFace datasets.
+  metrics:
+    image_pairs: 43
+    augmented_examples: 212
+    new_pairs: 4
+    design_types: 4
+    layouts_covered: 2-helix, 3-helix, 6-helix_flat, 2x3_grid
+  figures:
+  - results/obj-014-grid-screenshots.png
+  conclusions: >-
+    Dataset now covers 4 design layouts including the first multi-row design
+    (2×3 grid). 10× growth from initial 21 pairs to 212 augmented examples.
+    Multi-row operations (cross-row crossover removal) add important training
+    signal for understanding 2D helix arrangements.
   connects_to: null
   completed_date: '2026-03-11'

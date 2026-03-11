@@ -1123,6 +1123,158 @@ def gen_six_helix_operations(app):
     return results
 
 
+def setup_grid_2x3_design(app, length=126, strand_type="both"):
+    """Create a 2×3 grid design (6 helices in 2 rows of 3)."""
+    from cadnano2.views.agent.agentmethods import AgentMethods
+
+    dc = get_dc(app)
+    dc.actionAddHoneycombPartSlot()
+    doc = dc.document()
+    part = doc.selectedPart()
+
+    class MockDC:
+        def __init__(self, app, doc, part):
+            self._app = app
+            self._doc = doc
+            self._part = part
+        def document(self):
+            return self._doc
+        def activePart(self):
+            return self._part
+        def undoStack(self):
+            return self._doc.undoStack()
+
+    mock = MockDC(app, doc, part)
+    methods = AgentMethods(mock)
+
+    positions = [[21, 20], [21, 21], [21, 22],
+                 [22, 20], [22, 21], [22, 22]]
+    result = methods.createHelicesWithStrands(
+        positions=positions,
+        strand_type=strand_type,
+        length=length
+    )
+    print(f"  Setup 2×3 grid: {result}")
+    return dc, methods
+
+
+def gen_grid_operations(app):
+    """Generate screenshots for 2×3 grid (multi-row) operations."""
+    results = []
+
+    # 1. Add all scaffold crossovers to 2×3 grid
+    print(f"\n--- grid_add_scaffold_crossovers ---")
+    dc, methods = setup_grid_2x3_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "grid_add_scaffold_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addAllNeighborCrossovers("scaffold")
+    print(f"  addAllNeighborCrossovers(scaffold): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold crossovers to all pairs in 2×3 grid",
+        "params": {"strand_type": "scaffold", "n_helices": 6, "layout": "2x3_grid"},
+        "result": str(result),
+        "natural_language": "Add scaffold crossovers between all neighboring helices in a 2×3 grid design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 2. Add both crossover types to 2×3 grid
+    print(f"\n--- grid_add_both_crossovers ---")
+    dc, methods = setup_grid_2x3_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "grid_add_both_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    r1 = methods.addAllNeighborCrossovers("scaffold")
+    r2 = methods.addAllNeighborCrossovers("staple")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold and staple crossovers to 2×3 grid",
+        "params": {"strand_type": "both", "n_helices": 6, "layout": "2x3_grid"},
+        "result": f"scaffold: {r1}, staple: {r2}",
+        "natural_language": "Add both scaffold and staple crossovers to all pairs in a 2×3 grid design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 3. Remove one row's crossovers in grid
+    print(f"\n--- grid_remove_cross_row_pair ---")
+    dc, methods = setup_grid_2x3_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "grid_remove_cross_row_pair")
+    save_screenshot(before_img, outdir, "before")
+
+    # Get helix numbers — find a cross-row pair
+    neighbor_result = methods.getNeighborPairs()
+    print(f"  Neighbors: {neighbor_result}")
+    # Remove crossovers between first cross-row pair (typically helix 1 and 2 or similar)
+    result = methods.removeCrossoversForPair(1, 2, "scaffold")
+    print(f"  removeCrossoversForPair(1,2): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "removeCrossoversForPair",
+        "description": "Remove cross-row scaffold crossovers in 2×3 grid",
+        "params": {"helix1": 1, "helix2": 2, "strand_type": "scaffold", "layout": "2x3_grid"},
+        "result": str(result),
+        "natural_language": "Remove scaffold crossovers between helix 1 and helix 2 in a 2×3 grid (cross-row pair)"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 4. Insertion pattern on grid
+    print(f"\n--- grid_insertion_pattern ---")
+    dc, methods = setup_grid_2x3_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "grid_insertion_pattern")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addInsertionPatternAll(length=1, spacing=21)
+    print(f"  addInsertionPatternAll: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addInsertionPatternAll",
+        "description": "Add insertion pattern across all helices in 2×3 grid",
+        "params": {"length": 1, "spacing": 21, "layout": "2x3_grid"},
+        "result": str(result),
+        "natural_language": "Add single-base insertions every 21 bases across all helices in a 2×3 grid design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    return results
+
+
 # ============================================================
 # Main
 # ============================================================
@@ -1147,6 +1299,7 @@ def main():
         ("Strand breaks", gen_strand_breaks),
         ("Three-helix operations", gen_three_helix_operations),
         ("Six-helix operations", gen_six_helix_operations),
+        ("2×3 grid operations", gen_grid_operations),
     ]
 
     for name, gen_fn in generators:

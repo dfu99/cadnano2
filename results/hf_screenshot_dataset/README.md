@@ -1,6 +1,6 @@
 ---
 dataset_info:
-  num_examples: 39
+  num_examples: 43
   features:
     - name: before_image
       dtype: image
@@ -19,7 +19,7 @@ task_categories:
 
 # cadnano Screenshot Training Dataset
 
-**39 before/after pairs** of DNA nanostructure design operations.
+**43 before/after pairs** of DNA nanostructure design operations.
 
 Each example contains:
 - `before_image`: Screenshot before the operation
@@ -30,8 +30,8 @@ Each example contains:
 
 ## Categories
 
-- **crossover_move**: 15 examples
-- **crossover_add**: 11 examples
-- **insertion**: 5 examples
+- **crossover_move**: 16 examples
+- **crossover_add**: 13 examples
+- **insertion**: 6 examples
 - **strand_break**: 4 examples
 - **strand_resize**: 4 examples
