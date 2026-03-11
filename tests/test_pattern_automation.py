@@ -313,6 +313,109 @@ def test_error_handling(methods):
     return True
 
 
+def test_split_strand_at(methods):
+    """Test splitStrandAt."""
+    print("\n=== Test: splitStrandAt ===")
+
+    # Split scaffold on helix 0 at midpoint
+    result = methods.splitStrandAt(helix_num=0, strand_type="scaffold", idx=42)
+    print(f"  Split at 42: {result}")
+    assert isinstance(result, dict), f"Expected dict, got: {result}"
+    assert result['split_idx'] == 42
+    assert result['split_idx'] == 42
+    # new_strands depend on current strand state (prior tests may have modified it)
+    assert len(result['new_strands']) == 2
+    print(f"  PASS: split at midpoint → {result['new_strands']}")
+
+    # Error: split at boundary
+    result = methods.splitStrandAt(helix_num=0, strand_type="scaffold", idx=0)
+    assert isinstance(result, str) and "Error" in result
+    print(f"  PASS: boundary error → {result}")
+
+    # Error: non-existent helix
+    result = methods.splitStrandAt(helix_num=99, strand_type="scaffold", idx=42)
+    assert isinstance(result, str) and "Error" in result
+    print(f"  PASS: non-existent helix → {result}")
+
+    return True
+
+
+def test_list_staples(methods):
+    """Test listStaples (need to create staples first)."""
+    print("\n=== Test: listStaples ===")
+
+    # Create staple strands
+    result = methods.createFullLengthStrands(helix_num=0, strand_type="staple")
+    print(f"  Created staples on h0: {result}")
+    result = methods.createFullLengthStrands(helix_num=1, strand_type="staple")
+    print(f"  Created staples on h1: {result}")
+
+    # List staples
+    result = methods.listStaples()
+    print(f"  listStaples: {result}")
+    assert isinstance(result, dict), f"Expected dict, got: {result}"
+    assert result['count'] > 0, "Should have staple oligos"
+    print(f"  PASS: found {result['count']} staple oligos")
+
+    # Filter by helix
+    result = methods.listStaples(helix_num=0)
+    assert isinstance(result, dict)
+    print(f"  PASS: filtered by helix → {result['count']} staples")
+
+    return True
+
+
+def test_break_staple_pattern(methods):
+    """Test breakStaplePattern."""
+    print("\n=== Test: breakStaplePattern ===")
+
+    # List staples before
+    before = methods.listStaples()
+    print(f"  Before: {before['count']} staples")
+    before_lengths = [s['oligo_length'] for s in before['staples']]
+    print(f"  Before lengths: {before_lengths}")
+
+    # Break at spacing of 35
+    result = methods.breakStaplePattern(spacing=35)
+    print(f"  breakStaplePattern: {result}")
+    assert isinstance(result, dict), f"Expected dict, got: {result}"
+
+    # List staples after
+    after = methods.listStaples()
+    print(f"  After: {after['count']} staples")
+    after_lengths = [s['oligo_length'] for s in after['staples']]
+    print(f"  After lengths: {after_lengths}")
+
+    if result['breaks'] > 0:
+        assert after['count'] > before['count'], "Should have more staples after breaking"
+        print(f"  PASS: {result['breaks']} breaks, staples {before['count']} → {after['count']}")
+    else:
+        print(f"  PASS: no breaks needed (all staples <= max_staple_len)")
+
+    return True
+
+
+def test_auto_break_staples(methods):
+    """Test autoBreakStaples (Dijkstra-based)."""
+    print("\n=== Test: autoBreakStaples ===")
+
+    # First, create full-length staple strands with crossovers so they form long oligos
+    # Add crossovers between helices for staples
+    methods.addCrossoversForPair(helix1=0, helix2=1, strand_type="staple")
+
+    before = methods.listStaples()
+    print(f"  Before auto-break: {before['count']} staple oligos")
+    before_lengths = [s['oligo_length'] for s in before['staples']]
+    print(f"  Before lengths: {before_lengths}")
+
+    result = methods.autoBreakStaples(tgt_staple_len=35)
+    print(f"  autoBreakStaples: {result}")
+    assert isinstance(result, dict), f"Expected dict, got: {result}"
+    print(f"  PASS: {result.get('before_staple_count', '?')} → {result.get('after_staple_count', '?')} staples")
+
+    return True
+
+
 # ============================================================
 # MAIN
 # ============================================================
@@ -335,6 +438,10 @@ def main():
         ("addInsertionPatternAll", test_insertion_pattern_all),
         ("insertions_skip_crossovers", test_insertion_skips_crossovers),
         ("error_handling", test_error_handling),
+        ("splitStrandAt", test_split_strand_at),
+        ("listStaples", test_list_staples),
+        ("breakStaplePattern", test_break_staple_pattern),
+        ("autoBreakStaples", test_auto_break_staples),
     ]
 
     passed = 0

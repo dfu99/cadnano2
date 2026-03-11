@@ -2880,6 +2880,281 @@ class AgentMethods:
             'message': f"Found {len(insertions)} insertions{filter_desc}"
         }
 
+    # ==================== STAPLE BREAK METHODS ====================
+
+    def autoBreakStaples(self, min_staple_len=30, max_staple_len=40,
+                         tgt_staple_len=35, min_leg_len=3):
+        """
+        Auto-break staple strands using cadnano's built-in Dijkstra-based
+        algorithm. Finds optimal break positions to produce staples near
+        the target length. Wrapped in one undo macro.
+
+        Args:
+            min_staple_len (int): Minimum staple length (default 30)
+            max_staple_len (int): Maximum staple length (default 40)
+            tgt_staple_len (int): Target staple length (default 35)
+            min_leg_len (int): Minimum bases after a crossover (default 3)
+
+        Returns:
+            dict or str: Summary with staple count before/after
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        # Count staple oligos before
+        before_oligos = [o for o in part.oligos() if o.isStaple()]
+        before_count = len(before_oligos)
+        if before_count == 0:
+            return "Error: No staple strands in design"
+
+        settings = {
+            'minStapleLen': min_staple_len,
+            'maxStapleLen': max_staple_len,
+            'tgtStapleLen': tgt_staple_len,
+            'minStapleLegLen': min_leg_len,
+        }
+
+        try:
+            # Import autobreak.py directly to avoid the package __init__.py
+            # which has legacy 'import cadnano' that doesn't resolve
+            import importlib.util as ilu
+            import os
+            ab_path = os.path.join(os.path.dirname(__file__), '..', '..',
+                                   'plugins', 'autobreak', 'autobreak.py')
+            spec = ilu.spec_from_file_location("autobreak_mod", os.path.abspath(ab_path))
+            ab_mod = ilu.module_from_spec(spec)
+            spec.loader.exec_module(ab_mod)
+            ab_mod.breakStaples(part, settings)
+        except Exception as e:
+            return f"Error during auto-break: {e}"
+
+        # Count after
+        after_oligos = [o for o in part.oligos() if o.isStaple()]
+        after_count = len(after_oligos)
+        lengths = [o.length() for o in after_oligos]
+
+        return {
+            'before_staple_count': before_count,
+            'after_staple_count': after_count,
+            'breaks_added': after_count - before_count,
+            'staple_lengths': sorted(lengths),
+            'avg_length': round(sum(lengths) / len(lengths), 1) if lengths else 0,
+            'min_length': min(lengths) if lengths else 0,
+            'max_length': max(lengths) if lengths else 0,
+            'message': f"Broke {before_count} staple oligos into {after_count} staples "
+                       f"(avg {round(sum(lengths)/len(lengths), 1) if lengths else 0} bp)"
+        }
+
+    def splitStrandAt(self, helix_num, strand_type, idx):
+        """
+        Split a strand at a specific index. Creates two strands from one.
+
+        Args:
+            helix_num (int): Helix number
+            strand_type (str): "scaffold" or "staple"
+            idx (int): Index at which to split (split creates strands
+                       [..., idx] and [idx+1, ...])
+
+        Returns:
+            dict or str: Summary of the split
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vh = part.virtualHelix(helix_num)
+        if vh is None:
+            return f"Error: Helix {helix_num} not found"
+
+        if strand_type.lower() == "scaffold":
+            ss = vh.scaffoldStrandSet()
+        else:
+            ss = vh.stapleStrandSet()
+
+        strand = ss.getStrand(idx)
+        if strand is None:
+            return f"Error: No {strand_type} strand at index {idx} on helix {helix_num}"
+
+        lo, hi = strand.idxs()
+        if idx <= lo or idx >= hi:
+            return f"Error: Cannot split at boundary (strand range [{lo}, {hi}], split idx {idx})"
+
+        if not ss.strandCanBeSplit(strand, idx):
+            return f"Error: Strand cannot be split at index {idx}"
+
+        part.undoStack().beginMacro(f"Split strand h{helix_num} at {idx}")
+        try:
+            ss.splitStrand(strand, idx, updateSequence=True, useUndoStack=True)
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error splitting strand: {e}"
+
+        return {
+            'helix_num': helix_num,
+            'strand_type': strand_type,
+            'split_idx': idx,
+            'original_range': [lo, hi],
+            'new_strands': [[lo, idx], [idx + 1, hi]],
+            'message': f"Split {strand_type} on helix {helix_num} at idx {idx}"
+        }
+
+    def breakStaplePattern(self, helix_num=None, spacing=None,
+                           min_staple_len=30, max_staple_len=40):
+        """
+        Break staple strands at regular intervals. For each staple strand
+        longer than max_staple_len, splits at the target spacing. Uses
+        simple interval-based splitting (for Dijkstra-optimized breaks,
+        use autoBreakStaples instead).
+
+        Args:
+            helix_num (int, optional): Only break staples on this helix
+            spacing (int, optional): Target staple length between breaks.
+                Defaults to (min+max)/2
+            min_staple_len (int): Don't break staples shorter than this
+            max_staple_len (int): Only break staples longer than this
+
+        Returns:
+            dict or str: Summary of breaks performed
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        if spacing is None:
+            spacing = (min_staple_len + max_staple_len) // 2
+
+        vhs = [part.virtualHelix(helix_num)] if helix_num is not None else part.getVirtualHelices()
+
+        # Collect staple strands to break
+        to_break = []
+        for vh in vhs:
+            if vh is None:
+                continue
+            ss = vh.stapleStrandSet()
+            for strand in ss:
+                lo, hi = strand.idxs()
+                length = hi - lo + 1
+                if length > max_staple_len:
+                    to_break.append((strand, ss, lo, hi, vh.number()))
+
+        if not to_break:
+            filter_str = f" on helix {helix_num}" if helix_num is not None else ""
+            return {
+                'breaks': 0,
+                'message': f"No staple strands longer than {max_staple_len}{filter_str}"
+            }
+
+        part.undoStack().beginMacro("Break Staple Pattern")
+        try:
+            total_breaks = 0
+            details = []
+
+            for strand, ss, lo, hi, h_num in to_break:
+                length = hi - lo + 1
+                is5to3 = strand.isDrawn5to3()
+
+                # Calculate break positions from 5' end
+                break_positions = []
+                if is5to3:
+                    pos = lo + spacing
+                    while pos < hi and (hi - pos + 1) >= min_staple_len:
+                        break_positions.append(pos - 1)  # split creates [..., pos-1] and [pos, ...]
+                        pos += spacing
+                else:
+                    pos = hi - spacing
+                    while pos > lo and (pos - lo + 1) >= min_staple_len:
+                        break_positions.append(pos)
+                        pos -= spacing
+
+                # Perform splits from 3' end to avoid index invalidation
+                break_positions.sort(reverse=True)
+                for bp in break_positions:
+                    current_strand = ss.getStrand(bp)
+                    if current_strand and ss.strandCanBeSplit(current_strand, bp):
+                        ss.splitStrand(current_strand, bp, updateSequence=False,
+                                       useUndoStack=True)
+                        total_breaks += 1
+
+                if break_positions:
+                    details.append({
+                        'helix': h_num,
+                        'original_range': [lo, hi],
+                        'breaks_at': sorted(break_positions)
+                    })
+
+            part.undoStack().endMacro()
+        except Exception as e:
+            part.undoStack().endMacro()
+            part.undoStack().undo()
+            return f"Error breaking staples: {e}"
+
+        return {
+            'spacing': spacing,
+            'breaks': total_breaks,
+            'details': details,
+            'message': f"Added {total_breaks} breaks across {len(details)} staple strands"
+        }
+
+    def listStaples(self, helix_num=None):
+        """
+        List all staple oligos with their lengths and helix spans.
+
+        Args:
+            helix_num (int, optional): Filter to staples touching this helix
+
+        Returns:
+            dict: List of staple oligos with lengths and ranges
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        staples = []
+        seen_oligos = set()
+
+        vhs = [part.virtualHelix(helix_num)] if helix_num is not None else part.getVirtualHelices()
+        for vh in vhs:
+            if vh is None:
+                continue
+            ss = vh.stapleStrandSet()
+            for strand in ss:
+                oligo = strand.oligo()
+                oid = id(oligo)
+                if oid in seen_oligos:
+                    continue
+                seen_oligos.add(oid)
+
+                # Collect all strands in this oligo
+                spans = []
+                s = oligo.strand5p()
+                gen = s.generator3pStrand()
+                for seg in gen:
+                    lo, hi = seg.idxs()
+                    spans.append({
+                        'helix': seg.virtualHelix().number(),
+                        'range': [lo, hi],
+                        'length': hi - lo + 1
+                    })
+
+                staples.append({
+                    'oligo_length': oligo.length(),
+                    'color': oligo.color(),
+                    'is_loop': oligo.isLoop(),
+                    'spans': spans
+                })
+
+        staples.sort(key=lambda x: x['oligo_length'])
+        filter_str = f" on helix {helix_num}" if helix_num is not None else ""
+
+        return {
+            'count': len(staples),
+            'staples': staples,
+            'message': f"Found {len(staples)} staple oligos{filter_str}"
+        }
+
     def planScaffoldRouting(self, strand_type="scaffold"):
         """
         Plan and execute a complete scaffold routing for a 2×N grid design.

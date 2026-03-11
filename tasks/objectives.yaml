@@ -63,3 +63,27 @@ objectives:
     atomically, and error handling returns clear messages for invalid inputs.
   connects_to: obj-005
   completed_date: '2026-03-10'
+- id: obj-005
+  status: completed
+  statement: Add staple break automation methods with 3 breaking strategies
+  methodology: >-
+    Added 4 new agent methods: autoBreakStaples (Dijkstra-optimized via
+    autobreak plugin), splitStrandAt (single split), breakStaplePattern
+    (interval-based), listStaples (query). Added tool schemas. Autobreak
+    import uses importlib to bypass legacy __init__.py. All 12 tests pass.
+  metrics:
+    new_methods: 4
+    new_tool_schemas: 4
+    total_agent_methods: 38
+    tests_run: 12
+    tests_passed: 12
+    pass_rate: 100%
+  figures:
+  - results/obj-005-staple-break-automation-2026-03-10.png
+  conclusions: >-
+    Three staple break strategies cover different use cases: autoBreakStaples
+    for production-quality Dijkstra-optimized breaks, breakStaplePattern for
+    simple interval splits, splitStrandAt for surgical single-position splits.
+    Agent can now handle the full staple workflow: create, break, list.
+  connects_to: obj-006
+  completed_date: '2026-03-10'

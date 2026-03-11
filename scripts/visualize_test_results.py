@@ -51,12 +51,13 @@ axes[1].set_title('Summary', fontsize=13, fontweight='bold')
 method_list = [
     'resizeAllStrands', 'removeCrossoversForPair', 'removeAllCrossovers',
     'addInsertionPattern', 'removeInsertionPattern',
-    'addInsertionPatternAll', 'listInsertions'
+    'addInsertionPatternAll', 'listInsertions',
+    'autoBreakStaples', 'splitStrandAt', 'breakStaplePattern', 'listStaples'
 ]
-coverage_text = f"Methods tested: {len(method_list)}/7 pattern automation methods"
+coverage_text = f"Methods tested: {len(method_list)} pattern automation + staple break methods"
 fig.text(0.5, 0.02, coverage_text, ha='center', fontsize=10, style='italic', color='gray')
 
 plt.tight_layout(rect=[0, 0.05, 1, 1])
-outpath = 'results/obj-004-test-pattern-automation-2026-03-10.png'
+outpath = 'results/obj-005-staple-break-automation-2026-03-10.png'
 plt.savefig(outpath, dpi=150, bbox_inches='tight')
 print(f"Saved to {outpath}")

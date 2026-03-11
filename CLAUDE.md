@@ -114,6 +114,10 @@ Methods are organized in two tiers. **Level 2 tools are preferred** — they enc
 - `addInsertionPatternAll(length, spacing?, strand_type?)`: Add insertions/deletions across all helices
 - `removeInsertionPattern(helix_num, strand_type?)`: Remove all insertions/deletions from a helix
 - `listInsertions(helix_num?, strand_type?)`: List all insertions/deletions in the design
+- `autoBreakStaples(min_staple_len?, max_staple_len?, tgt_staple_len?, min_leg_len?)`: Dijkstra-optimized staple breaking
+- `splitStrandAt(helix_num, strand_type, idx)`: Split a single strand at a specific index
+- `breakStaplePattern(helix_num?, spacing?, min_staple_len?, max_staple_len?)`: Interval-based staple breaking
+- `listStaples(helix_num?)`: List all staple oligos with lengths and spans
 
 **Level 1 — Primitives** (fine-grained control):
 - **Geometry**: `getActivePartInfo`, `getHelixInfo`, `getHelixDirection`, `getHoneycombPositions`, `listHelices`, `getPartSize`

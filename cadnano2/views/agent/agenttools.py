@@ -378,6 +378,110 @@ TOOL_SCHEMAS = [
     },
 
     {
+        "name": "autoBreakStaples",
+        "description": (
+            "Auto-break staple strands using cadnano's built-in Dijkstra-based "
+            "algorithm. Finds optimal break positions to produce staples near "
+            "the target length. Uses graph-based optimization for best results."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "min_staple_len": {
+                    "type": "integer",
+                    "description": "Minimum staple length (default 30)."
+                },
+                "max_staple_len": {
+                    "type": "integer",
+                    "description": "Maximum staple length (default 40)."
+                },
+                "tgt_staple_len": {
+                    "type": "integer",
+                    "description": "Target staple length (default 35)."
+                },
+                "min_leg_len": {
+                    "type": "integer",
+                    "description": "Minimum bases after a crossover (default 3)."
+                }
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "splitStrandAt",
+        "description": (
+            "Split a strand at a specific index. Creates two strands from one. "
+            "The split creates strands [..., idx] and [idx+1, ...]. "
+            "Cannot split at strand endpoints."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "helix_num": {
+                    "type": "integer",
+                    "description": "Helix number."
+                },
+                "strand_type": {
+                    "type": "string",
+                    "enum": ["scaffold", "staple"],
+                    "description": "Which strand type to split."
+                },
+                "idx": {
+                    "type": "integer",
+                    "description": "Index at which to split."
+                }
+            },
+            "required": ["helix_num", "strand_type", "idx"]
+        }
+    },
+    {
+        "name": "breakStaplePattern",
+        "description": (
+            "Break staple strands at regular intervals using simple spacing. "
+            "For each staple longer than max_staple_len, splits at target spacing. "
+            "For Dijkstra-optimized breaks, use autoBreakStaples instead."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "helix_num": {
+                    "type": "integer",
+                    "description": "Only break staples on this helix (optional)."
+                },
+                "spacing": {
+                    "type": "integer",
+                    "description": "Target staple length between breaks (default: midpoint of min/max)."
+                },
+                "min_staple_len": {
+                    "type": "integer",
+                    "description": "Don't break staples shorter than this (default 30)."
+                },
+                "max_staple_len": {
+                    "type": "integer",
+                    "description": "Only break staples longer than this (default 40)."
+                }
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "listStaples",
+        "description": (
+            "List all staple oligos with their lengths, colors, and helix spans. "
+            "Useful for checking staple lengths before/after breaking."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "helix_num": {
+                    "type": "integer",
+                    "description": "Filter to staples touching this helix (optional)."
+                }
+            },
+            "required": []
+        }
+    },
+    {
         "name": "planScaffoldRouting",
         "description": (
             "Plan AND execute a complete scaffold routing for a 2×N grid design "
