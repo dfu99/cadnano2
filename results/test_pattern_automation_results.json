@@ -1,0 +1,15 @@
+{
+  "tests": {
+    "resizeAllStrands": "PASS",
+    "removeCrossoversForPair": "PASS",
+    "removeAllCrossovers": "PASS",
+    "addInsertionPattern": "PASS",
+    "insertion_deletions": "PASS",
+    "addInsertionPatternAll": "PASS",
+    "insertions_skip_crossovers": "PASS",
+    "error_handling": "PASS"
+  },
+  "passed": 8,
+  "failed": 0,
+  "total": 8
+}

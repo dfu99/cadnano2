@@ -40,3 +40,26 @@ objectives:
     automation of tedious daily tasks.
   connects_to: obj-004
   completed_date: '2026-03-10'
+- id: obj-004
+  status: completed
+  statement: Headless test suite validates all 7 pattern automation methods
+  methodology: >-
+    Built test_pattern_automation.py with QT_QPA_PLATFORM=offscreen and
+    initAppWithGui(). Tests cover resizeAllStrands, removeCrossoversForPair,
+    removeAllCrossovers, addInsertionPattern, removeInsertionPattern,
+    addInsertionPatternAll, listInsertions. Also tests deletion mode,
+    crossover-skip logic, and error handling for invalid inputs.
+  metrics:
+    tests_run: 8
+    tests_passed: 8
+    tests_failed: 0
+    methods_covered: 7
+    pass_rate: 100%
+  figures:
+  - results/obj-004-test-pattern-automation-2026-03-10.png
+  conclusions: >-
+    All pattern automation methods work correctly in headless mode. Resize
+    respects parity, insertions skip crossover positions, undo macros wrap
+    atomically, and error handling returns clear messages for invalid inputs.
+  connects_to: obj-005
+  completed_date: '2026-03-10'
