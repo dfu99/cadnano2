@@ -252,5 +252,29 @@ objectives:
     Template-based augmentation is a lightweight way to scale instruction
     diversity without new images. 192 training examples across 5 categories
     with varied phrasing should improve VLM robustness to instruction style.
+  connects_to: obj-013
+  completed_date: '2026-03-11'
+- id: obj-013
+  status: completed
+  statement: Extend oxDNA verification to L-shape and wide sheet (6 total shapes)
+  methodology: >-
+    Added create_l_shape (5 helices in L-pattern) and create_wide_sheet
+    (10 helices single-row) to oxdna_shape_verify.py. L-shape uses 3 horizontal
+    + 2 vertical helices. All 6 shapes converted to oxDNA and compared via PCA.
+  metrics:
+    shapes_tested: 6
+    l_shape_dims_nm: [41.5, 8.8, 4.6]
+    l_shape_flatness: 0.110
+    l_shape_planarity_nm: 1.28
+    wide_sheet_dims_nm: [41.5, 18.0, 2.3]
+    wide_sheet_flatness: 0.056
+    wide_sheet_width_nm: 18.0
+  figures:
+  - results/obj-010-oxdna-shape-verification.png
+  conclusions: >-
+    L-shape shows expected asymmetric thickening (4.6 nm vs 2.4 nm flat sheet)
+    and higher planarity RMS (1.28 nm) due to the bend. Wide 10-helix sheet
+    scales width to 18.0 nm (vs 10.5 nm for 6-helix) while maintaining flatness.
+    Pipeline distinguishes 6 distinct geometric classes reliably.
   connects_to: null
   completed_date: '2026-03-11'

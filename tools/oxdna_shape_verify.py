@@ -242,6 +242,57 @@ def create_long_sheet(app, n_helices=6, length=252):
     return dc, "long_sheet"
 
 
+def create_l_shape(app, length=126):
+    """
+    L-shape: 3 helices in a row + 2 helices extending downward from one end.
+    Should show asymmetric cross-section (not flat, not circular).
+    """
+    print(f"\n{'='*60}")
+    print(f"  L-SHAPE: 5 helices x {length}bp")
+    print(f"{'='*60}")
+
+    dc, methods = _make_methods(app)
+
+    # Horizontal arm: row 21, cols 20-22 (3 helices)
+    # Vertical arm: rows 22-23, col 20 (2 more helices below left end)
+    positions = [[21, 20], [21, 21], [21, 22],
+                 [22, 20],
+                 [23, 20]]
+
+    result = methods.createHelicesWithStrands(positions=positions, strand_type="both", length=length)
+    print(f"  Helices: {result}")
+
+    xr = methods.addAllNeighborCrossovers("scaffold")
+    print(f"  Scaffold xovers: {xr}")
+    xr2 = methods.addAllNeighborCrossovers("staple")
+    print(f"  Staple xovers: {xr2}")
+
+    return dc, "l_shape"
+
+
+def create_wide_sheet(app, n_cols=10, length=126):
+    """
+    Wide single-row flat sheet: 10 helices.
+    Should have much higher aspect ratio than 6-helix sheet.
+    """
+    print(f"\n{'='*60}")
+    print(f"  WIDE SHEET: {n_cols} helices x {length}bp")
+    print(f"{'='*60}")
+
+    dc, methods = _make_methods(app)
+
+    positions = [[21, 20 + i] for i in range(n_cols)]
+    result = methods.createHelicesWithStrands(positions=positions, strand_type="both", length=length)
+    print(f"  Helices: {result}")
+
+    xr = methods.addAllNeighborCrossovers("scaffold")
+    print(f"  Scaffold xovers: {xr}")
+    xr2 = methods.addAllNeighborCrossovers("staple")
+    print(f"  Staple xovers: {xr2}")
+
+    return dc, "wide_sheet"
+
+
 def generate_comparison_figure(all_results):
     """Generate a comparison figure across all shapes."""
     import matplotlib
@@ -261,7 +312,7 @@ def generate_comparison_figure(all_results):
             spine.set_color('#334155')
 
     names = [r['name'] for r in all_results]
-    colors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
+    colors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#a855f7']
 
     # Panel 1: PCA dimensions
     ax = axes[0, 0]
@@ -342,6 +393,8 @@ def main():
         ("tube", create_tube),
         ("grid_2x3", create_2x3_grid),
         ("long_sheet", create_long_sheet),
+        ("l_shape", create_l_shape),
+        ("wide_sheet", create_wide_sheet),
     ]
 
     all_results = []
@@ -374,6 +427,8 @@ def main():
                 'tube': 'tube\n(hex 6×126)',
                 'grid_2x3': 'grid_2×3\n(6×126)',
                 'long_sheet': 'long_sheet\n(6×252)',
+                'l_shape': 'L-shape\n(5×126)',
+                'wide_sheet': 'wide_sheet\n(10×126)',
             }.get(shape_name, shape_name)
 
             all_results.append({'name': display_name, 'metrics': metrics})
