@@ -1,5 +1,5 @@
 {
-  "total_operations": 46,
+  "total_operations": 49,
   "operations": [
     {
       "operation": "moveCrossover",
@@ -536,7 +536,41 @@
       },
       "result": "{'helix1': 1, 'helix2': 2, 'strand_type': 'scaffold', 'removed': 12}",
       "natural_language": "Remove scaffold crossovers at the bend connecting the two arms of the L-shaped design"
+    },
+    {
+      "operation": "addAllNeighborCrossovers",
+      "description": "Add scaffold crossovers to all pairs in T-shaped design",
+      "params": {
+        "strand_type": "scaffold",
+        "n_helices": 5,
+        "layout": "t_shape"
+      },
+      "result": "{'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}]}",
+      "natural_language": "Add scaffold crossovers between all neighboring helices in a T-shaped design"
+    },
+    {
+      "operation": "addAllNeighborCrossovers",
+      "description": "Add scaffold and staple crossovers to T-shaped design",
+      "params": {
+        "strand_type": "both",
+        "n_helices": 5,
+        "layout": "t_shape"
+      },
+      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}]}, staple: {'strand_type': 'staple', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}]}",
+      "natural_language": "Add both scaffold and staple crossovers to all pairs in a T-shaped design"
+    },
+    {
+      "operation": "removeCrossoversForPair",
+      "description": "Remove scaffold crossovers at T-junction",
+      "params": {
+        "helix1": 0,
+        "helix2": 2,
+        "strand_type": "scaffold",
+        "layout": "t_shape"
+      },
+      "result": "{'helix1': 0, 'helix2': 2, 'strand_type': 'scaffold', 'removed': 0, 'message': 'No crossovers found between this pair'}",
+      "natural_language": "Remove scaffold crossovers at the T-junction connecting the bar to the stem"
     }
   ],
-  "generated_at": "2026-03-11 19:11:30"
+  "generated_at": "2026-03-11 19:41:30"
 }

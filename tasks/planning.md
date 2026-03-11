@@ -2,19 +2,20 @@
 
 ## Current Priorities
 
-1. **Push dataset to HuggingFace Hub** — Make training data publicly available (requires auth)
-2. **Begin VLM fine-tuning experiments** — Use augmented 228-example dataset
-3. **Add T-shape design screenshots** — Another non-rectangular layout for broader coverage
+1. **Push dataset to HuggingFace Hub** — Make training data publicly available (requires `huggingface-cli login`)
+2. **Begin VLM fine-tuning experiments** — Use augmented 244-example dataset across 6 layouts
 
-## Next Steps
+All autonomous dataset-building priorities are complete. Remaining items require user input (HuggingFace auth) or new project direction (VLM training).
 
-- Push augmented dataset (228 examples) to HuggingFace Hub (needs `huggingface-cli login`)
+## Next Steps (require user input)
+
+- Push augmented dataset (244 examples) to HuggingFace Hub (needs `huggingface-cli login`)
 - Begin VLM fine-tuning experiments with the augmented dataset
-- Add T-shape design screenshots
-- Explore adding more shape classes to oxDNA verification (T-shape, cross)
+- Explore adding T-shape and cross to oxDNA verification pipeline
 
 ## Recently Completed
 
+- **T-shape design screenshots** (2026-03-11): Added 3 T-shaped operations (5 helices, symmetric branching). Final dataset: 49 image pairs, 244 augmented examples across 6 design layouts. 11.6× growth from initial.
 - **L-shape design screenshots** (2026-03-11): Added 3 L-shaped operations (5 helices, asymmetric). Dataset now 46 image pairs, 228 augmented examples across 5 design layouts.
 - **2×3 grid design screenshots** (2026-03-11): Added 4 multi-row grid operations (add scaffold, add both, remove cross-row pair, insertion pattern). Dataset now 43 image pairs, 212 augmented examples across 4 design layouts.
 - **oxDNA verification extended to 6 shapes** (2026-03-11): Added L-shape (5 helices, asymmetric) and wide sheet (10 helices) to `tools/oxdna_shape_verify.py`. L-shape shows expected thickening (4.6 nm) at bend. Wide sheet scales to 18.0 nm width. Pipeline distinguishes all 6 geometric classes.

@@ -1,0 +1,12 @@
+{
+  "operation": "removeCrossoversForPair",
+  "description": "Remove scaffold crossovers at T-junction",
+  "params": {
+    "helix1": 0,
+    "helix2": 2,
+    "strand_type": "scaffold",
+    "layout": "t_shape"
+  },
+  "result": "{'helix1': 0, 'helix2': 2, 'strand_type': 'scaffold', 'removed': 0, 'message': 'No crossovers found between this pair'}",
+  "natural_language": "Remove scaffold crossovers at the T-junction connecting the bar to the stem"
+}

@@ -1,0 +1,11 @@
+{
+  "operation": "addAllNeighborCrossovers",
+  "description": "Add scaffold crossovers to all pairs in T-shaped design",
+  "params": {
+    "strand_type": "scaffold",
+    "n_helices": 5,
+    "layout": "t_shape"
+  },
+  "result": "{'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}]}",
+  "natural_language": "Add scaffold crossovers between all neighboring helices in a T-shaped design"
+}

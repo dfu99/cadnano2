@@ -1403,6 +1403,132 @@ def gen_l_shape_operations(app):
     return results
 
 
+def setup_t_shape_design(app, length=126, strand_type="both"):
+    """Create a T-shaped design: 3 horizontal (top bar) + 2 vertical (stem)."""
+    from cadnano2.views.agent.agentmethods import AgentMethods
+
+    dc = get_dc(app)
+    dc.actionAddHoneycombPartSlot()
+    doc = dc.document()
+    part = doc.selectedPart()
+
+    class MockDC:
+        def __init__(self, app, doc, part):
+            self._app = app
+            self._doc = doc
+            self._part = part
+        def document(self):
+            return self._doc
+        def activePart(self):
+            return self._part
+        def undoStack(self):
+            return self._doc.undoStack()
+
+    mock = MockDC(app, doc, part)
+    methods = AgentMethods(mock)
+
+    # T-shape: horizontal bar (row 21, cols 20-22) + stem (rows 22-23, col 21 = middle)
+    positions = [[21, 20], [21, 21], [21, 22],
+                 [22, 21],
+                 [23, 21]]
+    result = methods.createHelicesWithStrands(
+        positions=positions,
+        strand_type=strand_type,
+        length=length
+    )
+    print(f"  Setup T-shape: {result}")
+    return dc, methods
+
+
+def gen_t_shape_operations(app):
+    """Generate screenshots for T-shaped design operations."""
+    results = []
+
+    # 1. Add all scaffold crossovers
+    print(f"\n--- t_shape_add_scaffold_crossovers ---")
+    dc, methods = setup_t_shape_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "t_shape_add_scaffold_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addAllNeighborCrossovers("scaffold")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold crossovers to all pairs in T-shaped design",
+        "params": {"strand_type": "scaffold", "n_helices": 5, "layout": "t_shape"},
+        "result": str(result),
+        "natural_language": "Add scaffold crossovers between all neighboring helices in a T-shaped design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 2. Add both crossover types
+    print(f"\n--- t_shape_add_both_crossovers ---")
+    dc, methods = setup_t_shape_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "t_shape_add_both_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    r1 = methods.addAllNeighborCrossovers("scaffold")
+    r2 = methods.addAllNeighborCrossovers("staple")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold and staple crossovers to T-shaped design",
+        "params": {"strand_type": "both", "n_helices": 5, "layout": "t_shape"},
+        "result": f"scaffold: {r1}, staple: {r2}",
+        "natural_language": "Add both scaffold and staple crossovers to all pairs in a T-shaped design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 3. Remove stem crossovers (disconnect stem from bar)
+    print(f"\n--- t_shape_remove_stem_pair ---")
+    dc, methods = setup_t_shape_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "t_shape_remove_stem_pair")
+    save_screenshot(before_img, outdir, "before")
+
+    # Remove crossovers at the T-junction (bar center to stem top)
+    neighbors = methods.getNeighborPairs()
+    print(f"  Neighbors: {neighbors}")
+    # Helix at (21,21) connects to (22,21) — this is the T-junction
+    result = methods.removeCrossoversForPair(0, 2, "scaffold")
+    print(f"  removeCrossoversForPair at junction: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "removeCrossoversForPair",
+        "description": "Remove scaffold crossovers at T-junction",
+        "params": {"helix1": 0, "helix2": 2, "strand_type": "scaffold", "layout": "t_shape"},
+        "result": str(result),
+        "natural_language": "Remove scaffold crossovers at the T-junction connecting the bar to the stem"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    return results
+
+
 # ============================================================
 # Main
 # ============================================================
@@ -1429,6 +1555,7 @@ def main():
         ("Six-helix operations", gen_six_helix_operations),
         ("2×3 grid operations", gen_grid_operations),
         ("L-shape operations", gen_l_shape_operations),
+        ("T-shape operations", gen_t_shape_operations),
     ]
 
     for name, gen_fn in generators:

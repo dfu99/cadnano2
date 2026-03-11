@@ -322,5 +322,29 @@ objectives:
     (multi-row, asymmetric) arrangements. L-shape adds the first non-rectangular
     layout, important for training on designs with bends and junctions.
     10.9× total growth from initial 21 pairs to 228 augmented examples.
+  connects_to: obj-016
+  completed_date: '2026-03-11'
+- id: obj-016
+  status: completed
+  statement: Add T-shape screenshots, final dataset at 49 pairs and 244 augmented examples
+  methodology: >-
+    Added setup_t_shape_design() (3 horizontal bar + 2 vertical stem helices)
+    and gen_t_shape_operations() with 3 operations: add scaffold crossovers,
+    add both types, remove T-junction pair. Re-exported base and augmented
+    HuggingFace datasets.
+  metrics:
+    image_pairs: 49
+    augmented_examples: 244
+    new_pairs: 3
+    design_layouts: 6
+    growth_from_initial: 11.6x
+    layouts: 2-helix, 3-helix, 6-helix, 2x3_grid, l_shape, t_shape
+  figures:
+  - results/obj-016-t-shape-final-dataset.png
+  conclusions: >-
+    Dataset now covers 6 design layouts spanning simple 1D rows to complex
+    2D asymmetric shapes. T-shape adds symmetric branching geometry, complementing
+    L-shape's asymmetric bend. 11.6× growth from 21 to 244 examples provides
+    a solid foundation for VLM SFT training on DNA nanostructure operations.
   connects_to: null
   completed_date: '2026-03-11'
