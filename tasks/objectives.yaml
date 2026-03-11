@@ -229,5 +229,28 @@ objectives:
     across 13 operations. 6-helix operations demonstrate complex multi-helix
     workflows: full crossover wiring, selective pair removal, bulk resize,
     and auto staple breaking.
+  connects_to: obj-012
+  completed_date: '2026-03-11'
+- id: obj-012
+  status: completed
+  statement: Template-based instruction augmentation scales dataset 3.9x to 192 examples
+  methodology: >-
+    Built tools/augment_instructions.py with operation-specific paraphrase
+    generators (move, create, remove, batch, resize, insertion, break). Each
+    of 39 original instructions gets 3-5 paraphrases varying formality,
+    specificity, and phrasing style. Exported as HuggingFace dataset.
+  metrics:
+    original_examples: 39
+    augmented_examples: 192
+    augmentation_factor: 3.9
+    unique_images: 39
+    categories: 5
+    paraphrase_templates: 8
+  figures:
+  - results/obj-012-instruction-augmentation.png
+  conclusions: >-
+    Template-based augmentation is a lightweight way to scale instruction
+    diversity without new images. 192 training examples across 5 categories
+    with varied phrasing should improve VLM robustness to instruction style.
   connects_to: null
   completed_date: '2026-03-11'

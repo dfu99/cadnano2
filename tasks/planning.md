@@ -2,19 +2,20 @@
 
 ## Current Priorities
 
-1. **Scale dataset** — More operation variants, more helix counts, augment with paraphrased instructions
-2. **Push dataset to HuggingFace Hub** — Make training data publicly available
-3. **Extend oxDNA verification** — L-shapes, asymmetric designs, larger structures
+1. **Push dataset to HuggingFace Hub** — Make training data publicly available
+2. **Extend oxDNA verification** — L-shapes, asymmetric designs, larger structures
+3. **Add 2×3 grid design screenshots** — Multi-row operations for more diverse training data
 
 ## Next Steps
 
-- Add instruction paraphrasing / augmentation to grow dataset beyond 39 examples
-- Push dataset to HuggingFace Hub
+- Push augmented dataset (192 examples) to HuggingFace Hub
 - Extend oxDNA verification to L-shapes and asymmetric designs
 - Add 2×3 grid design screenshots (multi-row operations)
+- Begin VLM fine-tuning experiments with the augmented dataset
 
 ## Recently Completed
 
+- **Instruction augmentation to 192 examples** (2026-03-11): Built `tools/augment_instructions.py` — template-based paraphrasing generates 3-5 variants per instruction. 39 images × ~4.9 instructions = 192 training examples. Exported as augmented HuggingFace dataset.
 - **6-helix design screenshots** (2026-03-11): Added 6 new 6-helix operations to screenshot library (39 total pairs). Covers add scaffold/both crossovers, remove middle pair, resize, insertions, auto-break across 2/3/6-helix designs. Re-exported HuggingFace dataset.
 - **oxDNA shape verification for 4 geometries** (2026-03-11): Built `tools/oxdna_shape_verify.py` — tests tube, 2×3 grid, long sheet against flat sheet reference. All shapes produce expected 3D geometries: grid has near-square cross-section (circularity 0.84), long sheet doubles length to 83.3 nm.
 - **HuggingFace screenshot dataset export** (2026-03-11): Built `tools/export_screenshot_dataset.py` — exports 33 before/after image pairs as HuggingFace Dataset (Arrow + Parquet). 5 categories, 7 features per example including PIL Images. 3.5MB total.
