@@ -87,3 +87,50 @@ objectives:
     Agent can now handle the full staple workflow: create, break, list.
   connects_to: obj-006
   completed_date: '2026-03-10'
+- id: obj-006
+  status: completed
+  statement: Screenshot library generator with 21 before/after crossover operation pairs
+  methodology: >-
+    Built tools/generate_screenshot_library.py with headless path view rendering
+    (QGraphicsScene.render to QImage). Fixed moveCrossover co-moving strand overlap
+    bug. Generates before/after PNGs with metadata.json for 7 operation categories.
+  metrics:
+    before_after_pairs: 21
+    operation_categories: 7
+    bug_fixes: 1
+    operations: move_right(4), move_left(4), delete(3), create(3), add_batch(4), remove_batch(2), staple_add(1)
+  figures:
+  - screenshots/move_crossover_right_3/before.png
+  - screenshots/move_crossover_right_3/after.png
+  - screenshots/add_4_evenly_spaced_crossovers/after.png
+  conclusions: >-
+    Headless screenshot capture enables automated generation of visual training
+    data. The moveCrossover overlap bug (co-moving strands blocking each other)
+    was a real blocker for any crossover movement operations.
+  connects_to: obj-007
+  completed_date: '2026-03-11'
+- id: obj-007
+  status: completed
+  statement: cadnano-to-oxDNA pipeline validates flat sheet as rectilinear prism
+  methodology: >-
+    Built tools/oxdna_flat_sheet.py: creates 6-helix x 126bp flat sheet in cadnano,
+    converts to oxDNA via tacoxDNA, parses 3D nucleotide coordinates, fits PCA-aligned
+    bounding box. Measures flatness ratio, planarity RMS, and prism dimensions.
+  metrics:
+    nucleotides: 1512
+    strands: 51
+    pca_dims_nm: [41.5, 10.5, 2.4]
+    flatness_ratio: 0.0576
+    rms_planarity_nm: 0.63
+    aspect_ratio: 3.96
+  figures:
+  - results/oxdna_flat_sheet_3d.png
+  - results/oxdna_flat_sheet_planarity.png
+  - results/oxdna_flat_sheet_prism_dims.png
+  conclusions: >-
+    The cadnano-to-oxDNA pipeline works end-to-end. The 6-helix flat sheet
+    maps to a 41.5 x 10.5 x 2.4 nm rectilinear prism with flatness ratio
+    0.058 and planarity RMS 0.63 nm (~1 DNA diameter). This geometric
+    validation enables automated shape verification of cadnano designs.
+  connects_to: null
+  completed_date: '2026-03-11'

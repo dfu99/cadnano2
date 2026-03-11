@@ -1,0 +1,55 @@
+{
+  "design": {
+    "n_helices": 6,
+    "length_bp": 126,
+    "lattice": "honeycomb"
+  },
+  "oxdna": {
+    "n_nucleotides": 1512,
+    "n_strands": 51
+  },
+  "prism_fit": {
+    "aabb_dims_nm": [
+      10.42689374469131,
+      2.10816862783255,
+      41.50000000000005
+    ],
+    "pca_dims_nm": [
+      41.50000000000006,
+      10.470334901596003,
+      2.391647149586239
+    ],
+    "flatness_ratio": 0.05763005179725869,
+    "aspect_ratio": 3.9635790440355616,
+    "rms_planarity_nm": 0.6299415585198145,
+    "fill_fraction": null,
+    "eigenvalues": [
+      201.10400082691928,
+      14.453262216678363,
+      0.5472837793507532
+    ],
+    "eigenvectors": [
+      [
+        1.1786273516966843e-16,
+        0.9987139644344536,
+        0.050699282476355
+      ],
+      [
+        -4.7512765088156145e-17,
+        -0.050699282476355,
+        0.9987139644344536
+      ],
+      [
+        1.0,
+        -1.2012002259882461e-16,
+        4.147610587863717e-17
+      ]
+    ],
+    "n_nucleotides": 1512
+  },
+  "figures": [
+    "/home/dan/Documents/code/cadnano2/results/oxdna_flat_sheet_3d.png",
+    "/home/dan/Documents/code/cadnano2/results/oxdna_flat_sheet_planarity.png",
+    "/home/dan/Documents/code/cadnano2/results/oxdna_flat_sheet_prism_dims.png"
+  ]
+}
