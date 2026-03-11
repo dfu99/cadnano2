@@ -179,5 +179,32 @@ objectives:
     Screenshot library is now a standard HuggingFace dataset loadable with
     load_from_disk(). Each example pairs before/after PIL images with natural
     language instructions, ready for vision-language model SFT training.
+  connects_to: obj-010
+  completed_date: '2026-03-11'
+- id: obj-010
+  status: completed
+  statement: oxDNA geometric verification for 4 diverse cadnano shape classes
+  methodology: >-
+    Built tools/oxdna_shape_verify.py that creates tube (3×2 hex block),
+    2×3 grid, and long sheet (6×252bp) designs, converts each to oxDNA via
+    tacoxDNA, and compares PCA dimensions, flatness, cross-section circularity,
+    and planarity against the reference flat sheet.
+  metrics:
+    shapes_tested: 4
+    flat_sheet_dims_nm: [41.5, 10.5, 2.4]
+    tube_dims_nm: [41.5, 8.7, 3.0]
+    grid_2x3_dims_nm: [41.5, 5.2, 5.2]
+    long_sheet_dims_nm: [83.3, 10.5, 2.4]
+    grid_circularity: 0.838
+    tube_circularity: 0.548
+    flat_circularity: 0.483
+    long_length_ratio: 2.01
+  figures:
+  - results/obj-010-oxdna-shape-verification.png
+  conclusions: >-
+    All four shapes produce expected geometries: flat sheet is flat (0.058),
+    tube is thicker with higher circularity (0.55), 2×3 grid has near-square
+    cross-section (circularity 0.84), long sheet doubles length while preserving
+    width/thickness. Pipeline reliably verifies diverse cadnano designs.
   connects_to: null
   completed_date: '2026-03-11'

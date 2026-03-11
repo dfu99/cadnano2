@@ -2,19 +2,20 @@
 
 ## Current Priorities
 
-1. **oxDNA geometric verification for diverse shapes** — Extend the cadnano-to-oxDNA pipeline to test tubes, L-shapes, and multi-layer structures
-2. **Generate screenshot pairs for 6-helix designs** — Larger designs with more complex operations
-3. **Scale dataset** — More operation variants, more helix counts, augment with paraphrased instructions
+1. **Generate screenshot pairs for 6-helix designs** — Larger designs with more complex operations
+2. **Scale dataset** — More operation variants, more helix counts, augment with paraphrased instructions
+3. **Push dataset to HuggingFace Hub** — Make training data publicly available
 
 ## Next Steps
 
-- Test oxDNA pipeline on tube (closed) and multi-row designs
 - Generate 6-helix design screenshot pairs with more complex multi-step operations
 - Add instruction paraphrasing / augmentation to grow dataset beyond 33 examples
-- Explore pushing dataset to HuggingFace Hub
+- Push dataset to HuggingFace Hub
+- Extend oxDNA verification to L-shapes and asymmetric designs
 
 ## Recently Completed
 
+- **oxDNA shape verification for 4 geometries** (2026-03-11): Built `tools/oxdna_shape_verify.py` — tests tube, 2×3 grid, long sheet against flat sheet reference. All shapes produce expected 3D geometries: grid has near-square cross-section (circularity 0.84), long sheet doubles length to 83.3 nm.
 - **HuggingFace screenshot dataset export** (2026-03-11): Built `tools/export_screenshot_dataset.py` — exports 33 before/after image pairs as HuggingFace Dataset (Arrow + Parquet). 5 categories, 7 features per example including PIL Images. 3.5MB total.
 - **Expanded screenshot library to 33 pairs** (2026-03-11): Added resize strands (3), insertion patterns (4), strand breaks (3), three-helix operations (2) to `tools/generate_screenshot_library.py`. Now 11 operation categories, 57% growth from initial 21 pairs.
 - **cadnano-to-oxDNA flat sheet pipeline** (2026-03-11): Built `tools/oxdna_flat_sheet.py` — creates 6-helix flat sheet in cadnano, converts to oxDNA via tacoxDNA, parses 3D coordinates, fits rectilinear prism via PCA. Result: 41.5 x 10.5 x 2.4 nm, flatness ratio 0.058, planarity RMS 0.63 nm. Validates that automated cadnano designs produce geometrically correct 3D structures.
