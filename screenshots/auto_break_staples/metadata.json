@@ -1,0 +1,7 @@
+{
+  "operation": "autoBreakStaples",
+  "description": "Auto-break staples (Dijkstra optimized)",
+  "params": {},
+  "result": "{'before_staple_count': 8, 'after_staple_count': 8, 'breaks_added': 0, 'staple_lengths': [42, 42, 42, 42, 42, 42, 42, 42], 'avg_length': 42.0, 'min_length': 42, 'max_length': 42, 'message': 'Broke 8 staple oligos into 8 staples (avg 42.0 bp)'}",
+  "natural_language": "Automatically break all staple strands into optimal lengths"
+}

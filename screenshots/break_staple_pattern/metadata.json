@@ -1,0 +1,9 @@
+{
+  "operation": "breakStaplePattern",
+  "description": "Break staples every 21 bases",
+  "params": {
+    "spacing": 21
+  },
+  "result": "{'breaks': 0, 'message': 'No staple strands longer than 40'}",
+  "natural_language": "Break all staple strands at intervals of 21 bases"
+}

@@ -1,0 +1,11 @@
+{
+  "operation": "addInsertionPattern",
+  "description": "Add insertion pattern (length=3) on helix 0",
+  "params": {
+    "helix_num": 0,
+    "length": 3,
+    "spacing": 21
+  },
+  "result": "{'helix_num': 0, 'length': 3, 'spacing': 21, 'added': 8, 'positions': [0, 21, 42, 63, 84, 105, 126, 147], 'message': 'Added 8 3-base insertions on helix 0'}",
+  "natural_language": "Add insertions of length 3 every 21 bases on helix 0"
+}

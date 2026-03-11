@@ -1,0 +1,9 @@
+{
+  "operation": "addAllNeighborCrossovers",
+  "description": "Add scaffold crossovers to all neighbor pairs (3-helix)",
+  "params": {
+    "strand_type": "scaffold"
+  },
+  "result": "{'strand_type': 'scaffold', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}]}",
+  "natural_language": "Add scaffold crossovers between all neighboring helices in a 3-helix design"
+}

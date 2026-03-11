@@ -1,0 +1,10 @@
+{
+  "operation": "resizeAllStrands",
+  "description": "Resize all scaffold strands by -21bp",
+  "params": {
+    "strand_type": "scaffold",
+    "delta": -21
+  },
+  "result": "No strands found to resize",
+  "natural_language": "Shrink all scaffold strands by 21 bases"
+}

@@ -1,0 +1,10 @@
+{
+  "operation": "addInsertionPatternAll",
+  "description": "Add insertions on all helices",
+  "params": {
+    "length": 1,
+    "spacing": 21
+  },
+  "result": "{'length': 1, 'spacing': 21, 'total_added': 16, 'per_helix': [{'helix_num': 1, 'added': 8, 'positions': [0, 21, 42, 63, 84, 105, 126, 147]}, {'helix_num': 0, 'added': 8, 'positions': [0, 21, 42, 63, 84, 105, 126, 147]}], 'message': 'Added 16 1-base insertions across 2 helices'}",
+  "natural_language": "Add single-base insertions every 21 bases on all helices"
+}

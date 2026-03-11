@@ -664,6 +664,262 @@ def gen_move_crossover_staple(app):
 
 
 # ============================================================
+# New operations: resize, insertions, strand breaks
+# ============================================================
+
+def gen_resize_strands(app):
+    """Generate before/after for resizing strands."""
+    results = []
+
+    for delta, label in [(21, "extend_21"), (42, "extend_42"), (-21, "shrink_21")]:
+        print(f"\n--- resize_strands_{label} ---")
+        dc, methods = setup_two_helix_design(app, length=126, with_crossovers=True)
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"resize_strands_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.resizeAllStrands("scaffold", delta=delta)
+        print(f"  resizeAllStrands: {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "resizeAllStrands",
+            "description": f"Resize all scaffold strands by {delta}bp",
+            "params": {"strand_type": "scaffold", "delta": delta},
+            "result": str(result),
+            "natural_language": f"{'Extend' if delta > 0 else 'Shrink'} all scaffold strands by {abs(delta)} bases"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_insertion_pattern(app):
+    """Generate before/after for adding insertion/deletion patterns."""
+    results = []
+
+    # Insertion (length=1)
+    for length, label in [(1, "insertion_1"), (-1, "deletion_1"), (3, "insertion_3")]:
+        print(f"\n--- insertion_pattern_{label} ---")
+        dc, methods = setup_two_helix_design(app, length=168, with_crossovers=True)
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"insertion_pattern_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.addInsertionPattern(0, length=length, spacing=21)
+        print(f"  addInsertionPattern: {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "addInsertionPattern",
+            "description": f"Add {'insertion' if length > 0 else 'deletion'} pattern (length={length}) on helix 0",
+            "params": {"helix_num": 0, "length": length, "spacing": 21},
+            "result": str(result),
+            "natural_language": f"Add {'insertions' if length > 0 else 'deletions'} of length {abs(length)} every 21 bases on helix 0"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    # Insertions on all helices
+    print(f"\n--- insertion_pattern_all ---")
+    dc, methods = setup_two_helix_design(app, length=168, with_crossovers=True)
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "insertion_pattern_all")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addInsertionPatternAll(length=1, spacing=21)
+    print(f"  addInsertionPatternAll: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addInsertionPatternAll",
+        "description": "Add insertions on all helices",
+        "params": {"length": 1, "spacing": 21},
+        "result": str(result),
+        "natural_language": "Add single-base insertions every 21 bases on all helices"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+
+    results.append(meta)
+    reset_design(app)
+
+    return results
+
+
+def gen_strand_breaks(app):
+    """Generate before/after for strand breaking operations."""
+    results = []
+
+    # Split a single strand
+    print(f"\n--- split_strand_at ---")
+    dc, methods = setup_two_helix_design(app, strand_type="both", with_crossovers=False)
+    methods.addCrossoversForPair(0, 1, "scaffold")
+    methods.addCrossoversForPair(0, 1, "staple")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "split_strand_at")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.splitStrandAt(0, "staple", 42)
+    print(f"  splitStrandAt: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "splitStrandAt",
+        "description": "Split staple strand at helix 0 index 42",
+        "params": {"helix_num": 0, "strand_type": "staple", "idx": 42},
+        "result": str(result),
+        "natural_language": "Split the staple strand on helix 0 at position 42"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+
+    results.append(meta)
+    reset_design(app)
+
+    # Break staple pattern
+    print(f"\n--- break_staple_pattern ---")
+    dc, methods = setup_two_helix_design(app, strand_type="both", with_crossovers=False)
+    methods.addCrossoversForPair(0, 1, "scaffold")
+    methods.addCrossoversForPair(0, 1, "staple")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "break_staple_pattern")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.breakStaplePattern(spacing=21)
+    print(f"  breakStaplePattern: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "breakStaplePattern",
+        "description": "Break staples every 21 bases",
+        "params": {"spacing": 21},
+        "result": str(result),
+        "natural_language": "Break all staple strands at intervals of 21 bases"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+
+    results.append(meta)
+    reset_design(app)
+
+    # Auto-break staples (Dijkstra optimized)
+    print(f"\n--- auto_break_staples ---")
+    dc, methods = setup_two_helix_design(app, strand_type="both", with_crossovers=False)
+    methods.addCrossoversForPair(0, 1, "scaffold")
+    methods.addCrossoversForPair(0, 1, "staple")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "auto_break_staples")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.autoBreakStaples()
+    print(f"  autoBreakStaples: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "autoBreakStaples",
+        "description": "Auto-break staples (Dijkstra optimized)",
+        "params": {},
+        "result": str(result),
+        "natural_language": "Automatically break all staple strands into optimal lengths"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+
+    results.append(meta)
+    reset_design(app)
+
+    return results
+
+
+def gen_three_helix_operations(app):
+    """Generate before/after for 3-helix design operations."""
+    results = []
+
+    # Add all neighbor crossovers on 3-helix design
+    print(f"\n--- three_helix_add_all_crossovers ---")
+    dc, methods = setup_three_helix_design(app, length=126)
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "three_helix_add_all_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addAllNeighborCrossovers("scaffold")
+    print(f"  addAllNeighborCrossovers: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold crossovers to all neighbor pairs (3-helix)",
+        "params": {"strand_type": "scaffold"},
+        "result": str(result),
+        "natural_language": "Add scaffold crossovers between all neighboring helices in a 3-helix design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+
+    results.append(meta)
+    reset_design(app)
+
+    # Remove crossovers from one pair in 3-helix design
+    print(f"\n--- three_helix_remove_one_pair ---")
+    dc, methods = setup_three_helix_design(app, length=126)
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "three_helix_remove_one_pair")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.removeCrossoversForPair(0, 1, "scaffold")
+    print(f"  removeCrossoversForPair(0,1): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "removeCrossoversForPair",
+        "description": "Remove crossovers between helix 0 and 1 in 3-helix design",
+        "params": {"helix1": 0, "helix2": 1, "strand_type": "scaffold"},
+        "result": str(result),
+        "natural_language": "Remove all scaffold crossovers between helix 0 and helix 1 (keep helix 1-2 crossovers)"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+
+    results.append(meta)
+    reset_design(app)
+
+    return results
+
+
+# ============================================================
 # Main
 # ============================================================
 
@@ -682,9 +938,10 @@ def main():
         ("Add evenly spaced crossovers", gen_add_evenly_spaced),
         ("Remove all crossovers", gen_remove_all_crossovers),
         ("Staple operations", gen_staple_operations),
-        # Staple move skipped: staple double crossovers span wide ranges,
-        # moveCrossover needs additional logic for them
-        # ("Move staple crossover", gen_move_crossover_staple),
+        ("Resize strands", gen_resize_strands),
+        ("Insertion patterns", gen_insertion_pattern),
+        ("Strand breaks", gen_strand_breaks),
+        ("Three-helix operations", gen_three_helix_operations),
     ]
 
     for name, gen_fn in generators:
