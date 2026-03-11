@@ -2,19 +2,20 @@
 
 ## Current Priorities
 
-1. **Generate screenshot pairs for 6-helix designs** — Larger designs with more complex operations
-2. **Scale dataset** — More operation variants, more helix counts, augment with paraphrased instructions
-3. **Push dataset to HuggingFace Hub** — Make training data publicly available
+1. **Scale dataset** — More operation variants, more helix counts, augment with paraphrased instructions
+2. **Push dataset to HuggingFace Hub** — Make training data publicly available
+3. **Extend oxDNA verification** — L-shapes, asymmetric designs, larger structures
 
 ## Next Steps
 
-- Generate 6-helix design screenshot pairs with more complex multi-step operations
-- Add instruction paraphrasing / augmentation to grow dataset beyond 33 examples
+- Add instruction paraphrasing / augmentation to grow dataset beyond 39 examples
 - Push dataset to HuggingFace Hub
 - Extend oxDNA verification to L-shapes and asymmetric designs
+- Add 2×3 grid design screenshots (multi-row operations)
 
 ## Recently Completed
 
+- **6-helix design screenshots** (2026-03-11): Added 6 new 6-helix operations to screenshot library (39 total pairs). Covers add scaffold/both crossovers, remove middle pair, resize, insertions, auto-break across 2/3/6-helix designs. Re-exported HuggingFace dataset.
 - **oxDNA shape verification for 4 geometries** (2026-03-11): Built `tools/oxdna_shape_verify.py` — tests tube, 2×3 grid, long sheet against flat sheet reference. All shapes produce expected 3D geometries: grid has near-square cross-section (circularity 0.84), long sheet doubles length to 83.3 nm.
 - **HuggingFace screenshot dataset export** (2026-03-11): Built `tools/export_screenshot_dataset.py` — exports 33 before/after image pairs as HuggingFace Dataset (Arrow + Parquet). 5 categories, 7 features per example including PIL Images. 3.5MB total.
 - **Expanded screenshot library to 33 pairs** (2026-03-11): Added resize strands (3), insertion patterns (4), strand breaks (3), three-helix operations (2) to `tools/generate_screenshot_library.py`. Now 11 operation categories, 57% growth from initial 21 pairs.

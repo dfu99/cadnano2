@@ -1,0 +1,9 @@
+{
+  "operation": "autoBreakStaples",
+  "description": "Auto-break staples in fully-wired 6-helix design",
+  "params": {
+    "n_helices": 6
+  },
+  "result": "{'before_staple_count': 40, 'after_staple_count': 40, 'breaks_added': 0, 'staple_lengths': [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 13, 13, 13, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 40, 40, 40, 40, 40, 40, 126], 'avg_length': 18.9, 'min_length': 4, 'max_length': 126, 'message': 'Broke 40 staple oligos into 40 staples (avg 18.9 bp)'}",
+  "natural_language": "Automatically break all staple strands into optimal lengths in a 6-helix design"
+}

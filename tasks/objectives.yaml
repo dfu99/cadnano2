@@ -206,5 +206,28 @@ objectives:
     tube is thicker with higher circularity (0.55), 2×3 grid has near-square
     cross-section (circularity 0.84), long sheet doubles length while preserving
     width/thickness. Pipeline reliably verifies diverse cadnano designs.
+  connects_to: obj-011
+  completed_date: '2026-03-11'
+- id: obj-011
+  status: completed
+  statement: Add 6-helix design screenshots, expand dataset to 39 pairs
+  methodology: >-
+    Added setup_six_helix_design() and gen_six_helix_operations() to
+    generate_screenshot_library.py. 6 new operations: add scaffold crossovers,
+    add both crossover types, remove middle pair, resize extend, insertion
+    pattern all, auto-break staples. Re-exported HuggingFace dataset.
+  metrics:
+    before_after_pairs: 39
+    new_pairs: 6
+    operation_categories: 13
+    helix_counts_covered: [2, 3, 6]
+    dataset_size_mb: 4.1
+  figures:
+  - results/obj-011-six-helix-screenshots.png
+  conclusions: >-
+    Dataset now covers 2-helix, 3-helix, and 6-helix designs with 39 pairs
+    across 13 operations. 6-helix operations demonstrate complex multi-helix
+    workflows: full crossover wiring, selective pair removal, bulk resize,
+    and auto staple breaking.
   connects_to: null
   completed_date: '2026-03-11'

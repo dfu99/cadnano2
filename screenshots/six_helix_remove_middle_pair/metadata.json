@@ -1,0 +1,12 @@
+{
+  "operation": "removeCrossoversForPair",
+  "description": "Remove scaffold crossovers between middle pair in 6-helix design",
+  "params": {
+    "helix1": 2,
+    "helix2": 3,
+    "strand_type": "scaffold",
+    "n_helices": 6
+  },
+  "result": "{'helix1': 2, 'helix2': 3, 'strand_type': 'scaffold', 'removed': 12}",
+  "natural_language": "Remove all scaffold crossovers between helix 2 and helix 3 in a 6-helix design"
+}

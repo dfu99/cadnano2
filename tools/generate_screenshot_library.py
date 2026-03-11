@@ -919,6 +919,210 @@ def gen_three_helix_operations(app):
     return results
 
 
+def setup_six_helix_design(app, length=126, strand_type="both"):
+    """Create a 6-helix single-row design (flat sheet)."""
+    from cadnano2.views.agent.agentmethods import AgentMethods
+
+    dc = get_dc(app)
+    dc.actionAddHoneycombPartSlot()
+    doc = dc.document()
+    part = doc.selectedPart()
+
+    class MockDC:
+        def __init__(self, app, doc, part):
+            self._app = app
+            self._doc = doc
+            self._part = part
+        def document(self):
+            return self._doc
+        def activePart(self):
+            return self._part
+        def undoStack(self):
+            return self._doc.undoStack()
+
+    mock = MockDC(app, doc, part)
+    methods = AgentMethods(mock)
+
+    positions = [[21, 20 + i] for i in range(6)]
+    result = methods.createHelicesWithStrands(
+        positions=positions,
+        strand_type=strand_type,
+        length=length
+    )
+    print(f"  Setup 6-helix: {result}")
+    return dc, methods
+
+
+def gen_six_helix_operations(app):
+    """Generate screenshots for 6-helix design operations."""
+    results = []
+
+    # 1. Add all scaffold crossovers to 6-helix design
+    print(f"\n--- six_helix_add_scaffold_crossovers ---")
+    dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "six_helix_add_scaffold_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addAllNeighborCrossovers("scaffold")
+    print(f"  addAllNeighborCrossovers(scaffold): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold crossovers to all pairs in 6-helix design",
+        "params": {"strand_type": "scaffold", "n_helices": 6},
+        "result": str(result),
+        "natural_language": "Add scaffold crossovers between all neighboring helices in a 6-helix flat sheet"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 2. Add both scaffold and staple crossovers
+    print(f"\n--- six_helix_add_both_crossovers ---")
+    dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "six_helix_add_both_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    result1 = methods.addAllNeighborCrossovers("scaffold")
+    result2 = methods.addAllNeighborCrossovers("staple")
+    print(f"  scaffold: {result1}")
+    print(f"  staple: {result2}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold and staple crossovers to 6-helix design",
+        "params": {"strand_type": "both", "n_helices": 6},
+        "result": f"scaffold: {result1}, staple: {result2}",
+        "natural_language": "Add both scaffold and staple crossovers to all neighboring helices in a 6-helix design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 3. Remove crossovers from middle pair in 6-helix design
+    print(f"\n--- six_helix_remove_middle_pair ---")
+    dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "six_helix_remove_middle_pair")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.removeCrossoversForPair(2, 3, "scaffold")
+    print(f"  removeCrossoversForPair(2,3): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "removeCrossoversForPair",
+        "description": "Remove scaffold crossovers between middle pair in 6-helix design",
+        "params": {"helix1": 2, "helix2": 3, "strand_type": "scaffold", "n_helices": 6},
+        "result": str(result),
+        "natural_language": "Remove all scaffold crossovers between helix 2 and helix 3 in a 6-helix design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 4. Resize all strands in 6-helix design
+    print(f"\n--- six_helix_resize_extend ---")
+    dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "six_helix_resize_extend")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.resizeAllStrands("scaffold", delta=21)
+    print(f"  resizeAllStrands(scaffold, delta=21): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "resizeAllStrands",
+        "description": "Extend all scaffold strands by 21bp in 6-helix design",
+        "params": {"strand_type": "scaffold", "delta": 21, "n_helices": 6},
+        "result": str(result),
+        "natural_language": "Extend all scaffold strands by 21 bases in a 6-helix design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 5. Add insertion pattern to all helices in 6-helix design
+    print(f"\n--- six_helix_insertion_pattern_all ---")
+    dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "six_helix_insertion_pattern_all")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addInsertionPatternAll(length=1, spacing=21)
+    print(f"  addInsertionPatternAll(1, spacing=21): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addInsertionPatternAll",
+        "description": "Add insertion pattern across all 6 helices",
+        "params": {"length": 1, "spacing": 21, "n_helices": 6},
+        "result": str(result),
+        "natural_language": "Add single-base insertions every 21 bases across all helices in a 6-helix design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 6. Auto-break staples in fully-wired 6-helix design
+    print(f"\n--- six_helix_auto_break ---")
+    dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+    methods.addAllNeighborCrossovers("staple")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "six_helix_auto_break")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.autoBreakStaples()
+    print(f"  autoBreakStaples(): {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "autoBreakStaples",
+        "description": "Auto-break staples in fully-wired 6-helix design",
+        "params": {"n_helices": 6},
+        "result": str(result),
+        "natural_language": "Automatically break all staple strands into optimal lengths in a 6-helix design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    return results
+
+
 # ============================================================
 # Main
 # ============================================================
@@ -942,6 +1146,7 @@ def main():
         ("Insertion patterns", gen_insertion_pattern),
         ("Strand breaks", gen_strand_breaks),
         ("Three-helix operations", gen_three_helix_operations),
+        ("Six-helix operations", gen_six_helix_operations),
     ]
 
     for name, gen_fn in generators:
