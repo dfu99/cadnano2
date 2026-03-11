@@ -1,0 +1,280 @@
+{
+  "total_operations": 21,
+  "operations": [
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover right 1 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 88,
+        "strand_type": "scaffold",
+        "delta": 1
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by 1bp to indices [89, 90]",
+      "natural_language": "Move the crossover at helix 1 index 88 to the right by 1 bases"
+    },
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover right 2 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 88,
+        "strand_type": "scaffold",
+        "delta": 2
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by 2bp to indices [90, 91]",
+      "natural_language": "Move the crossover at helix 1 index 88 to the right by 2 bases"
+    },
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover right 3 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 88,
+        "strand_type": "scaffold",
+        "delta": 3
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by 3bp to indices [91, 92]",
+      "natural_language": "Move the crossover at helix 1 index 88 to the right by 3 bases"
+    },
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover right 7 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 88,
+        "strand_type": "scaffold",
+        "delta": 7
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by 7bp to indices [95, 96]",
+      "natural_language": "Move the crossover at helix 1 index 88 to the right by 7 bases"
+    },
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover left 1 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 89,
+        "strand_type": "scaffold",
+        "delta": -1
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by -1bp to indices [87, 88]",
+      "natural_language": "Move the crossover at helix 1 index 89 to the left by 1 bases"
+    },
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover left 2 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 89,
+        "strand_type": "scaffold",
+        "delta": -2
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by -2bp to indices [86, 87]",
+      "natural_language": "Move the crossover at helix 1 index 89 to the left by 2 bases"
+    },
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover left 3 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 89,
+        "strand_type": "scaffold",
+        "delta": -3
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by -3bp to indices [85, 86]",
+      "natural_language": "Move the crossover at helix 1 index 89 to the left by 3 bases"
+    },
+    {
+      "operation": "moveCrossover",
+      "description": "Move crossover left 7 bases",
+      "params": {
+        "helix1": 1,
+        "helix2": 0,
+        "idx": 89,
+        "strand_type": "scaffold",
+        "delta": -7
+      },
+      "result": "Moved scaffold double crossover between helix 1 and helix 0 by -7bp to indices [81, 82]",
+      "natural_language": "Move the crossover at helix 1 index 89 to the left by 7 bases"
+    },
+    {
+      "operation": "removeCrossover",
+      "description": "Delete the first crossover",
+      "params": {
+        "helix_num": 0,
+        "idx": 25,
+        "strand_type": "scaffold"
+      },
+      "result": "Removed crossover at helix 0[25] (was connected to helix 1)",
+      "natural_language": "Delete the first crossover between helix 0 and helix 1"
+    },
+    {
+      "operation": "removeCrossover",
+      "description": "Delete the middle crossover",
+      "params": {
+        "helix_num": 1,
+        "idx": 46,
+        "strand_type": "scaffold"
+      },
+      "result": "Removed crossover at helix 1[46] (was connected to helix 0)",
+      "natural_language": "Delete the middle crossover between helix 0 and helix 1"
+    },
+    {
+      "operation": "removeCrossover",
+      "description": "Delete the last crossover",
+      "params": {
+        "helix_num": 1,
+        "idx": 152,
+        "strand_type": "scaffold"
+      },
+      "result": "Removed crossover at helix 1[152] (was connected to helix 0)",
+      "natural_language": "Delete the last crossover between helix 0 and helix 1"
+    },
+    {
+      "operation": "createCrossover",
+      "description": "Create crossover near_start (idx 4)",
+      "params": {
+        "helix1": 0,
+        "idx1": 4,
+        "helix2": 1,
+        "idx2": 4,
+        "strand_type": "scaffold"
+      },
+      "result": "Created scaffold double crossover: helix 0 <-> helix 1 at indices [4, 5]",
+      "natural_language": "Create a scaffold crossover between helix 0 and helix 1 at index 4"
+    },
+    {
+      "operation": "createCrossover",
+      "description": "Create crossover middle (idx 88)",
+      "params": {
+        "helix1": 0,
+        "idx1": 88,
+        "helix2": 1,
+        "idx2": 88,
+        "strand_type": "scaffold"
+      },
+      "result": "Created scaffold double crossover: helix 0 <-> helix 1 at indices [88, 89]",
+      "natural_language": "Create a scaffold crossover between helix 0 and helix 1 at index 88"
+    },
+    {
+      "operation": "createCrossover",
+      "description": "Create crossover near_end (idx 163)",
+      "params": {
+        "helix1": 0,
+        "idx1": 163,
+        "helix2": 1,
+        "idx2": 163,
+        "strand_type": "scaffold"
+      },
+      "result": "Created scaffold double crossover: helix 0 <-> helix 1 at indices [162, 163]",
+      "natural_language": "Create a scaffold crossover between helix 0 and helix 1 at index 163"
+    },
+    {
+      "operation": "addCrossoversForPair",
+      "description": "Add 2 evenly spaced crossovers",
+      "params": {
+        "helix1": 0,
+        "helix2": 1,
+        "strand_type": "scaffold",
+        "positions": [
+          4,
+          88
+        ]
+      },
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 2, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 88, 'high_idx': 89}]}",
+      "natural_language": "Add 2 evenly spaced scaffold crossovers between helix 0 and helix 1"
+    },
+    {
+      "operation": "addCrossoversForPair",
+      "description": "Add 3 evenly spaced crossovers",
+      "params": {
+        "helix1": 0,
+        "helix2": 1,
+        "strand_type": "scaffold",
+        "positions": [
+          4,
+          57,
+          109
+        ]
+      },
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 3, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 57, 'high_idx': 58}, {'low_idx': 109, 'high_idx': 110}]}",
+      "natural_language": "Add 3 evenly spaced scaffold crossovers between helix 0 and helix 1"
+    },
+    {
+      "operation": "addCrossoversForPair",
+      "description": "Add 4 evenly spaced crossovers",
+      "params": {
+        "helix1": 0,
+        "helix2": 1,
+        "strand_type": "scaffold",
+        "positions": [
+          4,
+          46,
+          88,
+          130
+        ]
+      },
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 4, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 130, 'high_idx': 131}]}",
+      "natural_language": "Add 4 evenly spaced scaffold crossovers between helix 0 and helix 1"
+    },
+    {
+      "operation": "addCrossoversForPair",
+      "description": "Add 6 evenly spaced crossovers",
+      "params": {
+        "helix1": 0,
+        "helix2": 1,
+        "strand_type": "scaffold",
+        "positions": [
+          4,
+          25,
+          46,
+          67,
+          88,
+          109
+        ]
+      },
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 6, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 25, 'high_idx': 26}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 109, 'high_idx': 110}]}",
+      "natural_language": "Add 6 evenly spaced scaffold crossovers between helix 0 and helix 1"
+    },
+    {
+      "operation": "removeCrossoversForPair",
+      "description": "Remove all crossovers between helix 0 and 1",
+      "params": {
+        "helix1": 0,
+        "helix2": 1,
+        "strand_type": "scaffold"
+      },
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'removed': 23}",
+      "natural_language": "Remove all scaffold crossovers between helix 0 and helix 1"
+    },
+    {
+      "operation": "removeAllCrossovers",
+      "description": "Remove all scaffold crossovers in the entire design",
+      "params": {
+        "strand_type": "scaffold"
+      },
+      "result": "{'strand_type': 'scaffold', 'removed': 23}",
+      "natural_language": "Remove all scaffold crossovers in the design"
+    },
+    {
+      "operation": "addCrossoversForPair",
+      "description": "Add staple crossovers between helix 0 and 1",
+      "params": {
+        "helix1": 0,
+        "helix2": 1,
+        "strand_type": "staple"
+      },
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'staple', 'created': 8, 'crossovers': [{'low_idx': 0, 'high_idx': 20}, {'low_idx': 21, 'high_idx': 41}, {'low_idx': 42, 'high_idx': 62}, {'low_idx': 63, 'high_idx': 83}, {'low_idx': 84, 'high_idx': 104}, {'low_idx': 105, 'high_idx': 125}, {'low_idx': 126, 'high_idx': 146}, {'low_idx': 147, 'high_idx': 167}]}",
+      "natural_language": "Add staple crossovers between helix 0 and helix 1"
+    }
+  ],
+  "generated_at": "2026-03-11 16:50:34"
+}

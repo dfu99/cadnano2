@@ -1,0 +1,9 @@
+{
+  "operation": "removeAllCrossovers",
+  "description": "Remove all scaffold crossovers in the entire design",
+  "params": {
+    "strand_type": "scaffold"
+  },
+  "result": "{'strand_type': 'scaffold', 'removed': 23}",
+  "natural_language": "Remove all scaffold crossovers in the design"
+}

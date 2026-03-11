@@ -1,0 +1,11 @@
+{
+  "operation": "removeCrossover",
+  "description": "Delete the middle crossover",
+  "params": {
+    "helix_num": 1,
+    "idx": 46,
+    "strand_type": "scaffold"
+  },
+  "result": "Removed crossover at helix 1[46] (was connected to helix 0)",
+  "natural_language": "Delete the middle crossover between helix 0 and helix 1"
+}

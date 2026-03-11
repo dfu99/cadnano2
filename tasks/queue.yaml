@@ -1,0 +1,43 @@
+max_chain: 10
+queue:
+- objective: Use our examples to see if you can determine what exactly is a full crossover
+    that connects two helices, and what is a half crossover that might go at the endpoint
+    of a structure. It should actually have very obvious features, especially within
+    the JSON data. Generally, a full crossover will have, along a single strand, at
+    adjacent index positions, one where its 3' element in the 4-tuple goes to an adjacent
+    helix, and at the adjacent index position, in the 4-tuple there, its 5' element
+    goes to the same adjacent helix. That's a full crossover. A half crossover is
+    simply having only the 3' or 5' element of the 4-tuple going to the other helix.
+  priority: 3
+  status: completed
+  added: 2026-03-11 00:10
+  source: slack
+  started: 2026-03-11 04:41
+  completed: 2026-03-11 10:46
+- objective: Instead of long-form reasoning like making a 6 helix bundle, we're going
+    to just automate tedious tasks, like moving crossovers left or right, or adding
+    patterns of them (e.g., add 6 evenly spaced crossovers). Build a library of before
+    and after screenshots of different variations of such actions, such as (move this
+    crossover to the right 3 spaces. move this crossover to the left 4 spaces. delete
+    this crossover. create a crossover here. and so on.)
+  priority: 3
+  status: pending
+  added: 2026-03-11 00:12
+  source: slack
+- objective: investigate using tacox to convert a cadnano design to the oxdna file
+    format and the oxdna file format (which is a coarse-grained 3d description of
+    the DNA nanostructure, where each line is a nucleobase), to further automate the
+    training within this pipeline. Since it is difficult for an LLM to abstract the
+    cadnano data format into a geometric space, use existing geometric converts. Try
+    to create a flat sheet rectangle by designing it in cadnano, converting it into
+    oxdna file type, then building a script that can take the 3d coordinates of the
+    file to see how well it fits a rectalinear prism. Always take screenshots and
+    create a detailed report with focused figures. Do not create figures without a
+    purpose. Always create mindful figures. Always create purposeful figures. Always
+    have an objective in mind and a desire to explain something to another person
+    using the figure. Do not create figures simply to express random data.
+  priority: 3
+  status: in_progress
+  added: 2026-03-11 00:16
+  source: slack
+  started: 2026-03-11 16:51

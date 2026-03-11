@@ -1,0 +1,11 @@
+{
+  "operation": "addCrossoversForPair",
+  "description": "Add staple crossovers between helix 0 and 1",
+  "params": {
+    "helix1": 0,
+    "helix2": 1,
+    "strand_type": "staple"
+  },
+  "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'staple', 'created': 8, 'crossovers': [{'low_idx': 0, 'high_idx': 20}, {'low_idx': 21, 'high_idx': 41}, {'low_idx': 42, 'high_idx': 62}, {'low_idx': 63, 'high_idx': 83}, {'low_idx': 84, 'high_idx': 104}, {'low_idx': 105, 'high_idx': 125}, {'low_idx': 126, 'high_idx': 146}, {'low_idx': 147, 'high_idx': 167}]}",
+  "natural_language": "Add staple crossovers between helix 0 and helix 1"
+}

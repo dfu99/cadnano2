@@ -1351,6 +1351,10 @@ class AgentMethods:
                 partner2_idx = p2_hi
             xover_endpoints.append((partner2, partner2_at_low, partner2_idx))
 
+        # Collect all strands participating in this move so we can skip
+        # overlap checks between co-moving strands
+        moving_strands = set(id(s) for s, _, _ in xover_endpoints)
+
         # Validate bounds for all strands being resized
         for strand, at_low, xover_idx in xover_endpoints:
             lo, hi = strand.idxs()
@@ -1359,13 +1363,13 @@ class AgentMethods:
                 new_hi = hi
                 # Check: new_lo must not go below lower neighbor's high idx
                 neighbors = strand.strandSet().getNeighbors(strand)
-                if neighbors[0]:
+                if neighbors[0] and id(neighbors[0]) not in moving_strands:
                     if new_lo <= neighbors[0].highIdx():
                         return (f"Error: Moving by {delta} would overlap "
                                 f"neighboring strand on helix "
                                 f"{strand.virtualHelix().number()} "
                                 f"(bound: {neighbors[0].highIdx() + 1})")
-                elif new_lo < part.minBaseIdx():
+                elif neighbors[0] is None and new_lo < part.minBaseIdx():
                     return f"Error: Moving by {delta} would go below minimum index"
                 if new_lo > new_hi:
                     return f"Error: Moving by {delta} would make strand length negative"
@@ -1373,13 +1377,13 @@ class AgentMethods:
                 new_lo = lo
                 new_hi = hi + delta
                 neighbors = strand.strandSet().getNeighbors(strand)
-                if neighbors[1]:
+                if neighbors[1] and id(neighbors[1]) not in moving_strands:
                     if new_hi >= neighbors[1].lowIdx():
                         return (f"Error: Moving by {delta} would overlap "
                                 f"neighboring strand on helix "
                                 f"{strand.virtualHelix().number()} "
                                 f"(bound: {neighbors[1].lowIdx() - 1})")
-                elif new_hi > part.maxBaseIdx():
+                elif neighbors[1] is None and new_hi > part.maxBaseIdx():
                     return f"Error: Moving by {delta} would exceed maximum index"
                 if new_lo > new_hi:
                     return f"Error: Moving by {delta} would make strand length negative"

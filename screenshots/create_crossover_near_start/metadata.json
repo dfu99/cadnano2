@@ -1,0 +1,13 @@
+{
+  "operation": "createCrossover",
+  "description": "Create crossover near_start (idx 4)",
+  "params": {
+    "helix1": 0,
+    "idx1": 4,
+    "helix2": 1,
+    "idx2": 4,
+    "strand_type": "scaffold"
+  },
+  "result": "Created scaffold double crossover: helix 0 <-> helix 1 at indices [4, 5]",
+  "natural_language": "Create a scaffold crossover between helix 0 and helix 1 at index 4"
+}

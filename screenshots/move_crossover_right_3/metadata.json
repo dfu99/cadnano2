@@ -1,0 +1,13 @@
+{
+  "operation": "moveCrossover",
+  "description": "Move crossover right 3 bases",
+  "params": {
+    "helix1": 1,
+    "helix2": 0,
+    "idx": 88,
+    "strand_type": "scaffold",
+    "delta": 3
+  },
+  "result": "Moved scaffold double crossover between helix 1 and helix 0 by 3bp to indices [91, 92]",
+  "natural_language": "Move the crossover at helix 1 index 88 to the right by 3 bases"
+}
