@@ -1,0 +1,42 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "operation_id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "before_image": {
+      "_type": "Image"
+    },
+    "after_image": {
+      "_type": "Image"
+    },
+    "instruction": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "operation": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "description": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "result": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "params": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "category": {
+      "dtype": "string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}

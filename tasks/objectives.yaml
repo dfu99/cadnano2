@@ -156,5 +156,28 @@ objectives:
     resizing, insertions/deletions, staple breaking, and multi-helix designs.
     57% growth from 21 to 33 pairs provides broader coverage for vision-language
     model training data.
+  connects_to: obj-009
+  completed_date: '2026-03-11'
+- id: obj-009
+  status: completed
+  statement: Export screenshot library as HuggingFace dataset for VLM training
+  methodology: >-
+    Built tools/export_screenshot_dataset.py that collects all screenshot
+    directories (before.png, after.png, metadata.json), creates a HuggingFace
+    Dataset with Image features, and exports as Arrow + Parquet formats with
+    a dataset card. Includes category labels for 5 operation types.
+  metrics:
+    examples: 33
+    features: 7
+    categories: 5
+    arrow_size_mb: 3.5
+    parquet_size_mb: 2.8
+    export_formats: arrow, parquet, dataset_card
+  figures:
+  - results/obj-009-hf-screenshot-dataset.png
+  conclusions: >-
+    Screenshot library is now a standard HuggingFace dataset loadable with
+    load_from_disk(). Each example pairs before/after PIL images with natural
+    language instructions, ready for vision-language model SFT training.
   connects_to: null
   completed_date: '2026-03-11'
