@@ -1,0 +1,12 @@
+{
+  "operation": "removeCrossoversForPair",
+  "description": "Remove scaffold crossovers at the bend of L-shaped design",
+  "params": {
+    "helix1": 1,
+    "helix2": 2,
+    "strand_type": "scaffold",
+    "layout": "l_shape"
+  },
+  "result": "{'helix1': 1, 'helix2': 2, 'strand_type': 'scaffold', 'removed': 12}",
+  "natural_language": "Remove scaffold crossovers at the bend connecting the two arms of the L-shaped design"
+}

@@ -1275,6 +1275,134 @@ def gen_grid_operations(app):
     return results
 
 
+def setup_l_shape_design(app, length=126, strand_type="both"):
+    """Create an L-shaped design: 3 horizontal + 2 vertical helices."""
+    from cadnano2.views.agent.agentmethods import AgentMethods
+
+    dc = get_dc(app)
+    dc.actionAddHoneycombPartSlot()
+    doc = dc.document()
+    part = doc.selectedPart()
+
+    class MockDC:
+        def __init__(self, app, doc, part):
+            self._app = app
+            self._doc = doc
+            self._part = part
+        def document(self):
+            return self._doc
+        def activePart(self):
+            return self._part
+        def undoStack(self):
+            return self._doc.undoStack()
+
+    mock = MockDC(app, doc, part)
+    methods = AgentMethods(mock)
+
+    # L-shape: horizontal arm (row 21, cols 20-22) + vertical arm (rows 22-23, col 20)
+    positions = [[21, 20], [21, 21], [21, 22],
+                 [22, 20],
+                 [23, 20]]
+    result = methods.createHelicesWithStrands(
+        positions=positions,
+        strand_type=strand_type,
+        length=length
+    )
+    print(f"  Setup L-shape: {result}")
+    return dc, methods
+
+
+def gen_l_shape_operations(app):
+    """Generate screenshots for L-shaped design operations."""
+    results = []
+
+    # 1. Add all scaffold crossovers
+    print(f"\n--- l_shape_add_scaffold_crossovers ---")
+    dc, methods = setup_l_shape_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "l_shape_add_scaffold_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    result = methods.addAllNeighborCrossovers("scaffold")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold crossovers to all pairs in L-shaped design",
+        "params": {"strand_type": "scaffold", "n_helices": 5, "layout": "l_shape"},
+        "result": str(result),
+        "natural_language": "Add scaffold crossovers between all neighboring helices in an L-shaped design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 2. Add both crossover types
+    print(f"\n--- l_shape_add_both_crossovers ---")
+    dc, methods = setup_l_shape_design(app, length=126, strand_type="both")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "l_shape_add_both_crossovers")
+    save_screenshot(before_img, outdir, "before")
+
+    r1 = methods.addAllNeighborCrossovers("scaffold")
+    r2 = methods.addAllNeighborCrossovers("staple")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "addAllNeighborCrossovers",
+        "description": "Add scaffold and staple crossovers to L-shaped design",
+        "params": {"strand_type": "both", "n_helices": 5, "layout": "l_shape"},
+        "result": f"scaffold: {r1}, staple: {r2}",
+        "natural_language": "Add both scaffold and staple crossovers to all pairs in an L-shaped design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    # 3. Remove crossovers at the bend (corner pair)
+    print(f"\n--- l_shape_remove_bend_pair ---")
+    dc, methods = setup_l_shape_design(app, length=126, strand_type="both")
+    methods.addAllNeighborCrossovers("scaffold")
+
+    before_img = render_pathview(dc, "before")
+    outdir = os.path.join(SCREENSHOT_DIR, "l_shape_remove_bend_pair")
+    save_screenshot(before_img, outdir, "before")
+
+    # The corner helix (row 21, col 20) connects to vertical arm (row 22, col 20)
+    # Find the right helix pair by checking neighbors
+    neighbors = methods.getNeighborPairs()
+    print(f"  Neighbors: {neighbors}")
+
+    # Remove crossovers from first cross-direction pair
+    result = methods.removeCrossoversForPair(1, 2, "scaffold")
+    print(f"  removeCrossoversForPair at bend: {result}")
+
+    after_img = render_pathview(dc, "after")
+    save_screenshot(after_img, outdir, "after")
+
+    meta = {
+        "operation": "removeCrossoversForPair",
+        "description": "Remove scaffold crossovers at the bend of L-shaped design",
+        "params": {"helix1": 1, "helix2": 2, "strand_type": "scaffold", "layout": "l_shape"},
+        "result": str(result),
+        "natural_language": "Remove scaffold crossovers at the bend connecting the two arms of the L-shaped design"
+    }
+    with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+        json.dump(meta, f, indent=2)
+    results.append(meta)
+    reset_design(app)
+
+    return results
+
+
 # ============================================================
 # Main
 # ============================================================
@@ -1300,6 +1428,7 @@ def main():
         ("Three-helix operations", gen_three_helix_operations),
         ("Six-helix operations", gen_six_helix_operations),
         ("2×3 grid operations", gen_grid_operations),
+        ("L-shape operations", gen_l_shape_operations),
     ]
 
     for name, gen_fn in generators:

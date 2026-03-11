@@ -299,5 +299,28 @@ objectives:
     (2×3 grid). 10× growth from initial 21 pairs to 212 augmented examples.
     Multi-row operations (cross-row crossover removal) add important training
     signal for understanding 2D helix arrangements.
+  connects_to: obj-015
+  completed_date: '2026-03-11'
+- id: obj-015
+  status: completed
+  statement: Add L-shape screenshots, expand to 46 pairs and 228 augmented examples
+  methodology: >-
+    Added setup_l_shape_design() (3 horizontal + 2 vertical helices) and
+    gen_l_shape_operations() with 3 operations: add scaffold crossovers,
+    add both types, remove bend pair. Re-exported base and augmented datasets.
+  metrics:
+    image_pairs: 46
+    augmented_examples: 228
+    new_pairs: 3
+    design_layouts: 5
+    growth_from_initial: 10.9x
+    layouts: 2-helix, 3-helix, 6-helix, 2x3_grid, l_shape
+  figures:
+  - results/obj-015-l-shape-screenshots.png
+  conclusions: >-
+    Dataset now covers 5 design layouts spanning 1D (single-row) and 2D
+    (multi-row, asymmetric) arrangements. L-shape adds the first non-rectangular
+    layout, important for training on designs with bends and junctions.
+    10.9× total growth from initial 21 pairs to 228 augmented examples.
   connects_to: null
   completed_date: '2026-03-11'

@@ -1,0 +1,11 @@
+{
+  "operation": "addAllNeighborCrossovers",
+  "description": "Add scaffold and staple crossovers to L-shaped design",
+  "params": {
+    "strand_type": "both",
+    "n_helices": 5,
+    "layout": "l_shape"
+  },
+  "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}]}, staple: {'strand_type': 'staple', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 0}, {'helix1': 0, 'helix2': 3, 'created': 6}]}",
+  "natural_language": "Add both scaffold and staple crossovers to all pairs in an L-shaped design"
+}
