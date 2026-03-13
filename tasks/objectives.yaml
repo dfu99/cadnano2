@@ -432,9 +432,9 @@ objectives:
     geometric reward orthogonal to the structural verifier — together they cover
     both shape correctness and connectivity correctness. Recommended: combine
     as 0.7×structural + 0.3×geometric for total RLVR reward.
-  connects_to: obj-018
+  connects_to: obj-019
   completed_date: '2026-03-13'
-- id: obj-018
+- id: obj-019
   status: completed
   statement: Rectilinear prism fit metric for oxDNA flat sheet verification
   methodology: >-
