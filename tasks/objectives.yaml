@@ -379,5 +379,34 @@ objectives:
     operations provide a much more comprehensive training signal for VLM
     fine-tuning, especially for parameter sensitivity (how far to move, where
     to create/delete).
+  connects_to: obj-018
+  completed_date: '2026-03-13'
+- id: obj-018
+  status: completed
+  statement: Build geometric reward scorer using tacoxDNA for automated 3D shape verification
+  methodology: >-
+    Built tools/oxdna_geometric_reward.py — end-to-end pipeline: cadnano JSON
+    → tacoxDNA → oxDNA coordinates → PCA shape analysis → continuous reward [0,1].
+    Tested on 7 designs: correct flat sheets, defective variants (no crossovers,
+    partial crossovers, scaffold-only), wrong shape class (2×3 grid), and tube.
+    Reward function uses weighted flatness (40%), planarity (35%), circularity (25%).
+  metrics:
+    correct_flat_sheet_reward: 0.948
+    wrong_shape_grid_reward: 0.421
+    correct_tube_reward: 0.619
+    designs_tested: 7
+    figures_generated: 3
+    discrimination_gap: 0.527
+  figures:
+  - results/oxdna_geometric_reward/fig1_reward_discrimination.png
+  - results/oxdna_geometric_reward/fig2_cross_section_comparison.png
+  - results/oxdna_geometric_reward/fig3_reward_landscape.png
+  conclusions: >-
+    The geometric reward reliably discriminates helix arrangement (flat sheet
+    0.95 vs grid 0.42) but not crossover connectivity, because tacoxDNA places
+    nucleotides by lattice position, not by strand connectivity. This makes the
+    geometric reward orthogonal to the structural verifier — together they cover
+    both shape correctness and connectivity correctness. Recommended: combine
+    as 0.7×structural + 0.3×geometric for total RLVR reward.
   connects_to: null
   completed_date: '2026-03-13'
