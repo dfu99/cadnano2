@@ -1530,6 +1530,454 @@ def gen_t_shape_operations(app):
 
 
 # ============================================================
+# New: Additional single-action variations
+# ============================================================
+
+def gen_move_crossover_right_extra(app):
+    """Fill gap: move crossover right by 4, 5, 6 bases."""
+    return gen_move_crossover_right(app, deltas=[4, 5, 6])
+
+
+def gen_move_crossover_left_extra(app):
+    """Fill gap: move crossover left by 4, 5, 6 bases."""
+    return gen_move_crossover_left(app, deltas=[4, 5, 6])
+
+
+def gen_add_evenly_spaced_extra(app):
+    """Fill gap: add 1, 5, 8 evenly spaced crossovers."""
+    return gen_add_evenly_spaced(app, counts=[1, 5, 8])
+
+
+def gen_delete_crossover_extra(app):
+    """Delete second and second-to-last crossovers."""
+    results = []
+
+    for which in ["second", "second_to_last"]:
+        print(f"\n--- delete_crossover_{which} ---")
+        dc, methods = setup_two_helix_design(app)
+
+        xovers = parse_crossover_list(methods.listCrossovers(strand_type="scaffold"))
+        if len(xovers) < 3:
+            print(f"  SKIP: Not enough crossovers ({len(xovers)})")
+            reset_design(app)
+            continue
+
+        if which == "second":
+            xover = xovers[1]
+        else:
+            xover = xovers[-2]
+        h1 = xover['helix1']
+        idx = xover['idx1']
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"delete_crossover_{which}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.removeCrossover(h1, idx, "scaffold")
+        print(f"  removeCrossover result: {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "removeCrossover",
+            "description": f"Delete the {which.replace('_', ' ')} crossover",
+            "params": {"helix_num": h1, "idx": idx, "strand_type": "scaffold"},
+            "result": str(result),
+            "natural_language": f"Delete the {which.replace('_', ' ')} crossover between helix 0 and helix 1"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_move_staple_crossover(app):
+    """Generate before/after for moving a staple crossover by various amounts."""
+    results = []
+
+    for delta, label in [(1, "right_1"), (3, "right_3"), (-1, "left_1"), (-3, "left_3")]:
+        print(f"\n--- move_staple_crossover_{label} ---")
+        dc, methods = setup_two_helix_design(app, strand_type="both", with_crossovers=False)
+
+        # Add scaffold crossovers first, then one staple crossover
+        methods.addCrossoversForPair(0, 1, "scaffold")
+        valid_staple = parse_valid_positions(
+            methods.getValidCrossoverPositions(0, 1, "staple"))
+        if valid_staple:
+            mid = valid_staple[len(valid_staple) // 2]
+            methods.addCrossoversForPair(0, 1, "staple", positions=[mid])
+
+        xovers = parse_crossover_list(methods.listCrossovers(strand_type="staple"))
+        if xovers:
+            xover = xovers[len(xovers) // 2]
+            h1, h2 = xover['helix1'], xover['helix2']
+            idx = xover['idx1']
+        else:
+            print(f"  SKIP: No staple crossovers")
+            reset_design(app)
+            continue
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"move_staple_crossover_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.moveCrossover(h1, h2, idx, "staple", delta)
+        print(f"  moveCrossover(staple, {delta}): {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "moveCrossover",
+            "description": f"Move staple crossover {label.replace('_', ' ')}",
+            "params": {"helix1": h1, "helix2": h2, "idx": idx,
+                       "strand_type": "staple", "delta": delta},
+            "result": str(result),
+            "natural_language": f"Move the staple crossover at helix {h1} index {idx} {'right' if delta > 0 else 'left'} by {abs(delta)} bases"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_resize_strands_extra(app):
+    """Resize by smaller/different amounts: 7, 14 bases."""
+    results = []
+
+    for delta, label in [(7, "extend_7"), (14, "extend_14"), (-7, "shrink_7")]:
+        print(f"\n--- resize_strands_{label} ---")
+        dc, methods = setup_two_helix_design(app, length=126, with_crossovers=True)
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"resize_strands_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.resizeAllStrands("scaffold", delta=delta)
+        print(f"  resizeAllStrands({delta}): {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "resizeAllStrands",
+            "description": f"Resize all scaffold strands by {delta}bp",
+            "params": {"strand_type": "scaffold", "delta": delta},
+            "result": str(result),
+            "natural_language": f"{'Extend' if delta > 0 else 'Shrink'} all scaffold strands by {abs(delta)} bases"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_insertion_pattern_extra(app):
+    """Different insertion spacings: 7, 14, 42 bases."""
+    results = []
+
+    for spacing, label in [(7, "spacing_7"), (14, "spacing_14"), (42, "spacing_42")]:
+        print(f"\n--- insertion_pattern_{label} ---")
+        dc, methods = setup_two_helix_design(app, length=168, with_crossovers=True)
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"insertion_pattern_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.addInsertionPattern(0, length=1, spacing=spacing)
+        print(f"  addInsertionPattern(spacing={spacing}): {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "addInsertionPattern",
+            "description": f"Add insertions every {spacing} bases on helix 0",
+            "params": {"helix_num": 0, "length": 1, "spacing": spacing},
+            "result": str(result),
+            "natural_language": f"Add single-base insertions every {spacing} bases on helix 0"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_create_crossover_specific(app):
+    """Create crossovers at specific index positions (quarter points)."""
+    results = []
+
+    print(f"\n--- create_crossover_specific ---")
+    dc, methods = setup_two_helix_design(app, with_crossovers=False)
+
+    valid_indices = parse_valid_positions(
+        methods.getValidCrossoverPositions(0, 1, "scaffold"))
+
+    if valid_indices:
+        low_indices = valid_indices[::2]
+        # Pick positions at quarter points
+        for frac_label, frac in [("quarter", 0.25), ("three_quarter", 0.75)]:
+            idx_pos = int(len(low_indices) * frac)
+            idx = low_indices[min(idx_pos, len(low_indices) - 1)]
+
+            before_img = render_pathview(dc, "before")
+            outdir = os.path.join(SCREENSHOT_DIR, f"create_crossover_{frac_label}")
+            save_screenshot(before_img, outdir, "before")
+
+            result = methods.createCrossover(0, idx, 1, idx, "scaffold")
+            print(f"  createCrossover at {frac_label} ({idx}): {result}")
+
+            after_img = render_pathview(dc, "after")
+            save_screenshot(after_img, outdir, "after")
+
+            meta = {
+                "operation": "createCrossover",
+                "description": f"Create crossover at {frac_label} point (idx {idx})",
+                "params": {"helix1": 0, "idx1": idx, "helix2": 1, "idx2": idx,
+                           "strand_type": "scaffold"},
+                "result": str(result),
+                "natural_language": f"Create a scaffold crossover between helix 0 and helix 1 at index {idx}"
+            }
+            with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+                json.dump(meta, f, indent=2)
+
+            results.append(meta)
+
+    reset_design(app)
+    return results
+
+
+def gen_three_helix_move_crossover(app):
+    """Move crossover on a 3-helix design (more complex visual context)."""
+    results = []
+
+    for delta, label in [(2, "right_2"), (-2, "left_2"), (5, "right_5")]:
+        print(f"\n--- three_helix_move_crossover_{label} ---")
+        dc, methods = setup_three_helix_design(app, length=126)
+        methods.addAllNeighborCrossovers("scaffold")
+
+        xovers = parse_crossover_list(methods.listCrossovers(strand_type="scaffold"))
+        if xovers:
+            # Pick a crossover in the middle
+            xover = xovers[len(xovers) // 2]
+            h1, h2 = xover['helix1'], xover['helix2']
+            idx = xover['idx1']
+        else:
+            print(f"  SKIP: No crossovers")
+            reset_design(app)
+            continue
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"three_helix_move_crossover_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.moveCrossover(h1, h2, idx, "scaffold", delta)
+        print(f"  moveCrossover({delta}): {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "moveCrossover",
+            "description": f"Move crossover {label.replace('_', ' ')} in 3-helix design",
+            "params": {"helix1": h1, "helix2": h2, "idx": idx,
+                       "strand_type": "scaffold", "delta": delta, "n_helices": 3},
+            "result": str(result),
+            "natural_language": f"Move the crossover at helix {h1} index {idx} {'right' if delta > 0 else 'left'} by {abs(delta)} bases in a 3-helix design"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_six_helix_move_crossover(app):
+    """Move crossover on a 6-helix design."""
+    results = []
+
+    for delta, label in [(3, "right_3"), (-3, "left_3")]:
+        print(f"\n--- six_helix_move_crossover_{label} ---")
+        dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+        methods.addAllNeighborCrossovers("scaffold")
+
+        xovers = parse_crossover_list(methods.listCrossovers(strand_type="scaffold"))
+        if xovers:
+            xover = xovers[len(xovers) // 2]
+            h1, h2 = xover['helix1'], xover['helix2']
+            idx = xover['idx1']
+        else:
+            print(f"  SKIP: No crossovers")
+            reset_design(app)
+            continue
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"six_helix_move_crossover_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.moveCrossover(h1, h2, idx, "scaffold", delta)
+        print(f"  moveCrossover({delta}): {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "moveCrossover",
+            "description": f"Move crossover {label.replace('_', ' ')} in 6-helix design",
+            "params": {"helix1": h1, "helix2": h2, "idx": idx,
+                       "strand_type": "scaffold", "delta": delta, "n_helices": 6},
+            "result": str(result),
+            "natural_language": f"Move the crossover at helix {h1} index {idx} {'right' if delta > 0 else 'left'} by {abs(delta)} bases in a 6-helix design"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_six_helix_delete_crossover(app):
+    """Delete specific crossovers from a 6-helix design."""
+    results = []
+
+    for which in ["edge_pair", "middle_pair"]:
+        print(f"\n--- six_helix_delete_crossover_{which} ---")
+        dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+        methods.addAllNeighborCrossovers("scaffold")
+
+        xovers = parse_crossover_list(methods.listCrossovers(strand_type="scaffold"))
+        if not xovers:
+            print(f"  SKIP: No crossovers")
+            reset_design(app)
+            continue
+
+        if which == "edge_pair":
+            xover = xovers[0]
+        else:
+            xover = xovers[len(xovers) // 2]
+
+        h1 = xover['helix1']
+        idx = xover['idx1']
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"six_helix_delete_crossover_{which}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.removeCrossover(h1, idx, "scaffold")
+        print(f"  removeCrossover: {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "removeCrossover",
+            "description": f"Delete {which.replace('_', ' ')} crossover in 6-helix design",
+            "params": {"helix_num": h1, "idx": idx, "strand_type": "scaffold", "n_helices": 6},
+            "result": str(result),
+            "natural_language": f"Delete the {which.replace('_', ' ')} crossover in a 6-helix design"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_add_crossovers_specific_pair(app):
+    """Add crossovers to specific helix pairs in multi-helix designs."""
+    results = []
+
+    # Add crossovers to just one pair in a 6-helix design
+    for h1, h2, label in [(0, 1, "first_pair"), (2, 3, "middle_pair"), (4, 5, "last_pair")]:
+        print(f"\n--- six_helix_add_crossovers_{label} ---")
+        dc, methods = setup_six_helix_design(app, length=126, strand_type="both")
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"six_helix_add_crossovers_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        # Need to find the actual helix numbers since setup creates them with internal IDs
+        neighbors = methods.getNeighborPairs()
+        print(f"  Neighbors: {neighbors}")
+
+        result = methods.addCrossoversForPair(h1, h2, "scaffold")
+        print(f"  addCrossoversForPair({h1},{h2}): {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "addCrossoversForPair",
+            "description": f"Add scaffold crossovers to {label.replace('_', ' ')} in 6-helix",
+            "params": {"helix1": h1, "helix2": h2, "strand_type": "scaffold", "n_helices": 6},
+            "result": str(result),
+            "natural_language": f"Add scaffold crossovers between helix {h1} and helix {h2} in a 6-helix design"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+def gen_split_strand_extra(app):
+    """Split strands at various positions."""
+    results = []
+
+    for idx, label in [(21, "at_21"), (63, "at_63"), (105, "at_105")]:
+        print(f"\n--- split_strand_{label} ---")
+        dc, methods = setup_two_helix_design(app, strand_type="both", with_crossovers=False)
+        methods.addCrossoversForPair(0, 1, "scaffold")
+        methods.addCrossoversForPair(0, 1, "staple")
+
+        before_img = render_pathview(dc, "before")
+        outdir = os.path.join(SCREENSHOT_DIR, f"split_strand_{label}")
+        save_screenshot(before_img, outdir, "before")
+
+        result = methods.splitStrandAt(0, "staple", idx)
+        print(f"  splitStrandAt({idx}): {result}")
+
+        after_img = render_pathview(dc, "after")
+        save_screenshot(after_img, outdir, "after")
+
+        meta = {
+            "operation": "splitStrandAt",
+            "description": f"Split staple strand at index {idx}",
+            "params": {"helix_num": 0, "strand_type": "staple", "idx": idx},
+            "result": str(result),
+            "natural_language": f"Split the staple strand on helix 0 at position {idx}"
+        }
+        with open(os.path.join(outdir, "metadata.json"), 'w') as f:
+            json.dump(meta, f, indent=2)
+
+        results.append(meta)
+        reset_design(app)
+
+    return results
+
+
+# ============================================================
 # Main
 # ============================================================
 
@@ -1556,6 +2004,20 @@ def main():
         ("2×3 grid operations", gen_grid_operations),
         ("L-shape operations", gen_l_shape_operations),
         ("T-shape operations", gen_t_shape_operations),
+        # New single-action variations
+        ("Move crossover right (4,5,6)", gen_move_crossover_right_extra),
+        ("Move crossover left (4,5,6)", gen_move_crossover_left_extra),
+        ("Add evenly spaced (1,5,8)", gen_add_evenly_spaced_extra),
+        ("Delete crossover (second, second-to-last)", gen_delete_crossover_extra),
+        ("Move staple crossover", gen_move_staple_crossover),
+        ("Resize strands (7,14)", gen_resize_strands_extra),
+        ("Insertion pattern spacings", gen_insertion_pattern_extra),
+        ("Create crossover specific", gen_create_crossover_specific),
+        ("3-helix move crossover", gen_three_helix_move_crossover),
+        ("6-helix move crossover", gen_six_helix_move_crossover),
+        ("6-helix delete crossover", gen_six_helix_delete_crossover),
+        ("6-helix add crossovers to specific pair", gen_add_crossovers_specific_pair),
+        ("Split strand at various positions", gen_split_strand_extra),
     ]
 
     for name, gen_fn in generators:

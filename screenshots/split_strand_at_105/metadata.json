@@ -1,0 +1,11 @@
+{
+  "operation": "splitStrandAt",
+  "description": "Split staple strand at index 105",
+  "params": {
+    "helix_num": 0,
+    "strand_type": "staple",
+    "idx": 105
+  },
+  "result": "Error: Cannot split at boundary (strand range [105, 125], split idx 105)",
+  "natural_language": "Split the staple strand on helix 0 at position 105"
+}

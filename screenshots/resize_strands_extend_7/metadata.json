@@ -1,0 +1,10 @@
+{
+  "operation": "resizeAllStrands",
+  "description": "Resize all scaffold strands by 7bp",
+  "params": {
+    "strand_type": "scaffold",
+    "delta": 7
+  },
+  "result": "{'strand_type': 'scaffold', 'resized': 11, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [19, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [40, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [61, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [82, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [103, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 11]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 32]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 53]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 74]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 95]}, {'helix': 0, 'old_range': [89, 109], 'new_range': [89, 116]}]}",
+  "natural_language": "Extend all scaffold strands by 7 bases"
+}

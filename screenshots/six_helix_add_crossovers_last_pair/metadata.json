@@ -1,0 +1,12 @@
+{
+  "operation": "addCrossoversForPair",
+  "description": "Add scaffold crossovers to last pair in 6-helix",
+  "params": {
+    "helix1": 4,
+    "helix2": 5,
+    "strand_type": "scaffold",
+    "n_helices": 6
+  },
+  "result": "{'helix1': 4, 'helix2': 5, 'strand_type': 'scaffold', 'created': 6, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 25, 'high_idx': 26}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 109, 'high_idx': 110}]}",
+  "natural_language": "Add scaffold crossovers between helix 4 and helix 5 in a 6-helix design"
+}

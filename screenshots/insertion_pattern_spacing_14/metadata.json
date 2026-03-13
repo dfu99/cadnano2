@@ -1,0 +1,11 @@
+{
+  "operation": "addInsertionPattern",
+  "description": "Add insertions every 14 bases on helix 0",
+  "params": {
+    "helix_num": 0,
+    "length": 1,
+    "spacing": 14
+  },
+  "result": "{'helix_num': 0, 'length': 1, 'spacing': 14, 'added': 12, 'positions': [0, 14, 28, 42, 56, 70, 84, 98, 112, 126, 140, 154], 'message': 'Added 12 1-base insertions on helix 0'}",
+  "natural_language": "Add single-base insertions every 14 bases on helix 0"
+}

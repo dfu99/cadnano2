@@ -40,4 +40,26 @@ queue:
   status: in_progress
   added: 2026-03-11 00:16
   source: slack
-  started: 2026-03-11 16:51
+  started: 2026-03-11 22:10
+- objective: 'Complete documentation for: **Scaled to 252 training examples** (2026-03-09):
+    Added 1×N linear chain generator (even N: 4,6,8), expanded 2×N to N=2..7 (up to....
+    Record methodology, conclusions, and generate a visualization.'
+  priority: 4
+  status: pending
+  added: 2026-03-11 23:54
+  source: auto-requeue
+- objective: 'Complete documentation for: **2×N grid bundle generator** (2026-03-09):
+    Added `generate_2xN()` to `tools/generate_training_designs.py`. Uses Hamiltonian
+    path through honeycomb neighbor graph, greedy constrained crossover placement..
+    Record methodology, conclusions, and generate a visualization.'
+  priority: 4
+  status: pending
+  added: 2026-03-11 23:54
+  source: auto-requeue
+- objective: The model appears to require a little bit more decision logic to decide
+    when to add a half crossover and when to add a full crossover. Half crossovers
+    are on the "edges" of the structure. The "edge" i
+  priority: 3
+  status: pending
+  added: 2026-03-12 14:19
+  source: slack

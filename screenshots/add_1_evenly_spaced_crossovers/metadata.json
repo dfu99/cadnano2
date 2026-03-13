@@ -1,0 +1,14 @@
+{
+  "operation": "addCrossoversForPair",
+  "description": "Add 1 evenly spaced crossovers",
+  "params": {
+    "helix1": 0,
+    "helix2": 1,
+    "strand_type": "scaffold",
+    "positions": [
+      4
+    ]
+  },
+  "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 1, 'crossovers': [{'low_idx': 4, 'high_idx': 5}]}",
+  "natural_language": "Add 1 evenly spaced scaffold crossovers between helix 0 and helix 1"
+}
