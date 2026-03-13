@@ -1,12 +1,36 @@
 objectives:
 - id: obj-001
   status: completed
-  statement: '**Scaled to 252 training examples** (2026-03-09): Added 1×N linear chain generator (even N: 4,6,8), expanded
-    2×N to N=2..7 (up to...'
-  methodology: ''
+  statement: Scale training dataset from 42 to 252 validated designs
+  methodology: >-
+    Added 1×N linear chain generator (even N: 4,6,8) and expanded 2×N grid
+    generator to N=2..7 (up to 14 helices). Added two new scaffold lengths
+    (147bp, 168bp) for 7 total. Refactored core scaffold routing into reusable
+    _route_and_build() function shared by all generators. Hamiltonian path
+    through honeycomb neighbor graph with greedy constrained crossover placement.
+    All 252 designs pass structural validation (loop closure, bidirectionality,
+    full coverage).
+  metrics:
+    total_designs: 252
+    design_types: 3
+    type_2hb: 42
+    type_1xn: 84
+    type_2xn: 126
+    helix_range: 2-14
+    length_range: 42-168bp
+    lengths: 7
+    starting_positions: 6+4+3
+    validation_pass_rate: 100%
+    growth_factor: 6x
   figures:
-  - results/obj-001-scaled-to-252-training-examples----202.png
-  conclusions: ''
+  - results/obj-001-training-design-distribution.png
+  conclusions: >-
+    6× dataset expansion from 42 (2HB only) to 252 designs across 3 generator
+    types and 7 helix counts (2-14). The refactored _route_and_build() engine
+    enables adding new layout types with minimal code. Uniform length coverage
+    (36 designs per length) prevents length bias during training. Helix count
+    distribution is heavier at 4-8 (49 each) than 10-14 (21 each), reflecting
+    the constraint that 1×N requires even N and caps at 8.
   connects_to: obj-002
   completed_date: '2026-03-10'
 - id: obj-002
@@ -408,5 +432,43 @@ objectives:
     geometric reward orthogonal to the structural verifier — together they cover
     both shape correctness and connectivity correctness. Recommended: combine
     as 0.7×structural + 0.3×geometric for total RLVR reward.
+  connects_to: obj-018
+  completed_date: '2026-03-13'
+- id: obj-018
+  status: completed
+  statement: Rectilinear prism fit metric for oxDNA flat sheet verification
+  methodology: >-
+    Built tools/oxdna_prism_fit.py — PCA-aligns oxDNA 3D nucleotide coordinates,
+    fits an oriented bounding box (rectilinear prism), and computes composite
+    prism_fit_score from three components: grid uniformity (how evenly nucleotides
+    fill the prism volume), rectangularity (convex hull area / bounding rect area
+    of cross-section), and slice consistency (CV of cross-section dimensions along
+    the sheet length). Analyzed existing 6-helix flat sheet (1512 nucleotides).
+    Generated 3 purposeful diagnostic figures.
+  metrics:
+    prism_dimensions_nm: "41.5 × 10.5 × 2.4"
+    prism_fit_score: 0.793
+    uniformity: 0.667
+    rectangularity: 0.754
+    slice_width_cv: 0.0008
+    slice_thickness_cv: 0.0032
+    flatness_ratio: 0.0576
+    aspect_ratio: 3.96
+    n_nucleotides: 1512
+    n_strands: 51
+    variance_explained_pc1: "93.1%"
+  figures:
+  - results/oxdna_flat_sheet/fig1_prism_wireframe.png
+  - results/oxdna_flat_sheet/fig2_cross_sections.png
+  - results/oxdna_flat_sheet/fig3_density_heatmap.png
+  conclusions: >-
+    The 6-helix flat sheet scores 0.793 on the prism fit metric, with excellent
+    cross-section uniformity (width CV = 0.0008) but moderate volume fill (uniformity
+    0.667) due to the inherent spacing between DNA helices. The 0.754 rectangularity
+    reflects the cylindrical helix cross-sections within the rectangular prism.
+    Key insight: the score ceiling for DNA origami is ~0.8, not 1.0, because
+    individual helices are cylindrical, not rectangular. This metric is best used
+    as a relative comparator between designs rather than an absolute threshold.
+    Pipeline: cadnano → tacoxDNA → oxDNA → prism_fit_score → RLVR reward.
   connects_to: null
   completed_date: '2026-03-13'
