@@ -64,6 +64,7 @@ queue:
     when to add a half crossover and when to add a full crossover. Half crossovers
     are on the "edges" of the structure. The "edge" i
   priority: 3
-  status: pending
+  status: in_progress
   added: 2026-03-12 14:19
   source: slack
+  started: 2026-03-13 01:42

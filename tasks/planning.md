@@ -13,6 +13,7 @@
 
 ## Recently Completed
 
+- **oxDNA investigation report** (2026-03-13): Comprehensive report on tacoxDNA conversion pipeline with 4 purposeful figures: format anatomy, conversion pipeline, planarity/helix analysis, training reward integration. 6-helix flat sheet: 41.5x10.5x2.4 nm, flatness 0.058, combined reward 0.76. Report at `results/oxdna_investigation/report.md`.
 - **Checkpoint: queue cleanup & obj-002 docs** (2026-03-13): Completed obj-002 methodology/conclusions for 2×N grid bundle generator. Marked tacoxDNA investigation and documentation queue items as completed. All queue items resolved except half-crossover edge logic (pending).
 - **tacoxDNA investigation report** (2026-03-13): Generated 4-figure investigation report (`results/oxdna_investigation/`) covering oxDNA format anatomy, conversion pipeline, planarity analysis, and training integration. Full report in `report.md` with metrics.
 - **Objective backfill: obj-001 documentation** (2026-03-13): Completed methodology, metrics, conclusions for "Scaled to 252 training examples". Generated proper distribution visualization (3-panel: generator types, helix counts, growth). Fixed duplicate obj-018 → renumbered to obj-019.
