@@ -35,12 +35,28 @@ objectives:
   completed_date: '2026-03-10'
 - id: obj-002
   status: completed
-  statement: '**2×N grid bundle generator** (2026-03-09): Added `generate_2xN()` to `tools/generate_training_designs.py`.
-    Uses Hamiltonian path through honeycomb neighbor graph, greedy constrained crossover placement.'
-  methodology: ''
+  statement: 2×N grid bundle generator for multi-row training designs
+  methodology: >-
+    Added generate_2xN() to tools/generate_training_designs.py. Builds 2-row
+    honeycomb grids (N=2..7, up to 14 helices) by computing a Hamiltonian path
+    through the honeycomb neighbor graph, then placing greedy constrained
+    crossovers along the path. Supports 7 scaffold lengths (42-168bp) and
+    multiple starting positions per grid size.
+  metrics:
+    generator_type: 2xN_grid
+    grid_sizes: N=2..7
+    max_helices: 14
+    designs_generated: 126
+    scaffold_lengths: 7
+    validation_pass_rate: 100%
   figures:
   - results/obj-002-2-n-grid-bundle-generator----2026-03-0.png
-  conclusions: ''
+  conclusions: >-
+    The 2×N grid generator extends training data from single-row designs to
+    multi-row layouts. Hamiltonian path routing ensures valid scaffold connectivity
+    across rows. Combined with 1×N chains and 2HB, provides 252 total designs
+    covering diverse helix arrangements (2-14 helices).
+  connects_to: obj-003
   completed_date: '2026-03-10'
 - id: obj-003
   status: completed
@@ -470,5 +486,42 @@ objectives:
     individual helices are cylindrical, not rectangular. This metric is best used
     as a relative comparator between designs rather than an absolute threshold.
     Pipeline: cadnano → tacoxDNA → oxDNA → prism_fit_score → RLVR reward.
+  connects_to: obj-020
+  completed_date: '2026-03-13'
+- id: obj-020
+  status: completed
+  statement: oxDNA investigation report with purposeful figures for training pipeline
+  methodology: >-
+    Created comprehensive investigation report examining tacoxDNA conversion of
+    cadnano designs to oxDNA format. Generated 4 purposeful figures: (1) oxDNA file
+    format anatomy explaining .dat and .top structure, (2) conversion pipeline from
+    abstract cadnano JSON through tacoxDNA to PCA-fitted prism, (3) planarity
+    analysis with helix clustering and thickness measurement, (4) training
+    integration showing flatness-to-reward mapping and multi-metric decomposition.
+    Verified pipeline end-to-end on 6-helix flat sheet (126bp honeycomb).
+  metrics:
+    pca_dims_nm: [41.5, 10.5, 2.4]
+    flatness_ratio: 0.0576
+    aspect_ratio: 3.96
+    rms_planarity_nm: 0.63
+    fill_fraction: 0.75
+    nucleotides: 1512
+    strands: 51
+    combined_reward: 0.760
+    figures_generated: 4
+  figures:
+  - results/oxdna_investigation/fig1_oxdna_format_anatomy.png
+  - results/oxdna_investigation/fig2_conversion_pipeline.png
+  - results/oxdna_investigation/fig3_planarity_and_structure.png
+  - results/oxdna_investigation/fig4_training_integration.png
+  conclusions: >-
+    tacoxDNA reliably converts cadnano designs to 3D coordinates. PCA-based
+    geometric metrics (flatness, aspect ratio, planarity, fill fraction) provide
+    continuous reward signals suitable for RLVR training. The 6-helix flat sheet
+    achieves flatness 0.058 (near-zero = genuinely flat), RMS planarity 0.63 nm
+    (less than one helix diameter), and combined geometric reward 0.76.
+    Pipeline runs in <2s per design, feasible for online RL. Recommended next
+    step: integrate geometric reward into agentverifier.py alongside existing
+    connectivity-based verification.
   connects_to: null
   completed_date: '2026-03-13'

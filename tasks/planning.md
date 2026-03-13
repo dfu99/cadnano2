@@ -13,6 +13,8 @@
 
 ## Recently Completed
 
+- **Checkpoint: queue cleanup & obj-002 docs** (2026-03-13): Completed obj-002 methodology/conclusions for 2×N grid bundle generator. Marked tacoxDNA investigation and documentation queue items as completed. All queue items resolved except half-crossover edge logic (pending).
+- **tacoxDNA investigation report** (2026-03-13): Generated 4-figure investigation report (`results/oxdna_investigation/`) covering oxDNA format anatomy, conversion pipeline, planarity analysis, and training integration. Full report in `report.md` with metrics.
 - **Objective backfill: obj-001 documentation** (2026-03-13): Completed methodology, metrics, conclusions for "Scaled to 252 training examples". Generated proper distribution visualization (3-panel: generator types, helix counts, growth). Fixed duplicate obj-018 → renumbered to obj-019.
 - **Rectilinear prism fit metric** (2026-03-13): Built `tools/oxdna_prism_fit.py` — PCA-aligned bounding box analysis of oxDNA 3D coordinates. Composite prism_fit_score (0.793 for 6-helix flat sheet) from uniformity, rectangularity, and slice consistency. Score ceiling ~0.8 due to cylindrical helix geometry. 3 diagnostic figures: wireframe overlay, cross-sectional slices, density heatmap.
 - **Geometric reward scorer for RLVR training** (2026-03-13): Built `tools/oxdna_geometric_reward.py` — cadnano JSON → tacoxDNA → oxDNA → PCA → reward [0,1]. Discriminates shape classes (flat sheet 0.95 vs grid 0.42) but not crossover connectivity (tacoxDNA places by lattice, not connectivity). Orthogonal to structural verifier — recommended combined reward: 0.7×structural + 0.3×geometric.
