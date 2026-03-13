@@ -346,5 +346,38 @@ objectives:
     2D asymmetric shapes. T-shape adds symmetric branching geometry, complementing
     L-shape's asymmetric bend. 11.6× growth from 21 to 244 examples provides
     a solid foundation for VLM SFT training on DNA nanostructure operations.
-  connects_to: null
+  connects_to: obj-017
   completed_date: '2026-03-11'
+- id: obj-017
+  status: completed
+  statement: Expand screenshot library from 49 to 85 operations with 36 new variations
+  methodology: >-
+    Added 36 new operation variations to generate_screenshot_library.py covering
+    gap-filling ranges (move 4-6 bases), staple crossover moves, additional delete/create
+    positions (second, second-to-last, quarter, three-quarter), evenly spaced counts
+    (1, 5, 8), insertion spacings (7, 14, 42), split points (21, 63, 105), resize
+    increments (7, 14), and multi-helix operations (six-helix per-pair crossovers,
+    delete edge/middle, move crossover; three-helix move crossover).
+  metrics:
+    total_operations: 85
+    new_operations: 36
+    operation_types: 13
+    design_layouts: 6
+    two_helix_pairs: 57
+    six_helix_pairs: 13
+    three_helix_pairs: 5
+    grid_pairs: 4
+    l_shape_pairs: 3
+    t_shape_pairs: 3
+    growth_from_49: 1.73x
+  figures:
+  - results/screenshot_library_85ops.png
+  conclusions: >-
+    Library now has dense coverage of single-action variations across all move
+    distances (1-7), all crossover positions, multiple strand types (scaffold
+    and staple), and multiple design complexities (2 to 6 helices). The 85
+    operations provide a much more comprehensive training signal for VLM
+    fine-tuning, especially for parameter sensitivity (how far to move, where
+    to create/delete).
+  connects_to: null
+  completed_date: '2026-03-13'

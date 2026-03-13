@@ -21,9 +21,10 @@ queue:
     crossover to the right 3 spaces. move this crossover to the left 4 spaces. delete
     this crossover. create a crossover here. and so on.)
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-11 00:12
   source: slack
+  completed: 2026-03-13
 - objective: investigate using tacox to convert a cadnano design to the oxdna file
     format and the oxdna file format (which is a coarse-grained 3d description of
     the DNA nanostructure, where each line is a nucleobase), to further automate the

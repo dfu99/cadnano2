@@ -2,19 +2,18 @@
 
 ## Current Priorities
 
-1. **Push dataset to HuggingFace Hub** — Make training data publicly available (requires `huggingface-cli login`)
-2. **Begin VLM fine-tuning experiments** — Use augmented 244-example dataset across 6 layouts
-
-All autonomous dataset-building priorities are complete. Remaining items require user input (HuggingFace auth) or new project direction (VLM training).
+1. **Re-export augmented HuggingFace dataset** — Re-run augmentation with expanded 85-operation library
+2. **Push dataset to HuggingFace Hub** — Make training data publicly available (requires `huggingface-cli login`)
+3. **Begin VLM fine-tuning experiments** — Use expanded dataset across 6 layouts
 
 ## Next Steps (require user input)
 
-- Push augmented dataset (244 examples) to HuggingFace Hub (needs `huggingface-cli login`)
+- Push augmented dataset to HuggingFace Hub (needs `huggingface-cli login`)
 - Begin VLM fine-tuning experiments with the augmented dataset
-- Explore adding T-shape and cross to oxDNA verification pipeline
 
 ## Recently Completed
 
+- **Expanded screenshot library to 85 operations** (2026-03-13): Added 36 new variations filling gaps in move distances (4-6), staple crossover moves, additional delete/create positions, more evenly-spaced counts (1,5,8), insertion spacings (7,14,42), split points, resize increments, and multi-helix move/delete operations. Now 85 operations across 13 method types and 6 design layouts.
 - **T-shape design screenshots** (2026-03-11): Added 3 T-shaped operations (5 helices, symmetric branching). Final dataset: 49 image pairs, 244 augmented examples across 6 design layouts. 11.6× growth from initial.
 - **L-shape design screenshots** (2026-03-11): Added 3 L-shaped operations (5 helices, asymmetric). Dataset now 46 image pairs, 228 augmented examples across 5 design layouts.
 - **2×3 grid design screenshots** (2026-03-11): Added 4 multi-row grid operations (add scaffold, add both, remove cross-row pair, insertion pattern). Dataset now 43 image pairs, 212 augmented examples across 4 design layouts.
