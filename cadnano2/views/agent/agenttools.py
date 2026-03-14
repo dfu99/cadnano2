@@ -55,10 +55,12 @@ TOOL_SCHEMAS = [
         "name": "suggestCrossovers",
         "description": (
             "Return annotated crossover positions between two neighboring helices: "
-            "which positions are occupied, available, recommended, and whether each "
-            "is an edge position (is_edge=true for first/last positions where the "
-            "scaffold turns) or interior. Edge positions should use half-crossovers "
-            "for scaffold routing; interior positions use double crossovers."
+            "which positions are occupied, available, recommended, whether each "
+            "is an edge position (is_edge), and whether it is the parity-determined "
+            "routing turn (is_routing_turn). Only the routing turn position should "
+            "use a half-crossover for scaffold; all others use double crossovers. "
+            "Also returns routing_turn_idx — the specific position for the half-crossover. "
+            "Call inferScaffoldRoute() first for the full routing plan."
         ),
         "input_schema": {
             "type": "object",
@@ -82,6 +84,28 @@ TOOL_SCHEMAS = [
                 }
             },
             "required": ["helix1", "helix2", "strand_type"]
+        }
+    },
+
+    {
+        "name": "inferScaffoldRoute",
+        "description": (
+            "Infer the optimal scaffold routing path through the helix neighbor graph. "
+            "Returns a Hamiltonian cycle (or path) with the turn position for each "
+            "consecutive pair, determined by helix parity.\n\n"
+            "Each turn entry specifies:\n"
+            "- helix_from / helix_to: the pair in routing order\n"
+            "- turn_idx: the crossover position where the scaffold turns (half-crossover)\n"
+            "- exit_end: 'high (right)' for even parity, 'low (left)' for odd\n\n"
+            "Also identifies non-routing neighbor pairs (these get only double crossovers "
+            "for structural reinforcement, not routing half-crossovers).\n\n"
+            "Call this BEFORE manually placing scaffold crossovers with addCrossoversForPair "
+            "to know which positions should be half vs double crossovers."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
         }
     },
 
@@ -141,10 +165,11 @@ TOOL_SCHEMAS = [
             "Add crossovers between two neighboring helices. "
             "Auto-computes valid positions if not specified. "
             "Each call is wrapped in one undo macro for atomic undo.\n\n"
-            "EDGE vs INTERIOR: In 'auto' mode (default), scaffold crossovers at edge "
-            "positions (first/last valid position — where the scaffold turns) are "
-            "created as half-crossovers. Interior positions and all staple crossovers "
-            "are created as double crossovers. This matches DNA origami conventions."
+            "ROUTING TURN: In 'auto' mode (default), exactly ONE scaffold crossover "
+            "is created as a half-crossover — at the parity-determined routing turn "
+            "(even parity → rightmost, odd parity → leftmost). All other positions "
+            "and all staple crossovers use double crossovers. "
+            "Call inferScaffoldRoute() first to see the full routing plan."
         ),
         "input_schema": {
             "type": "object",
@@ -190,8 +215,10 @@ TOOL_SCHEMAS = [
             "Wire up all neighbor pairs in the design with crossovers. "
             "Wrapped in one undo macro. Use after createHelicesWithStrands "
             "to connect all helices.\n\n"
-            "In 'auto' mode (default), scaffold edge positions use half-crossovers "
-            "and interior positions use double crossovers."
+            "In 'auto' mode (default) for scaffold, infers a routing path "
+            "(Hamiltonian cycle) and places exactly one half-crossover per "
+            "routing turn. Non-routing neighbor pairs get only double crossovers. "
+            "For staple, always uses double crossovers."
         ),
         "input_schema": {
             "type": "object",
@@ -908,6 +935,7 @@ TOOL_SCHEMAS = [
 
 RLVR_SCAFFOLD_TOOL_NAMES = {
     'analyzeDesign', 'describeHelix', 'getNeighborPairs', 'listHelices',
+    'inferScaffoldRoute',
     'verifyScaffoldRouting',
     'planScaffoldRouting',
     'deleteOrphanFragments',   # safe: AND condition (both ends free, no crossover)

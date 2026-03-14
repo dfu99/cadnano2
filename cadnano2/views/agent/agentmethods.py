@@ -1915,25 +1915,56 @@ class AgentMethods:
 
         # Classify edge vs interior positions.
         # Edge positions are the first and last valid crossover positions
-        # between this helix pair — these are at the structural boundary
-        # where the scaffold turns from one helix to the next.
-        # For scaffold routing, edge positions should use half-crossovers.
-        # Interior positions should use double crossovers.
+        # between this helix pair — at the structural boundary where the
+        # scaffold may turn from one helix to the next.
+        #
+        # Parity determines which edge is the routing turn:
+        #   Even parity helix (scaffold L→R): exits HIGH end → turn at last position
+        #   Odd parity helix (scaffold R→L):  exits LOW end  → turn at first position
+        #
+        # In auto mode, only the parity-correct turn edge gets a half-crossover.
+        # The other edge and all interior positions get double crossovers.
         if positions:
-            edge_low_idxs = {positions[0]['low_idx'], positions[-1]['low_idx']}
+            first_low = positions[0]['low_idx']
+            last_low = positions[-1]['low_idx']
+            edge_low_idxs = {first_low, last_low}
+
+            # Determine parity-based routing turn
+            row1, col1 = vh1.coord()
+            is_even_h1 = (row1 % 2) == (col1 % 2)
+            # Even parity exits high (right) → turn at last position
+            # Odd parity exits low (left)   → turn at first position
+            if is_even_h1:
+                routing_turn_low = last_low
+            else:
+                routing_turn_low = first_low
+
             for p in positions:
-                p['is_edge'] = p['low_idx'] in edge_low_idxs
+                low = p['low_idx']
+                p['is_edge'] = low in edge_low_idxs
+                p['is_routing_turn'] = (low == routing_turn_low)
         else:
             edge_low_idxs = set()
+            routing_turn_low = None
 
-        # Apply spacing filter for recommendations
+        # Apply spacing filter for recommendations.
+        # The routing turn position is always recommended even if it
+        # violates the spacing constraint — it is the scaffold turn.
         available = [p for p in positions if not p['occupied']]
-        recommended = []
+        recommended = set()
+        # Always include the routing turn
+        if routing_turn_low is not None:
+            recommended.add(routing_turn_low)
+
         last_idx = -min_spacing
         for p in available:
-            if p['low_idx'] - last_idx >= min_spacing:
-                recommended.append(p['low_idx'])
-                last_idx = p['low_idx']
+            low = p['low_idx']
+            if low - last_idx >= min_spacing:
+                recommended.add(low)
+                last_idx = low
+            elif low in recommended:
+                # Routing turn was pre-added; update last_idx
+                last_idx = low
 
         for p in positions:
             p['recommended'] = p['low_idx'] in recommended
@@ -1947,10 +1978,13 @@ class AgentMethods:
             'positions': positions,
             'available_count': len(available),
             'recommended_count': len(recommended),
+            'routing_turn_idx': routing_turn_low,
             'edge_note': (
-                'Edge positions (first/last) are where the scaffold turns — '
-                'use half-crossovers there for scaffold routing. '
-                'Interior positions use double crossovers for structural reinforcement.'
+                'Positions annotated with is_edge (first/last) and '
+                'is_routing_turn (parity-determined scaffold turn). '
+                'In auto mode, only the routing turn position uses a '
+                'half-crossover; all others use double crossovers. '
+                'Call inferScaffoldRoute() for the full routing plan.'
             )
         }
 
@@ -1987,6 +2021,175 @@ class AgentMethods:
                 })
 
         return {'neighbor_pairs': pairs, 'count': len(pairs)}
+
+    def inferScaffoldRoute(self):
+        """
+        Infer a scaffold routing path through the helix neighbor graph.
+
+        Computes a Hamiltonian cycle (or path) through all helices and
+        determines the turn position for each consecutive pair based on
+        helix parity.  This tells the model exactly which crossover
+        positions should be half-crossovers (routing turns) vs double
+        crossovers (structural reinforcement).
+
+        Returns:
+            dict with 'path', 'turns', 'routing_pairs', 'non_routing_pairs'
+        """
+        part = self.activePart
+        if part is None:
+            return "Error: No active part"
+
+        vhs = list(part.getVirtualHelices())
+        if not vhs:
+            return "Error: No helices in design"
+        if len(vhs) == 1:
+            return {
+                'path': [vhs[0].number()],
+                'is_cycle': False,
+                'turns': [],
+                'routing_pairs': [],
+                'non_routing_pairs': [],
+                'description': "Single helix — no scaffold routing needed."
+            }
+
+        vh_map = {vh.number(): vh for vh in vhs}
+        st = StrandType.Scaffold
+
+        # Build adjacency from potentialCrossoverList (same as planScaffoldRouting)
+        vh_set = set(vhs)
+        adj = {vh.number(): set() for vh in vhs}
+        all_neighbor_pairs = set()
+        for vh in vhs:
+            for neighbor_vh, idx, sType, isLowIdx in part.potentialCrossoverList(vh):
+                if (sType == st and neighbor_vh is not None
+                        and neighbor_vh in vh_set):
+                    adj[vh.number()].add(neighbor_vh.number())
+                    pair = tuple(sorted([vh.number(), neighbor_vh.number()]))
+                    all_neighbor_pairs.add(pair)
+
+        nums = sorted(vh_map.keys())
+
+        # Find Hamiltonian cycle via DFS (fine for small designs ≤ ~20 helices)
+        def _find_cycle(start, current, visited, path):
+            if len(path) == len(nums):
+                if start in adj[current]:
+                    return list(path)
+                return None
+            for nxt in sorted(adj[current]):
+                if nxt not in visited:
+                    visited.add(nxt)
+                    path.append(nxt)
+                    result = _find_cycle(start, nxt, visited, path)
+                    if result is not None:
+                        return result
+                    path.pop()
+                    visited.remove(nxt)
+            return None
+
+        def _find_path(start, current, visited, path):
+            if len(path) == len(nums):
+                return list(path)
+            for nxt in sorted(adj[current]):
+                if nxt not in visited:
+                    visited.add(nxt)
+                    path.append(nxt)
+                    result = _find_path(start, nxt, visited, path)
+                    if result is not None:
+                        return result
+                    path.pop()
+                    visited.remove(nxt)
+            return None
+
+        cycle = None
+        for start in nums:
+            result = _find_cycle(start, start, {start}, [start])
+            if result is not None:
+                cycle = result
+                break
+
+        is_cycle = cycle is not None
+        if cycle is None:
+            # Fall back to Hamiltonian path
+            for start in nums:
+                result = _find_path(start, start, {start}, [start])
+                if result is not None:
+                    cycle = result
+                    break
+
+        if cycle is None:
+            return {
+                'error': (
+                    "Cannot find a Hamiltonian path through the helix neighbor graph. "
+                    "The helices may not form a connected graph. "
+                    "Check that all helices are neighbors of at least one other helix."
+                )
+            }
+
+        def _is_even_parity(vh):
+            row, col = vh.coord()
+            return (row % 2) == (col % 2)
+
+        # Compute turn positions for each consecutive pair
+        turns = []
+        routing_pairs = set()
+        get_ss = lambda vh: vh.scaffoldStrandSet()
+
+        n_steps = len(cycle) if is_cycle else len(cycle) - 1
+        for i in range(n_steps):
+            vh_a_num = cycle[i]
+            vh_b_num = cycle[(i + 1) % len(cycle)]
+            vh_a = vh_map[vh_a_num]
+            vh_b = vh_map[vh_b_num]
+
+            routing_pairs.add(tuple(sorted([vh_a_num, vh_b_num])))
+
+            # Get valid scaffold crossover positions
+            positions = []
+            for neighbor_vh, idx, sType, isLowIdx in part.potentialCrossoverList(vh_a):
+                if sType != st or neighbor_vh is None or neighbor_vh != vh_b:
+                    continue
+                if (get_ss(vh_a).getStrand(idx) is not None and
+                        get_ss(vh_b).getStrand(idx) is not None):
+                    positions.append(idx)
+            positions = sorted(set(positions))
+
+            if not positions:
+                turns.append({
+                    'helix_from': vh_a_num,
+                    'helix_to': vh_b_num,
+                    'error': 'No valid scaffold crossover positions'
+                })
+                continue
+
+            even_a = _is_even_parity(vh_a)
+            turn_idx = max(positions) if even_a else min(positions)
+            turns.append({
+                'helix_from': vh_a_num,
+                'helix_to': vh_b_num,
+                'turn_idx': turn_idx,
+                'parity': 'even' if even_a else 'odd',
+                'exit_end': 'high (right)' if even_a else 'low (left)',
+                'type': 'half_crossover'
+            })
+
+        non_routing = all_neighbor_pairs - routing_pairs
+        path_str = ' → '.join(str(h) for h in cycle)
+        if is_cycle:
+            path_str += f' → {cycle[0]}'
+
+        return {
+            'path': cycle,
+            'is_cycle': is_cycle,
+            'turns': turns,
+            'routing_pairs': [list(p) for p in sorted(routing_pairs)],
+            'non_routing_pairs': [list(p) for p in sorted(non_routing)],
+            'description': (
+                f"Scaffold route: {path_str}. "
+                f"{len(turns)} routing turns (half-crossovers). "
+                f"{len(non_routing)} non-routing neighbor pair(s) "
+                f"(double crossovers only for structural reinforcement)."
+            )
+        }
 
     # ==================== LEVEL 2: BATCH EXECUTION TOOLS ====================
 
@@ -2177,8 +2380,10 @@ class AgentMethods:
             high_offsets = Crossovers.honeycombStapHigh[direction_idx]
             get_ss = lambda vh: vh.stapleStrandSet()
 
-        # Determine edge positions for auto mode
-        edge_low_idxs = set()
+        # Determine routing turn position for auto mode
+        # Only the parity-determined routing turn gets a half-crossover;
+        # all other positions (including the other edge) get double crossovers.
+        routing_turn_idx = None
         if positions is None:
             # Auto-compute: find all valid positions with spacing
             suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
@@ -2187,14 +2392,12 @@ class AgentMethods:
             all_positions = suggestions.get('positions', [])
             positions = [p['low_idx'] for p in all_positions
                         if p.get('recommended') and not p.get('occupied')]
-            # Collect edge positions from suggestCrossovers annotation
-            edge_low_idxs = {p['low_idx'] for p in all_positions if p.get('is_edge')}
+            routing_turn_idx = suggestions.get('routing_turn_idx')
         else:
-            # When explicit positions provided, detect edges from all valid positions
+            # When explicit positions provided, get routing turn from suggestions
             suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
             if not isinstance(suggestions, str):
-                all_positions = suggestions.get('positions', [])
-                edge_low_idxs = {p['low_idx'] for p in all_positions if p.get('is_edge')}
+                routing_turn_idx = suggestions.get('routing_turn_idx')
 
         if not positions:
             return {
@@ -2205,7 +2408,7 @@ class AgentMethods:
             }
 
         # Resolve crossover_type for each position
-        # "auto": scaffold edges → half, everything else → double
+        # "auto": scaffold routing turn → half, everything else → double
         # "double": always double
         # "half": always half
         def _use_half(pos):
@@ -2213,8 +2416,10 @@ class AgentMethods:
                 return True
             if crossover_type == "double":
                 return False
-            # auto mode
-            if strand_type.lower() == "scaffold" and pos in edge_low_idxs:
+            # auto mode: only the parity-determined routing turn gets half
+            if (strand_type.lower() == "scaffold"
+                    and routing_turn_idx is not None
+                    and pos == routing_turn_idx):
                 return True
             return False
 
@@ -2302,11 +2507,17 @@ class AgentMethods:
         Add crossovers between all neighbor pairs in the design.
         One undo macro for the whole operation.
 
+        For scaffold in "auto" mode, infers a routing path through the
+        helix graph and places half-crossovers only at routing turn
+        positions (one per consecutive pair in the path).  Non-routing
+        neighbor pairs get only double crossovers for structural
+        reinforcement.
+
         Args:
             strand_type (str): "scaffold" or "staple"
             spacing (int): Minimum spacing between crossovers (default 21)
             crossover_type (str): "auto", "double", or "half".
-                auto (default): scaffold edges → half-crossover, else double.
+                auto (default): scaffold routing turns → half, else double.
 
         Returns:
             dict or str: Summary with per-pair breakdown
@@ -2323,6 +2534,20 @@ class AgentMethods:
         if not pairs:
             return "Error: No neighbor pairs found"
 
+        # For scaffold auto mode, compute routing to determine which pairs
+        # need routing turns (half-crossovers) vs structural-only (all double).
+        routing_turn_map = {}  # (h1,h2) → turn_idx or None
+        if strand_type.lower() == "scaffold" and crossover_type == "auto":
+            route = self.inferScaffoldRoute()
+            if isinstance(route, dict) and 'turns' in route:
+                for turn in route.get('turns', []):
+                    if 'error' in turn:
+                        continue
+                    h_from = turn['helix_from']
+                    h_to = turn['helix_to']
+                    key = tuple(sorted([h_from, h_to]))
+                    routing_turn_map[key] = turn.get('turn_idx')
+
         part.undoStack().beginMacro("Add All Neighbor Crossovers")
         try:
             total_created = 0
@@ -2330,8 +2555,19 @@ class AgentMethods:
 
             for pair in pairs:
                 h1, h2 = pair['helix1'], pair['helix2']
+                pair_key = tuple(sorted([h1, h2]))
+
+                # Determine effective crossover_type for this pair
+                if (strand_type.lower() == "scaffold"
+                        and crossover_type == "auto"
+                        and pair_key not in routing_turn_map):
+                    # Non-routing pair: use all double crossovers
+                    effective_type = "double"
+                else:
+                    effective_type = crossover_type
+
                 result = self._addCrossoversForPairInternal(
-                    part, h1, h2, strand_type, spacing, crossover_type
+                    part, h1, h2, strand_type, spacing, effective_type
                 )
                 count = result.get('created', 0) if isinstance(result, dict) else 0
                 total_created += count
@@ -2351,7 +2587,8 @@ class AgentMethods:
         return {
             'strand_type': strand_type,
             'total_created': total_created,
-            'pairs': pair_results
+            'pairs': pair_results,
+            'routing_pairs': len(routing_turn_map) if routing_turn_map else None
         }
 
     def _addCrossoversForPairInternal(self, part, helix1, helix2, strand_type,
@@ -2377,22 +2614,24 @@ class AgentMethods:
         else:
             get_ss = lambda vh: vh.stapleStrandSet()
 
-        # Auto-compute positions with edge annotations
+        # Auto-compute positions with routing turn annotation
         suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
         if isinstance(suggestions, str):
             return {'created': 0}
         all_positions = suggestions.get('positions', [])
         positions = [p['low_idx'] for p in all_positions
                     if p.get('recommended') and not p.get('occupied')]
-        edge_low_idxs = {p['low_idx'] for p in all_positions if p.get('is_edge')}
+        routing_turn_idx = suggestions.get('routing_turn_idx')
 
         def _use_half(pos):
             if crossover_type == "half":
                 return True
             if crossover_type == "double":
                 return False
-            # auto: scaffold edges → half, everything else → double
-            if strand_type.lower() == "scaffold" and pos in edge_low_idxs:
+            # auto: only the parity-determined routing turn gets half
+            if (strand_type.lower() == "scaffold"
+                    and routing_turn_idx is not None
+                    and pos == routing_turn_idx):
                 return True
             return False
 

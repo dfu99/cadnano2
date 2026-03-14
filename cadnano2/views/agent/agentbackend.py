@@ -233,12 +233,14 @@ VERIFICATION:
 
 HONEYCOMB STEP SIZE: 21bp. Common lengths: 84bp (4 steps), 126bp (6 steps).
 
-EDGE vs INTERIOR CROSSOVERS:
-- Edge positions are the first and last valid crossover positions between a helix pair — where the scaffold turns from one helix to the next.
-- Interior positions are everything in between — for structural reinforcement.
-- Scaffold routing uses HALF-crossovers at edge positions (the scaffold makes a single crossing to turn around).
-- Interior crossovers and all staple crossovers use DOUBLE crossovers (two half-crossovers at adjacent Low/High positions).
-- addCrossoversForPair with crossover_type="auto" (the default) handles this automatically.
+SCAFFOLD ROUTING TURNS:
+- Each helix pair on the routing path has exactly ONE half-crossover (the routing turn).
+- The turn position is determined by helix parity:
+  * Even parity (scaffold L→R): exits at the HIGH (rightmost) end → turn at last position.
+  * Odd parity (scaffold R→L): exits at the LOW (leftmost) end → turn at first position.
+- All other crossovers (interior positions, non-routing pairs, staples) use DOUBLE crossovers.
+- Call inferScaffoldRoute() to see the full routing plan with turn positions.
+- addCrossoversForPair with crossover_type="auto" (default) handles this automatically.
 
 EXAMPLE — Create a 6-helix bundle with 84bp scaffold:
 1. {"method": "createHelicesWithStrands", "params": {"num_helices": 6, "strand_type": "scaffold", "length": 84}}
@@ -263,12 +265,15 @@ Always call analyzeDesign first if you don't know the current state.
 Honeycomb lattice step size is 21bp. Common lengths: 84bp (4×21), 126bp (6×21).
 For standard bundles, use createHelicesWithStrands with num_helices (e.g. num_helices=6) — never invent lattice coordinates yourself.
 
-EDGE vs INTERIOR CROSSOVERS:
-- Edge positions are the first/last valid crossover positions between a helix pair — where the scaffold turns.
-- For scaffold: edge positions use HALF-crossovers (single strand crossing at the turn). Interior positions use DOUBLE crossovers.
-- For staple: always use DOUBLE crossovers.
+SCAFFOLD ROUTING TURNS:
+- Each helix pair on the routing path has ONE half-crossover at the parity-determined turn position.
+  * Even parity exits HIGH (right) → turn at rightmost position.
+  * Odd parity exits LOW (left) → turn at leftmost position.
+- Non-routing neighbor pairs get DOUBLE crossovers only (structural reinforcement).
+- Staple crossovers are always DOUBLE.
+- Call inferScaffoldRoute() to see the routing path with turn positions.
+- suggestCrossovers annotates each position with is_routing_turn=true/false.
 - addCrossoversForPair with crossover_type="auto" (default) handles this automatically.
-- suggestCrossovers annotates each position with is_edge=true/false.
 
 SCAFFOLD ROUTING for 2×N grids (STRICT):
 1. createHelicesWithStrands(num_helices=2N, strand_type="scaffold", length=L)

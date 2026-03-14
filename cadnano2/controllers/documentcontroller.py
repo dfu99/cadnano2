@@ -413,7 +413,8 @@ class DocumentController():
             'getPartSize', 'listCrossovers',
             'selectStrand', 'selectEndpoint', 'selectCrossover', 'clearSelection',
             # Level 2 query tools
-            'describeHelix', 'analyzeDesign', 'suggestCrossovers', 'getNeighborPairs'
+            'describeHelix', 'analyzeDesign', 'suggestCrossovers', 'getNeighborPairs',
+            'inferScaffoldRoute'
         }
 
         if success and methodName not in query_methods:
