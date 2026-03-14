@@ -553,5 +553,37 @@ objectives:
     The "auto" default means existing workflows that don't specify crossover_type
     will automatically get correct behavior. The "double" mode preserves legacy
     behavior for backward compatibility.
+  connects_to: obj-022
+  completed_date: '2026-03-14'
+
+- id: obj-022
+  status: completed
+  statement: Upgrade crossover logic from naive edge heuristic to routing-aware turns
+  methodology: >-
+    Replaced first/last edge heuristic with parity-aware routing turn detection.
+    Added inferScaffoldRoute() — computes Hamiltonian cycle through helix neighbor
+    graph via DFS, determines turn position per pair based on helix parity (even
+    exits right, odd exits left). suggestCrossovers now annotates is_routing_turn
+    (1 per pair) and always includes the turn in recommendations. addCrossoversForPair
+    auto mode creates exactly 1 half-crossover at the routing turn. addAllNeighborCrossovers
+    auto scaffold infers routing path — non-routing pairs get only double crossovers.
+    Updated tool schemas, system prompts, and query method whitelist.
+  metrics:
+    new_tests: 8
+    original_tests_passing: 12
+    files_changed: 7
+    lines_added: 445
+    lines_removed: 74
+    half_crossovers_per_pair: 1
+    routing_turn_detection: parity-based
+    hamiltonian_cycle_solver: DFS
+  figures:
+  - results/obj-022-routing-aware-crossovers.png
+  conclusions: >-
+    The model now gets exactly one half-crossover per routing pair (at the
+    parity-determined turn) instead of two (at both edges). inferScaffoldRoute
+    gives the model a full routing plan before placing crossovers manually.
+    addAllNeighborCrossovers is now routing-aware — non-routing pairs get only
+    structural double crossovers. This matches actual DNA origami conventions.
   connects_to: null
   completed_date: '2026-03-14'
