@@ -55,8 +55,10 @@ TOOL_SCHEMAS = [
         "name": "suggestCrossovers",
         "description": (
             "Return annotated crossover positions between two neighboring helices: "
-            "which positions are occupied, available, and recommended. "
-            "Use before addCrossoversForPair to understand valid placement options."
+            "which positions are occupied, available, recommended, and whether each "
+            "is an edge position (is_edge=true for first/last positions where the "
+            "scaffold turns) or interior. Edge positions should use half-crossovers "
+            "for scaffold routing; interior positions use double crossovers."
         ),
         "input_schema": {
             "type": "object",
@@ -138,7 +140,11 @@ TOOL_SCHEMAS = [
         "description": (
             "Add crossovers between two neighboring helices. "
             "Auto-computes valid positions if not specified. "
-            "Each call is wrapped in one undo macro for atomic undo."
+            "Each call is wrapped in one undo macro for atomic undo.\n\n"
+            "EDGE vs INTERIOR: In 'auto' mode (default), scaffold crossovers at edge "
+            "positions (first/last valid position — where the scaffold turns) are "
+            "created as half-crossovers. Interior positions and all staple crossovers "
+            "are created as double crossovers. This matches DNA origami conventions."
         ),
         "input_schema": {
             "type": "object",
@@ -164,6 +170,15 @@ TOOL_SCHEMAS = [
                 "spacing": {
                     "type": "integer",
                     "description": "Minimum spacing between auto-computed crossovers (optional)."
+                },
+                "crossover_type": {
+                    "type": "string",
+                    "enum": ["auto", "double", "half"],
+                    "description": (
+                        "Crossover type strategy. 'auto' (default): scaffold edges use "
+                        "half-crossovers, interior and staple use double. 'double': always "
+                        "double crossovers. 'half': always half-crossovers."
+                    )
                 }
             },
             "required": ["helix1", "helix2", "strand_type"]
@@ -174,7 +189,9 @@ TOOL_SCHEMAS = [
         "description": (
             "Wire up all neighbor pairs in the design with crossovers. "
             "Wrapped in one undo macro. Use after createHelicesWithStrands "
-            "to connect all helices."
+            "to connect all helices.\n\n"
+            "In 'auto' mode (default), scaffold edge positions use half-crossovers "
+            "and interior positions use double crossovers."
         ),
         "input_schema": {
             "type": "object",
@@ -187,6 +204,15 @@ TOOL_SCHEMAS = [
                 "spacing": {
                     "type": "integer",
                     "description": "Minimum spacing between crossovers (optional)."
+                },
+                "crossover_type": {
+                    "type": "string",
+                    "enum": ["auto", "double", "half"],
+                    "description": (
+                        "Crossover type strategy. 'auto' (default): scaffold edges use "
+                        "half-crossovers, interior and staple use double. 'double': always "
+                        "double. 'half': always half."
+                    )
                 }
             },
             "required": ["strand_type"]

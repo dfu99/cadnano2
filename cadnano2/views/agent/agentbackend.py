@@ -203,8 +203,8 @@ UNDERSTAND THE DESIGN (call these first):
 
 BUILD (batch operations — preferred for multi-step tasks):
 - createHelicesWithStrands(num_helices, strand_type, length): Create multiple helices with strands in one step. Pass num_helices (e.g. 6) for a standard bundle — positions are computed automatically. Standard sizes: 2, 6, 7, 19. strand_type can be "scaffold", "staple", or "both". Auto-extends part size. You may also pass an explicit positions list of [row, col] pairs instead of num_helices.
-- addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?): Add crossovers between two helices. Auto-computes positions if not specified.
-- addAllNeighborCrossovers(strand_type, spacing?): Wire up all neighbor pairs with crossovers
+- addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?, crossover_type?): Add crossovers between two helices. crossover_type: "auto" (default) uses half-crossovers at edge positions for scaffold, double elsewhere. "double" forces all double. "half" forces all half.
+- addAllNeighborCrossovers(strand_type, spacing?, crossover_type?): Wire up all neighbor pairs with crossovers. Same crossover_type logic.
 - resizeAllStrands(strand_type, new_length?, delta?, helix_num?): Resize strands in bulk. Respects parity for which end to resize.
 
 FINE-GRAINED CONTROL (when batch tools aren't enough):
@@ -233,6 +233,13 @@ VERIFICATION:
 
 HONEYCOMB STEP SIZE: 21bp. Common lengths: 84bp (4 steps), 126bp (6 steps).
 
+EDGE vs INTERIOR CROSSOVERS:
+- Edge positions are the first and last valid crossover positions between a helix pair — where the scaffold turns from one helix to the next.
+- Interior positions are everything in between — for structural reinforcement.
+- Scaffold routing uses HALF-crossovers at edge positions (the scaffold makes a single crossing to turn around).
+- Interior crossovers and all staple crossovers use DOUBLE crossovers (two half-crossovers at adjacent Low/High positions).
+- addCrossoversForPair with crossover_type="auto" (the default) handles this automatically.
+
 EXAMPLE — Create a 6-helix bundle with 84bp scaffold:
 1. {"method": "createHelicesWithStrands", "params": {"num_helices": 6, "strand_type": "scaffold", "length": 84}}
 2. {"method": "planScaffoldRouting", "params": {"strand_type": "scaffold"}}
@@ -255,6 +262,13 @@ Use the provided tools to inspect and modify the design.
 Always call analyzeDesign first if you don't know the current state.
 Honeycomb lattice step size is 21bp. Common lengths: 84bp (4×21), 126bp (6×21).
 For standard bundles, use createHelicesWithStrands with num_helices (e.g. num_helices=6) — never invent lattice coordinates yourself.
+
+EDGE vs INTERIOR CROSSOVERS:
+- Edge positions are the first/last valid crossover positions between a helix pair — where the scaffold turns.
+- For scaffold: edge positions use HALF-crossovers (single strand crossing at the turn). Interior positions use DOUBLE crossovers.
+- For staple: always use DOUBLE crossovers.
+- addCrossoversForPair with crossover_type="auto" (default) handles this automatically.
+- suggestCrossovers annotates each position with is_edge=true/false.
 
 SCAFFOLD ROUTING for 2×N grids (STRICT):
 1. createHelicesWithStrands(num_helices=2N, strand_type="scaffold", length=L)

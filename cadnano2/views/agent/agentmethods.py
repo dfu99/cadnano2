@@ -1913,6 +1913,19 @@ class AgentMethods:
                     'occupied': is_occupied
                 })
 
+        # Classify edge vs interior positions.
+        # Edge positions are the first and last valid crossover positions
+        # between this helix pair — these are at the structural boundary
+        # where the scaffold turns from one helix to the next.
+        # For scaffold routing, edge positions should use half-crossovers.
+        # Interior positions should use double crossovers.
+        if positions:
+            edge_low_idxs = {positions[0]['low_idx'], positions[-1]['low_idx']}
+            for p in positions:
+                p['is_edge'] = p['low_idx'] in edge_low_idxs
+        else:
+            edge_low_idxs = set()
+
         # Apply spacing filter for recommendations
         available = [p for p in positions if not p['occupied']]
         recommended = []
@@ -1933,7 +1946,12 @@ class AgentMethods:
             'min_spacing': min_spacing,
             'positions': positions,
             'available_count': len(available),
-            'recommended_count': len(recommended)
+            'recommended_count': len(recommended),
+            'edge_note': (
+                'Edge positions (first/last) are where the scaffold turns — '
+                'use half-crossovers there for scaffold routing. '
+                'Interior positions use double crossovers for structural reinforcement.'
+            )
         }
 
     def getNeighborPairs(self):
@@ -2104,10 +2122,22 @@ class AgentMethods:
             'length': length
         }
 
-    def addCrossoversForPair(self, helix1, helix2, strand_type, positions=None, spacing=21):
+    def addCrossoversForPair(self, helix1, helix2, strand_type, positions=None,
+                             spacing=21, crossover_type="auto"):
         """
-        Add double crossovers between two helices. If positions is None,
+        Add crossovers between two helices. If positions is None,
         auto-computes valid positions with spacing constraint.
+
+        The crossover_type parameter controls whether to create double
+        crossovers (two half-crossovers at adjacent Low/High positions)
+        or single half-crossovers:
+
+        - "auto" (default): For scaffold, uses half-crossovers at edge
+          positions (first/last valid position — where the scaffold turns)
+          and double crossovers at interior positions. For staple, always
+          uses double crossovers.
+        - "double": Always create double crossovers (legacy behavior).
+        - "half": Always create single half-crossovers.
 
         Args:
             helix1 (int): First helix number
@@ -2115,6 +2145,7 @@ class AgentMethods:
             strand_type (str): "scaffold" or "staple"
             positions (list, optional): Specific crossover indices (low idx of each pair)
             spacing (int): Minimum spacing between crossovers (default 21)
+            crossover_type (str): "auto", "double", or "half"
 
         Returns:
             dict or str: Summary of crossovers created
@@ -2146,13 +2177,24 @@ class AgentMethods:
             high_offsets = Crossovers.honeycombStapHigh[direction_idx]
             get_ss = lambda vh: vh.stapleStrandSet()
 
+        # Determine edge positions for auto mode
+        edge_low_idxs = set()
         if positions is None:
             # Auto-compute: find all valid positions with spacing
             suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
             if isinstance(suggestions, str):
                 return suggestions  # error message
-            positions = [p['low_idx'] for p in suggestions.get('positions', [])
+            all_positions = suggestions.get('positions', [])
+            positions = [p['low_idx'] for p in all_positions
                         if p.get('recommended') and not p.get('occupied')]
+            # Collect edge positions from suggestCrossovers annotation
+            edge_low_idxs = {p['low_idx'] for p in all_positions if p.get('is_edge')}
+        else:
+            # When explicit positions provided, detect edges from all valid positions
+            suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
+            if not isinstance(suggestions, str):
+                all_positions = suggestions.get('positions', [])
+                edge_low_idxs = {p['low_idx'] for p in all_positions if p.get('is_edge')}
 
         if not positions:
             return {
@@ -2161,6 +2203,20 @@ class AgentMethods:
                 'created': 0,
                 'message': 'No valid positions found for crossovers'
             }
+
+        # Resolve crossover_type for each position
+        # "auto": scaffold edges → half, everything else → double
+        # "double": always double
+        # "half": always half
+        def _use_half(pos):
+            if crossover_type == "half":
+                return True
+            if crossover_type == "double":
+                return False
+            # auto mode
+            if strand_type.lower() == "scaffold" and pos in edge_low_idxs:
+                return True
+            return False
 
         # Validate all positions before creating any
         for pos in positions:
@@ -2175,42 +2231,56 @@ class AgentMethods:
         try:
             created = []
             for pos in positions:
-                # Find the paired index
-                paired_idx = self._getDoubleCrossoverPair(part, vh1, vh2, pos, strand_type)
-                if paired_idx is None:
-                    continue
+                use_half = _use_half(pos)
 
-                low_idx = min(pos, paired_idx)
-                high_idx = max(pos, paired_idx)
+                if use_half:
+                    # Single half-crossover at the edge position
+                    s1 = get_ss(vh1).getStrand(pos)
+                    s2 = get_ss(vh2).getStrand(pos)
+                    if s1 is None or s2 is None:
+                        continue
+                    part.createXover(s1, pos, s2, pos, useUndoStack=True)
+                    created.append({
+                        'idx': pos, 'type': 'half',
+                        'note': 'edge position (scaffold turn)'
+                    })
+                else:
+                    # Double crossover: find the paired index
+                    paired_idx = self._getDoubleCrossoverPair(
+                        part, vh1, vh2, pos, strand_type)
+                    if paired_idx is None:
+                        continue
 
-                # Verify strands exist at both indices on both helices
-                ss1 = get_ss(vh1)
-                ss2 = get_ss(vh2)
+                    low_idx = min(pos, paired_idx)
+                    high_idx = max(pos, paired_idx)
 
-                # Parity-aware: even is 5p at Low, odd is 5p at High
-                vh_even = vh1 if vh1.isEvenParity() else vh2
-                vh_odd  = vh2 if vh1.isEvenParity() else vh1
-                xover_pairs = [
-                    (vh_even, vh_odd, low_idx),
-                    (vh_odd, vh_even, high_idx),
-                ]
+                    # Parity-aware: even is 5p at Low, odd is 5p at High
+                    vh_even = vh1 if vh1.isEvenParity() else vh2
+                    vh_odd  = vh2 if vh1.isEvenParity() else vh1
+                    xover_pairs = [
+                        (vh_even, vh_odd, low_idx),
+                        (vh_odd, vh_even, high_idx),
+                    ]
 
-                skip = False
-                for vh_5p, vh_3p, idx in xover_pairs:
-                    s5p = get_ss(vh_5p).getStrand(idx)
-                    s3p = get_ss(vh_3p).getStrand(idx)
-                    if s5p is None or s3p is None:
-                        skip = True
-                        break
-                if skip:
-                    continue
+                    skip = False
+                    for vh_5p, vh_3p, idx in xover_pairs:
+                        s5p = get_ss(vh_5p).getStrand(idx)
+                        s3p = get_ss(vh_3p).getStrand(idx)
+                        if s5p is None or s3p is None:
+                            skip = True
+                            break
+                    if skip:
+                        continue
 
-                for vh_5p, vh_3p, idx in xover_pairs:
-                    s5p = get_ss(vh_5p).getStrand(idx)
-                    s3p = get_ss(vh_3p).getStrand(idx)
-                    part.createXover(s5p, idx, s3p, idx, useUndoStack=True)
+                    for vh_5p, vh_3p, idx in xover_pairs:
+                        s5p = get_ss(vh_5p).getStrand(idx)
+                        s3p = get_ss(vh_3p).getStrand(idx)
+                        part.createXover(s5p, idx, s3p, idx, useUndoStack=True)
 
-                created.append({'low_idx': low_idx, 'high_idx': high_idx})
+                    created.append({
+                        'low_idx': low_idx, 'high_idx': high_idx,
+                        'type': 'double'
+                    })
 
             part.undoStack().endMacro()
 
@@ -2227,7 +2297,7 @@ class AgentMethods:
             'crossovers': created
         }
 
-    def addAllNeighborCrossovers(self, strand_type, spacing=21):
+    def addAllNeighborCrossovers(self, strand_type, spacing=21, crossover_type="auto"):
         """
         Add crossovers between all neighbor pairs in the design.
         One undo macro for the whole operation.
@@ -2235,6 +2305,8 @@ class AgentMethods:
         Args:
             strand_type (str): "scaffold" or "staple"
             spacing (int): Minimum spacing between crossovers (default 21)
+            crossover_type (str): "auto", "double", or "half".
+                auto (default): scaffold edges → half-crossover, else double.
 
         Returns:
             dict or str: Summary with per-pair breakdown
@@ -2259,7 +2331,7 @@ class AgentMethods:
             for pair in pairs:
                 h1, h2 = pair['helix1'], pair['helix2']
                 result = self._addCrossoversForPairInternal(
-                    part, h1, h2, strand_type, spacing
+                    part, h1, h2, strand_type, spacing, crossover_type
                 )
                 count = result.get('created', 0) if isinstance(result, dict) else 0
                 total_created += count
@@ -2282,10 +2354,14 @@ class AgentMethods:
             'pairs': pair_results
         }
 
-    def _addCrossoversForPairInternal(self, part, helix1, helix2, strand_type, spacing):
+    def _addCrossoversForPairInternal(self, part, helix1, helix2, strand_type,
+                                      spacing, crossover_type="auto"):
         """
         Internal helper for addAllNeighborCrossovers — creates crossovers
         between a pair without its own undo macro (caller wraps).
+
+        crossover_type: "auto", "double", or "half" (same semantics as
+        addCrossoversForPair).
         """
         vh1 = part.virtualHelix(helix1)
         vh2 = part.virtualHelix(helix2)
@@ -2296,56 +2372,74 @@ class AgentMethods:
         if vh2 not in neighbors:
             return {'created': 0}
 
-        direction_idx = neighbors.index(vh2)
-
         if strand_type.lower() == "scaffold":
-            low_offsets = Crossovers.honeycombScafLow[direction_idx]
-            high_offsets = Crossovers.honeycombScafHigh[direction_idx]
             get_ss = lambda vh: vh.scaffoldStrandSet()
         else:
-            low_offsets = Crossovers.honeycombStapLow[direction_idx]
-            high_offsets = Crossovers.honeycombStapHigh[direction_idx]
             get_ss = lambda vh: vh.stapleStrandSet()
 
-        # Auto-compute positions
+        # Auto-compute positions with edge annotations
         suggestions = self.suggestCrossovers(helix1, helix2, strand_type, spacing)
         if isinstance(suggestions, str):
             return {'created': 0}
-        positions = [p['low_idx'] for p in suggestions.get('positions', [])
+        all_positions = suggestions.get('positions', [])
+        positions = [p['low_idx'] for p in all_positions
                     if p.get('recommended') and not p.get('occupied')]
+        edge_low_idxs = {p['low_idx'] for p in all_positions if p.get('is_edge')}
+
+        def _use_half(pos):
+            if crossover_type == "half":
+                return True
+            if crossover_type == "double":
+                return False
+            # auto: scaffold edges → half, everything else → double
+            if strand_type.lower() == "scaffold" and pos in edge_low_idxs:
+                return True
+            return False
 
         created = []
         for pos in positions:
-            paired_idx = self._getDoubleCrossoverPair(part, vh1, vh2, pos, strand_type)
-            if paired_idx is None:
-                continue
+            use_half = _use_half(pos)
 
-            low_idx = min(pos, paired_idx)
-            high_idx = max(pos, paired_idx)
+            if use_half:
+                s1 = get_ss(vh1).getStrand(pos)
+                s2 = get_ss(vh2).getStrand(pos)
+                if s1 is None or s2 is None:
+                    continue
+                part.createXover(s1, pos, s2, pos, useUndoStack=True)
+                created.append({'idx': pos, 'type': 'half'})
+            else:
+                paired_idx = self._getDoubleCrossoverPair(
+                    part, vh1, vh2, pos, strand_type)
+                if paired_idx is None:
+                    continue
 
-            vh_even = vh1 if vh1.isEvenParity() else vh2
-            vh_odd  = vh2 if vh1.isEvenParity() else vh1
-            xover_pairs = [
-                (vh_even, vh_odd, low_idx),
-                (vh_odd, vh_even, high_idx),
-            ]
+                low_idx = min(pos, paired_idx)
+                high_idx = max(pos, paired_idx)
 
-            skip = False
-            for vh_5p, vh_3p, idx in xover_pairs:
-                s5p = get_ss(vh_5p).getStrand(idx)
-                s3p = get_ss(vh_3p).getStrand(idx)
-                if s5p is None or s3p is None:
-                    skip = True
-                    break
-            if skip:
-                continue
+                vh_even = vh1 if vh1.isEvenParity() else vh2
+                vh_odd  = vh2 if vh1.isEvenParity() else vh1
+                xover_pairs = [
+                    (vh_even, vh_odd, low_idx),
+                    (vh_odd, vh_even, high_idx),
+                ]
 
-            for vh_5p, vh_3p, idx in xover_pairs:
-                s5p = get_ss(vh_5p).getStrand(idx)
-                s3p = get_ss(vh_3p).getStrand(idx)
-                part.createXover(s5p, idx, s3p, idx, useUndoStack=True)
+                skip = False
+                for vh_5p, vh_3p, idx in xover_pairs:
+                    s5p = get_ss(vh_5p).getStrand(idx)
+                    s3p = get_ss(vh_3p).getStrand(idx)
+                    if s5p is None or s3p is None:
+                        skip = True
+                        break
+                if skip:
+                    continue
 
-            created.append({'low_idx': low_idx, 'high_idx': high_idx})
+                for vh_5p, vh_3p, idx in xover_pairs:
+                    s5p = get_ss(vh_5p).getStrand(idx)
+                    s3p = get_ss(vh_3p).getStrand(idx)
+                    part.createXover(s5p, idx, s3p, idx, useUndoStack=True)
+
+                created.append({'low_idx': low_idx, 'high_idx': high_idx,
+                                'type': 'double'})
 
         return {'created': len(created), 'crossovers': created}
 

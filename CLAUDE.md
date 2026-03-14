@@ -113,8 +113,8 @@ Methods are organized in two tiers. **Level 2 tools are preferred** — they enc
 
 **Level 2 — Batch Execution Tools** (each wraps in one undo macro for atomic undo):
 - `createHelicesWithStrands(positions, strand_type, length)`: Create multiple helices with strands. Auto-extends part size. strand_type can be "scaffold", "staple", or "both"
-- `addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?)`: Add crossovers between two helices. Auto-computes positions if not specified
-- `addAllNeighborCrossovers(strand_type, spacing?)`: Wire up all neighbor pairs with crossovers
+- `addCrossoversForPair(helix1, helix2, strand_type, positions?, spacing?, crossover_type?)`: Add crossovers between two helices. Auto-computes positions if not specified. crossover_type: "auto" (default) uses half-crossovers at edge positions for scaffold, double elsewhere; "double" forces all double; "half" forces all half.
+- `addAllNeighborCrossovers(strand_type, spacing?, crossover_type?)`: Wire up all neighbor pairs with crossovers. Same crossover_type logic.
 - `removeCrossoversForPair(helix1, helix2, strand_type)`: Remove all crossovers between two helices
 - `removeAllCrossovers(strand_type)`: Remove all crossovers of a given strand type
 - `resizeAllStrands(strand_type, new_length?, delta?, helix_num?)`: Resize strands in bulk. Respects parity for which end to resize
