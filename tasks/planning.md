@@ -13,6 +13,7 @@
 
 ## Recently Completed
 
+- **Edge vs interior crossover decision logic** (2026-03-14): Added `crossover_type` parameter ("auto"/"double"/"half") to `addCrossoversForPair` and `addAllNeighborCrossovers`. In auto mode, scaffold edge positions (first/last valid crossover) use half-crossovers, interior positions use double. `suggestCrossovers` now annotates each position with `is_edge`. Updated system prompts and tool schemas. 5 new tests + 12 original tests pass.
 - **oxDNA investigation report** (2026-03-13): Comprehensive report on tacoxDNA conversion pipeline with 4 purposeful figures: format anatomy, conversion pipeline, planarity/helix analysis, training reward integration. 6-helix flat sheet: 41.5x10.5x2.4 nm, flatness 0.058, combined reward 0.76. Report at `results/oxdna_investigation/report.md`.
 - **Checkpoint: queue cleanup & obj-002 docs** (2026-03-13): Completed obj-002 methodology/conclusions for 2×N grid bundle generator. Marked tacoxDNA investigation and documentation queue items as completed. All queue items resolved except half-crossover edge logic (pending).
 - **tacoxDNA investigation report** (2026-03-13): Generated 4-figure investigation report (`results/oxdna_investigation/`) covering oxDNA format anatomy, conversion pipeline, planarity analysis, and training integration. Full report in `report.md` with metrics.

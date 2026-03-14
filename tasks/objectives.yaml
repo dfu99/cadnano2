@@ -523,5 +523,35 @@ objectives:
     Pipeline runs in <2s per design, feasible for online RL. Recommended next
     step: integrate geometric reward into agentverifier.py alongside existing
     connectivity-based verification.
-  connects_to: null
+  connects_to: obj-021
   completed_date: '2026-03-13'
+- id: obj-021
+  status: completed
+  statement: Add edge vs interior crossover decision logic for half/double crossovers
+  methodology: >-
+    Added is_edge annotation to suggestCrossovers (first/last valid positions
+    between a helix pair). Added crossover_type parameter ("auto"/"double"/"half")
+    to addCrossoversForPair and addAllNeighborCrossovers. In "auto" mode (default),
+    scaffold edge positions create half-crossovers (single strand crossing at
+    the turn), interior positions create double crossovers. Staple crossovers
+    always use double. Updated system prompts and tool schemas to explain the
+    edge vs interior rule. Added 5 new headless tests.
+  metrics:
+    new_tests: 5
+    original_tests_passing: 12
+    files_changed: 6
+    lines_added: 394
+    lines_removed: 80
+    crossover_types: 3
+    edge_positions_per_pair: 2
+  figures:
+  - results/obj-021-edge-crossover-logic.png
+  conclusions: >-
+    The model now has encoded domain knowledge about when to use half vs double
+    crossovers. Edge positions (first/last valid crossover between a helix pair)
+    use half-crossovers for scaffold routing, matching DNA origami conventions.
+    The "auto" default means existing workflows that don't specify crossover_type
+    will automatically get correct behavior. The "double" mode preserves legacy
+    behavior for backward compatibility.
+  connects_to: null
+  completed_date: '2026-03-14'
