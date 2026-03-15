@@ -585,5 +585,33 @@ objectives:
     gives the model a full routing plan before placing crossovers manually.
     addAllNeighborCrossovers is now routing-aware — non-routing pairs get only
     structural double crossovers. This matches actual DNA origami conventions.
-  connects_to: null
+  connects_to: obj-023
   completed_date: '2026-03-14'
+
+- id: obj-023
+  status: completed
+  statement: Design and screenshot a flat 4-helix sheet with correct crossover placement
+  methodology: >-
+    Created 4-helix linear chain (126bp) using createHelicesWithStrands(num_helices=4).
+    Placed crossovers per PI spec: H0-H1 gets 2 half crossovers at left (idx 1) and
+    right (idx 116) edges; H1-H2 gets 1 double crossover at midpoint (idx 60/61);
+    H2-H3 gets 2 half crossovers at left (idx 4) and right (idx 120) edges — different
+    positions from H0-H1 due to different neighbor direction. Cleaned up orphan fragments
+    (4 deleted). Rendered headless screenshot via pathview scene.
+  metrics:
+    helices: 4
+    strand_length: 126bp
+    half_crossovers: 4
+    double_crossovers: 1
+    orphan_fragments_deleted: 4
+    crossover_positions: "H0-H1:[1,116], H1-H2:[60,61], H2-H3:[4,120]"
+  figures:
+  - results/obj-023-4helix-flat-sheet.png
+  conclusions: >-
+    The 4-helix flat sheet demonstrates the PI's crossover placement rules:
+    half crossovers at the leftmost/rightmost valid positions (edges where no
+    further crossover exists), double crossovers at interior midpoints.
+    Different neighbor directions (p0, p1, p2) yield different valid position
+    offsets, so H0-H1 edges (idx 1, 116) differ from H2-H3 edges (idx 4, 120).
+  connects_to: null
+  completed_date: '2026-03-15'
