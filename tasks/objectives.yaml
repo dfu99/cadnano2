@@ -702,5 +702,36 @@ objectives:
     whether the visual result is a left or right half crossover. The fix makes
     createHalfCrossover parity-aware, matching the same logic used by
     createCrossover for double crossovers.
+  connects_to: obj-027
+  completed_date: '2026-03-16'
+
+- id: obj-027
+  status: completed
+  statement: Analyze distribution strategy for sharing AI-assisted cadnano with peers
+  methodology: >-
+    Analyzed the full agent stack to determine what transfers with 1:1 reproducibility
+    vs what is machine-local. Key finding: domain knowledge lives in code (85 methods,
+    tool schemas, system prompts, verifier), not in model weights or Claude Code memory.
+    The architecture separates intent parsing (any LLM) from domain rules (deterministic
+    Python), making the model interchangeable. Peer needs only git clone + pip install +
+    Ollama (or API key). No trained weights, memory files, or skills export needed.
+  metrics:
+    shipped_components: 7
+    not_shipped_components: 5
+    methods_count: 85
+    tool_schema_lines: 950
+    system_prompt_count: 3
+    peer_setup_commands: 3-4
+    pip_ml_deps_required: 0
+  figures:
+  - results/obj-027-distribution-strategy.png
+  conclusions: >-
+    The Level 2 methods layer is the transferrable intelligence. It encodes parity rules,
+    crossover position tables, routing algorithms, and staple breaking — things a model
+    would need thousands of training examples to learn. By putting this in code rather
+    than model weights, any LLM (local or cloud) that can call functions becomes a viable
+    agent. Training a local model (Phase 4-5) is for pushing the frontier on hard tasks,
+    not for basic distribution. Memory files and conversation history are working notes
+    for the development agent (Claude Code), not part of the user-facing product.
   connects_to: null
   completed_date: '2026-03-16'

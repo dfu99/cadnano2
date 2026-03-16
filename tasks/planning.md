@@ -13,6 +13,7 @@
 
 ## Recently Completed
 
+- **Distribution strategy analysis** (2026-03-16): Domain knowledge lives in code (85 methods, tool schemas, system prompts), not model weights or memory files. The repo IS the package — any LLM that can call functions works as the agent. Training is for hard-task frontier, not basic distribution. Figure at `results/obj-027-distribution-strategy.png`.
 - **Fixed half crossover handedness** (2026-03-16): PI correction — left side of 4-helix sheet needed RIGHT half crossovers, not left. Root cause: `createHalfCrossover` always used same 5'/3' ordering regardless of Low/High position. Fixed by adding `_isHighCrossoverPosition` and parity-aware strand ordering. Screenshot at `results/obj-026-4helix-sheet-handedness.png`.
 - **Transferability audit for peer distribution** (2026-03-16): Audited all 8 agent files — entire stack (GUI, 85 methods, 3 LLM backends, verifier, trajectories) uses only PyQt6 + stdlib. Zero extra pip deps. RLVR training is the only layer needing torch/transformers/peft, and those imports are conditional. A peer needs 4 commands: git clone, pip install -e ., curl Ollama, ollama pull. Figure at `results/obj-025-transferability-analysis.png`.
 - **Corrected 4-helix flat sheet half crossovers** (2026-03-15): PI correction — left half crossovers should use High index (one position right). H0-H1 left: idx 1→2, H2-H3 left: idx 4→5. Right half crossovers and double crossover unchanged. Built `tools/gen_4helix_sheet.py` for reproducible generation. Screenshot at `results/obj-024-4helix-flat-sheet-corrected.png`.
