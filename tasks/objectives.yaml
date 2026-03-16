@@ -733,5 +733,34 @@ objectives:
     agent. Training a local model (Phase 4-5) is for pushing the frontier on hard tasks,
     not for basic distribution. Memory files and conversation history are working notes
     for the development agent (Claude Code), not part of the user-facing product.
+  connects_to: obj-028
+  completed_date: '2026-03-16'
+
+- id: obj-028
+  status: completed
+  statement: Redo 4-helix sheet with double-then-remove approach and JSON export
+  methodology: >-
+    Changed half crossover creation strategy from direct createHalfCrossover to
+    creating a full double crossover and removing one half. This exactly replicates
+    GUI behavior. Added comprehensive strand connectivity diagnostics showing all
+    5'/3' endpoints and crossover partners after each operation. Exported design as
+    cadnano JSON for PI verification in the GUI. Verified single closed scaffold
+    loop through all 4 helices by tracing strand connections.
+  metrics:
+    scaffold_path: "H0[2→116]→H1[116→72]→H2[72→120]→H3[120→5]→H2[5→71]→H1[71→2]→H0"
+    topology: single closed loop
+    right_half_xovers: "idx 2 (H0-H1), idx 5 (H2-H3)"
+    left_half_xovers: "idx 116 (H0-H1), idx 120 (H2-H3)"
+    tests_passing: 8
+    json_exported: true
+  figures:
+  - results/obj-028-4helix-sheet-v3.png
+  conclusions: >-
+    The double-then-remove approach produces identical topology to the parity-aware
+    createHalfCrossover fix. The scaffold forms one continuous closed loop visiting
+    all 4 helices. The rectangular visual in the path view is correct — it represents
+    the continuous scaffold path wrapping around each helix pair. Previous screenshots
+    (obj-023/024) showed small V-shapes because wrong handedness prevented proper
+    scaffold routing. Exported JSON file allows PI to verify in the GUI directly.
   connects_to: null
   completed_date: '2026-03-16'

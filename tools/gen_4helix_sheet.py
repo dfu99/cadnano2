@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 """
-Generate a flat 4-helix sheet screenshot with correct crossover handedness.
+Generate a flat 4-helix sheet with correct crossover handedness.
 
-PI correction (obj-026): On the left side of the structure, use a RIGHT half
-crossover (High index position); on the right side, use a LEFT half crossover
-(Low index position). createHalfCrossover now automatically determines the
-correct 5'/3' strand ordering from the crossover tables.
+Strategy: Create double crossovers at edge positions, then remove
+one half to leave the correct half crossover. This reproduces
+exactly what a GUI user would do.
+
+For each edge pair:
+  - Left side of structure: create double, remove LEFT half → RIGHT half remains
+  - Right side of structure: create double, remove RIGHT half → LEFT half remains
 
 Usage:
-  QT_QPA_PLATFORM=offscreen python -m tools.gen_4helix_sheet
+  QT_QPA_PLATFORM=offscreen python tools/gen_4helix_sheet.py
 """
 
 import os
@@ -55,6 +58,28 @@ def render_pathview(dc):
     return image
 
 
+def print_strand_info(part, label):
+    """Print all scaffold strand info for debugging."""
+    print(f"\n--- {label} ---")
+    for h in range(4):
+        vh = part.virtualHelix(h)
+        if vh is None:
+            continue
+        ss = vh.scaffoldStrandSet()
+        parity = "even" if vh.isEvenParity() else "odd"
+        drawn = "L→R" if ss.isDrawn5to3() else "R→L"
+        print(f"  H{h} ({parity}, {drawn}):")
+        for strand in ss:
+            lo, hi = strand.idxs()
+            conn_lo = strand.connectionLow()
+            conn_hi = strand.connectionHigh()
+            idx5 = strand.idx5Prime()
+            idx3 = strand.idx3Prime()
+            lo_str = f"→H{conn_lo.virtualHelix().number()}[{conn_lo.idx5Prime() if conn_lo else '?'}]" if conn_lo else "free"
+            hi_str = f"→H{conn_hi.virtualHelix().number()}[{conn_hi.idx3Prime() if conn_hi else '?'}]" if conn_hi else "free"
+            print(f"    [{lo},{hi}] 5'@{idx5} 3'@{idx3} | lo:{lo_str} hi:{hi_str}")
+
+
 def main():
     app = cadnano.initAppWithGui()
 
@@ -81,61 +106,77 @@ def main():
 
     # Create 4-helix linear chain with scaffold strands
     result = m.createHelicesWithStrands(num_helices=4, strand_type="scaffold", length=126)
-    print(f"Created helices: {result}")
+    print(f"Created helices: {result['created']} helices, {result['strand_type']}, length={result['length']}")
 
     # Get suggested positions for each pair
     for h1, h2 in [(0, 1), (1, 2), (2, 3)]:
         sugg = m.suggestCrossovers(h1, h2, "scaffold")
-        print(f"\nH{h1}-H{h2} suggestions:")
-        if isinstance(sugg, dict):
-            for p in sugg.get('positions', []):
-                print(f"  low={p['low_idx']}, high={p['high_idx']}, "
-                      f"edge={p.get('is_edge')}, turn={p.get('is_routing_turn')}")
-            print(f"  routing_turn_idx: {sugg.get('routing_turn_idx')}")
+        positions = sugg.get('positions', [])
+        print(f"\nH{h1}-H{h2}: {len(positions)} positions, first=({positions[0]['low_idx']},{positions[0]['high_idx']}), last=({positions[-1]['low_idx']},{positions[-1]['high_idx']})")
 
-    # H0-H1: Two half crossovers at edges
-    # Left side of structure: RIGHT half crossover (use High index position)
-    # Right side of structure: LEFT half crossover (use Low index position)
+    print_strand_info(part, "After helix creation")
+
+    # === H0-H1: Half crossovers at edges ===
     sugg01 = m.suggestCrossovers(0, 1, "scaffold")
     positions01 = sugg01['positions']
-    left01 = positions01[0]   # first position (left side of structure)
-    right01 = positions01[-1]  # last position (right side of structure)
+    left_pair_01 = positions01[0]    # left edge: low=1, high=2
+    right_pair_01 = positions01[-1]  # right edge: low=116, high=117
 
-    left_idx_01 = left01['high_idx']    # High position → right half xover
-    right_idx_01 = right01['low_idx']   # Low position → left half xover
+    # LEFT side: Create double crossover, then remove left (Low) half → RIGHT half remains
+    print(f"\n=== H0-H1 LEFT side: double at ({left_pair_01['low_idx']},{left_pair_01['high_idx']}), then remove Low ===")
+    r = m.createCrossover(0, left_pair_01['low_idx'], 1, left_pair_01['low_idx'], "scaffold")
+    print(f"  Double: {r}")
+    print_strand_info(part, "After H0-H1 left double xover")
 
-    print(f"\nH0-H1 half crossovers: left_side={left_idx_01} (right half), right_side={right_idx_01} (left half)")
-    r = m.createHalfCrossover(0, left_idx_01, 1, left_idx_01, "scaffold")
-    print(f"  Left side: {r}")
-    r = m.createHalfCrossover(0, right_idx_01, 1, right_idx_01, "scaffold")
-    print(f"  Right side: {r}")
+    # Remove the Low (left) half to leave only the High (right) half
+    r = m.removeCrossover(0, left_pair_01['low_idx'], "scaffold")
+    print(f"  Remove Low half: {r}")
+    print_strand_info(part, "After removing Low half (right half remains)")
 
-    # H1-H2: One double crossover at midpoint
+    # RIGHT side: Create double crossover, then remove right (High) half → LEFT half remains
+    print(f"\n=== H0-H1 RIGHT side: double at ({right_pair_01['low_idx']},{right_pair_01['high_idx']}), then remove High ===")
+    r = m.createCrossover(0, right_pair_01['low_idx'], 1, right_pair_01['low_idx'], "scaffold")
+    print(f"  Double: {r}")
+
+    # Remove the High (right) half to leave only the Low (left) half
+    r = m.removeCrossover(0, right_pair_01['high_idx'], "scaffold")
+    print(f"  Remove High half: {r}")
+    print_strand_info(part, "After H0-H1 both edges done")
+
+    # === H1-H2: Double crossover at midpoint ===
     sugg12 = m.suggestCrossovers(1, 2, "scaffold")
     positions12 = sugg12['positions']
     mid_pos = positions12[len(positions12) // 2]
-    print(f"\nH1-H2 double crossover at low={mid_pos['low_idx']}, high={mid_pos['high_idx']}")
+    print(f"\n=== H1-H2: double crossover at ({mid_pos['low_idx']},{mid_pos['high_idx']}) ===")
     r = m.addCrossoversForPair(1, 2, "scaffold",
                                 positions=[mid_pos['low_idx']],
                                 crossover_type="double")
     print(f"  Result: {r}")
+    print_strand_info(part, "After H1-H2 double xover")
 
-    # H2-H3: Two half crossovers at edges
+    # === H2-H3: Half crossovers at edges ===
     sugg23 = m.suggestCrossovers(2, 3, "scaffold")
     positions23 = sugg23['positions']
-    left23 = positions23[0]     # left side of structure
-    right23 = positions23[-1]   # right side of structure
+    left_pair_23 = positions23[0]    # left edge
+    right_pair_23 = positions23[-1]  # right edge
 
-    left_idx_23 = left23['high_idx']    # High position → right half xover
-    right_idx_23 = right23['low_idx']   # Low position → left half xover
+    # LEFT side: double then remove Low → RIGHT half remains
+    print(f"\n=== H2-H3 LEFT side: double at ({left_pair_23['low_idx']},{left_pair_23['high_idx']}), then remove Low ===")
+    r = m.createCrossover(2, left_pair_23['low_idx'], 3, left_pair_23['low_idx'], "scaffold")
+    print(f"  Double: {r}")
+    r = m.removeCrossover(2, left_pair_23['low_idx'], "scaffold")
+    print(f"  Remove Low half: {r}")
 
-    print(f"\nH2-H3 half crossovers: left_side={left_idx_23} (right half), right_side={right_idx_23} (left half)")
-    r = m.createHalfCrossover(2, left_idx_23, 3, left_idx_23, "scaffold")
-    print(f"  Left side: {r}")
-    r = m.createHalfCrossover(2, right_idx_23, 3, right_idx_23, "scaffold")
-    print(f"  Right side: {r}")
+    # RIGHT side: double then remove High → LEFT half remains
+    print(f"\n=== H2-H3 RIGHT side: double at ({right_pair_23['low_idx']},{right_pair_23['high_idx']}), then remove High ===")
+    r = m.createCrossover(2, right_pair_23['low_idx'], 3, right_pair_23['low_idx'], "scaffold")
+    print(f"  Double: {r}")
+    r = m.removeCrossover(2, right_pair_23['high_idx'], "scaffold")
+    print(f"  Remove High half: {r}")
 
-    # Clean up orphan fragments (strands disconnected by half crossovers)
+    print_strand_info(part, "After all crossovers")
+
+    # Clean up orphan fragments
     print("\nCleaning orphan fragments...")
     for h in range(4):
         vh = part.virtualHelix(h)
@@ -149,14 +190,26 @@ def main():
                 print(f"  Deleting orphan on H{h}: [{lo},{hi}] (len={length})")
                 strand.strandSet().removeStrand(strand, useUndoStack=True)
 
-    # Render screenshot
-    image = render_pathview(dc)
+    print_strand_info(part, "Final state (after cleanup)")
+
+    # Save as cadnano JSON for PI to open in GUI
     outdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                           'results')
     os.makedirs(outdir, exist_ok=True)
-    outpath = os.path.join(outdir, 'obj-026-4helix-sheet-handedness.png')
+
+    json_path = os.path.join(outdir, '4helix-flat-sheet.json')
+    helixOrderList = dc.win.pathroot.getSelectedPartOrderedVHList()
+    if helixOrderList:
+        from cadnano2.model.io.encoder import encode
+        with open(json_path, 'w') as f:
+            encode(doc, helixOrderList, f)
+        print(f"\nSaved JSON: {json_path}")
+
+    # Render screenshot
+    image = render_pathview(dc)
+    outpath = os.path.join(outdir, 'obj-028-4helix-sheet-v3.png')
     image.save(outpath)
-    print(f"\nSaved: {outpath}")
+    print(f"Saved PNG: {outpath}")
 
 
 if __name__ == '__main__':
