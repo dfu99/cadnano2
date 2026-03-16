@@ -13,6 +13,7 @@
 
 ## Recently Completed
 
+- **Fixed 4-helix sheet with direct createHalfCrossover** (2026-03-16): PI correction — double-then-remove still produced left half crossovers. Now uses `createHalfCrossover` directly at pre-computed High index positions (idx 2, 5) for right half crossovers on left side. Low positions (idx 116, 120) for left half crossovers on right side. Figure at `results/obj-029-4helix-sheet-v4.png`.
 - **Redone 4-helix sheet with double-then-remove + JSON export** (2026-03-16): Create double crossover, remove one half to get correct handedness. Verified single closed scaffold loop through all 4 helices. Exported JSON for PI to verify in GUI. Figure at `results/obj-028-4helix-sheet-v3.png`.
 - **Distribution strategy analysis** (2026-03-16): Domain knowledge lives in code (85 methods, tool schemas, system prompts), not model weights or memory files. The repo IS the package — any LLM that can call functions works as the agent. Training is for hard-task frontier, not basic distribution. Figure at `results/obj-027-distribution-strategy.png`.
 - **Fixed half crossover handedness** (2026-03-16): PI correction — left side of 4-helix sheet needed RIGHT half crossovers, not left. Root cause: `createHalfCrossover` always used same 5'/3' ordering regardless of Low/High position. Fixed by adding `_isHighCrossoverPosition` and parity-aware strand ordering. Screenshot at `results/obj-026-4helix-sheet-handedness.png`.

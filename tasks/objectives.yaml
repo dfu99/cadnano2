@@ -764,3 +764,31 @@ objectives:
     scaffold routing. Exported JSON file allows PI to verify in the GUI directly.
   connects_to: null
   completed_date: '2026-03-16'
+- id: obj-029
+  status: completed
+  statement: Fix 4-helix sheet with direct createHalfCrossover at correct table positions
+  methodology: >-
+    PI correction: double-then-remove approach still produced left half crossovers
+    on the left side of the structure. Replaced with direct createHalfCrossover
+    calls at pre-computed crossover table positions. Left side uses High index
+    positions (idx 2 for H0-H1, idx 5 for H2-H3) for right half crossovers.
+    Right side uses Low index positions (idx 116, idx 120) for left half crossovers.
+    The _isHighCrossoverPosition method detects High vs Low from honeycombScafHigh/Low
+    tables and sets correct 5'/3' strand ordering automatically.
+  metrics:
+    scaffold_path: "H0[2→116]→H1[116→72]→H2[72→120]→H3[120→5]→H2[5→71]→H1[71→2]→H0"
+    topology: single closed loop
+    left_side_xovers: "right half at High positions (idx 2, 5)"
+    right_side_xovers: "left half at Low positions (idx 116, 120)"
+    approach: "direct createHalfCrossover (not double-then-remove)"
+    json_exported: true
+  figures:
+  - results/obj-029-4helix-sheet-v4.png
+  conclusions: >-
+    Using createHalfCrossover directly at the correct crossover table position
+    (High for right half, Low for left half) is the proper approach. The
+    double-then-remove method from obj-028 did not produce visually correct
+    right half crossovers. The honeycombScafHigh table provides pre-computed
+    valid positions for right half crossovers at each neighbor direction.
+  connects_to: null
+  completed_date: '2026-03-16'
