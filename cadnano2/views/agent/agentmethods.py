@@ -1132,6 +1132,13 @@ class AgentMethods:
         """
         Create a single half-crossover between two helices.
 
+        The handedness (left vs right) is determined automatically from the
+        crossover tables: Low index positions produce left half crossovers,
+        High index positions produce right half crossovers.  The 5'/3' strand
+        ordering follows the same parity rules as createCrossover:
+          Low  position: even-parity helix is 5p  (left half crossover)
+          High position: odd-parity  helix is 5p  (right half crossover)
+
         Most of the time you want createCrossover (double crossover) instead.
         Only use this for explicit half-crossover requests.
 
@@ -1158,25 +1165,60 @@ class AgentMethods:
             return f"Error: Helix {helix2} not found"
 
         if strand_type.lower() == "scaffold":
-            ss1 = vh1.scaffoldStrandSet()
-            ss2 = vh2.scaffoldStrandSet()
+            get_ss = lambda vh: vh.scaffoldStrandSet()
         else:
-            ss1 = vh1.stapleStrandSet()
-            ss2 = vh2.stapleStrandSet()
+            get_ss = lambda vh: vh.stapleStrandSet()
 
-        strand1 = ss1.getStrand(idx1)
-        strand2 = ss2.getStrand(idx2)
+        strand1 = get_ss(vh1).getStrand(idx1)
+        strand2 = get_ss(vh2).getStrand(idx2)
 
         if strand1 is None:
             return f"Error: No {strand_type} strand at helix {helix1} index {idx1}"
         if strand2 is None:
             return f"Error: No {strand_type} strand at helix {helix2} index {idx2}"
 
+        # Determine whether this is a Low (left) or High (right) position
+        # from the crossover tables, then set 5'/3' ordering accordingly.
+        is_high = self._isHighCrossoverPosition(part, vh1, vh2, idx1, strand_type)
+
+        vh_even = vh1 if vh1.isEvenParity() else vh2
+        vh_odd  = vh2 if vh1.isEvenParity() else vh1
+
+        if is_high:
+            # High position = right half crossover: odd is 5p
+            strand5p = get_ss(vh_odd).getStrand(idx1)
+            strand3p = get_ss(vh_even).getStrand(idx2)
+            handedness = "right"
+        else:
+            # Low position = left half crossover: even is 5p
+            strand5p = get_ss(vh_even).getStrand(idx1)
+            strand3p = get_ss(vh_odd).getStrand(idx2)
+            handedness = "left"
+
         try:
-            part.createXover(strand1, idx1, strand2, idx2, useUndoStack=True)
-            return f"Created {strand_type} half-crossover: helix {helix1}[{idx1}] <-> helix {helix2}[{idx2}]"
+            part.createXover(strand5p, idx1, strand3p, idx2, useUndoStack=True)
+            return (f"Created {strand_type} {handedness} half-crossover: "
+                    f"helix {helix1}[{idx1}] <-> helix {helix2}[{idx2}]")
         except Exception as e:
             return f"Error creating half-crossover: {e}"
+
+    def _isHighCrossoverPosition(self, part, vh1, vh2, idx, strand_type):
+        """Check if idx is a High (right) crossover position in the tables.
+
+        Returns True for High positions, False for Low positions.
+        """
+        neighbors = part.getVirtualHelixNeighbors(vh1)
+        if vh2 not in neighbors:
+            return False
+        direction = neighbors.index(vh2)
+
+        if strand_type.lower() == "scaffold":
+            high_positions = Crossovers.honeycombScafHigh[direction]
+        else:
+            high_positions = Crossovers.honeycombStapHigh[direction]
+
+        mod = idx % part._step
+        return mod in high_positions
 
     def removeCrossover(self, helix_num, idx, strand_type):
         """

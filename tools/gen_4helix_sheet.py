@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """
-Generate a corrected flat 4-helix sheet screenshot.
+Generate a flat 4-helix sheet screenshot with correct crossover handedness.
 
-PI correction: left half crossovers should use the High index (one position
-to the right of the Low index). Right half crossovers are correct as-is.
+PI correction (obj-026): On the left side of the structure, use a RIGHT half
+crossover (High index position); on the right side, use a LEFT half crossover
+(Low index position). createHalfCrossover now automatically determines the
+correct 5'/3' strand ordering from the crossover tables.
 
 Usage:
   QT_QPA_PLATFORM=offscreen python -m tools.gen_4helix_sheet
@@ -92,23 +94,21 @@ def main():
             print(f"  routing_turn_idx: {sugg.get('routing_turn_idx')}")
 
     # H0-H1: Two half crossovers at edges
-    # Left edge: use HIGH index (PI correction: one to the right)
-    # Right edge: use LOW index (already correct per PI)
+    # Left side of structure: RIGHT half crossover (use High index position)
+    # Right side of structure: LEFT half crossover (use Low index position)
     sugg01 = m.suggestCrossovers(0, 1, "scaffold")
     positions01 = sugg01['positions']
-    left01 = positions01[0]   # first position
-    right01 = positions01[-1]  # last position
+    left01 = positions01[0]   # first position (left side of structure)
+    right01 = positions01[-1]  # last position (right side of structure)
 
-    # Left half crossover: use high_idx instead of low_idx
-    left_idx_01 = left01['high_idx']
-    # Right half crossover: use low_idx (correct per PI)
-    right_idx_01 = right01['low_idx']
+    left_idx_01 = left01['high_idx']    # High position → right half xover
+    right_idx_01 = right01['low_idx']   # Low position → left half xover
 
-    print(f"\nH0-H1 half crossovers: left={left_idx_01}, right={right_idx_01}")
+    print(f"\nH0-H1 half crossovers: left_side={left_idx_01} (right half), right_side={right_idx_01} (left half)")
     r = m.createHalfCrossover(0, left_idx_01, 1, left_idx_01, "scaffold")
-    print(f"  Left: {r}")
+    print(f"  Left side: {r}")
     r = m.createHalfCrossover(0, right_idx_01, 1, right_idx_01, "scaffold")
-    print(f"  Right: {r}")
+    print(f"  Right side: {r}")
 
     # H1-H2: One double crossover at midpoint
     sugg12 = m.suggestCrossovers(1, 2, "scaffold")
@@ -123,22 +123,19 @@ def main():
     # H2-H3: Two half crossovers at edges
     sugg23 = m.suggestCrossovers(2, 3, "scaffold")
     positions23 = sugg23['positions']
-    left23 = positions23[0]
-    right23 = positions23[-1]
+    left23 = positions23[0]     # left side of structure
+    right23 = positions23[-1]   # right side of structure
 
-    # Left half crossover: use high_idx (PI correction)
-    left_idx_23 = left23['high_idx']
-    # Right half crossover: use low_idx (correct per PI)
-    right_idx_23 = right23['low_idx']
+    left_idx_23 = left23['high_idx']    # High position → right half xover
+    right_idx_23 = right23['low_idx']   # Low position → left half xover
 
-    print(f"\nH2-H3 half crossovers: left={left_idx_23}, right={right_idx_23}")
+    print(f"\nH2-H3 half crossovers: left_side={left_idx_23} (right half), right_side={right_idx_23} (left half)")
     r = m.createHalfCrossover(2, left_idx_23, 3, left_idx_23, "scaffold")
-    print(f"  Left: {r}")
+    print(f"  Left side: {r}")
     r = m.createHalfCrossover(2, right_idx_23, 3, right_idx_23, "scaffold")
-    print(f"  Right: {r}")
+    print(f"  Right side: {r}")
 
     # Clean up orphan fragments (strands disconnected by half crossovers)
-    # Any short strand with no crossover connections is an orphan
     print("\nCleaning orphan fragments...")
     for h in range(4):
         vh = part.virtualHelix(h)
@@ -157,7 +154,7 @@ def main():
     outdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                           'results')
     os.makedirs(outdir, exist_ok=True)
-    outpath = os.path.join(outdir, 'obj-024-4helix-flat-sheet-corrected.png')
+    outpath = os.path.join(outdir, 'obj-026-4helix-sheet-handedness.png')
     image.save(outpath)
     print(f"\nSaved: {outpath}")
 

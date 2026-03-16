@@ -672,5 +672,35 @@ objectives:
     imports are conditional so the app runs fine without them. The methods layer
     (85 deterministic operations) is the most valuable transferrable asset —
     it works identically regardless of which LLM backend drives it.
+  connects_to: obj-026
+  completed_date: '2026-03-16'
+
+- id: obj-026
+  status: completed
+  statement: Fix half crossover handedness — left vs right determined by 5'/3' ordering
+  methodology: >-
+    PI identified that left side of 4-helix sheet had left half crossovers where
+    right half crossovers were needed. Root cause: createHalfCrossover always passed
+    strand1 as 5p regardless of position, producing left handedness. Fix: added
+    _isHighCrossoverPosition helper to detect Low vs High from honeycomb crossover
+    tables, then set 5'/3' strand ordering to match createCrossover's parity rules
+    (Low: even is 5p → left half; High: odd is 5p → right half). Updated
+    gen_4helix_sheet.py with correct comments. 8/8 edge crossover tests pass.
+  metrics:
+    tests_passing: 8
+    files_changed: 3
+    methods_updated: createHalfCrossover
+    helpers_added: _isHighCrossoverPosition
+    left_side_handedness: right half crossover (correct)
+    right_side_handedness: left half crossover (correct)
+  figures:
+  - results/obj-026-4helix-sheet-handedness.png
+  conclusions: >-
+    Crossover handedness depends on BOTH position (Low vs High index from the
+    crossover tables) AND 5'/3' strand ordering. Using the correct index alone
+    is insufficient — the strand ordering passed to createXover determines
+    whether the visual result is a left or right half crossover. The fix makes
+    createHalfCrossover parity-aware, matching the same logic used by
+    createCrossover for double crossovers.
   connects_to: null
   completed_date: '2026-03-16'
