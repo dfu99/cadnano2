@@ -641,5 +641,36 @@ objectives:
     structure), the High index is correct — the crossover connects at the rightmost
     of the two adjacent positions in the pair. This distinction matters for correct
     scaffold routing topology.
-  connects_to: null
+  connects_to: obj-025
   completed_date: '2026-03-15'
+
+- id: obj-025
+  status: completed
+  statement: Audit agent stack transferability for peer distribution
+  methodology: >-
+    Audited all imports in the 8 agent subsystem files (agentbackend, agentdialog,
+    agentmethods, agenttools, agentverifier, trajectorylogger, rlvr_runner,
+    rlvr_local_backend). Found that the entire agent stack — GUI, 85 methods,
+    3 LLM backends (Ollama, OpenAI, Claude), verifier, trajectory logger — uses
+    only PyQt6 + Python stdlib. All LLM backends use raw urllib.request, no pip
+    packages. ML dependencies (torch, transformers, peft) are conditional imports
+    in rlvr_local_backend.py only, loaded inside worker threads.
+  metrics:
+    agent_files_audited: 8
+    external_pip_deps_for_agent: 0
+    external_pip_deps_for_rlvr: 3
+    llm_backends: 3
+    agent_methods: 85
+    install_commands_for_peer: 4
+    conditional_ml_imports: true
+  figures:
+  - results/obj-025-transferability-analysis.png
+  conclusions: >-
+    The agent stack is fully transferrable with pip install -e . plus Ollama
+    install. Zero additional pip dependencies needed for the core AI-assisted
+    workflow. RLVR training is the only layer requiring heavy ML deps, and those
+    imports are conditional so the app runs fine without them. The methods layer
+    (85 deterministic operations) is the most valuable transferrable asset —
+    it works identically regardless of which LLM backend drives it.
+  connects_to: null
+  completed_date: '2026-03-16'
