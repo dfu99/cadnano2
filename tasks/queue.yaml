@@ -64,7 +64,67 @@ queue:
     when to add a half crossover and when to add a full crossover. Half crossovers
     are on the "edges" of the structure. The "edge" i
   priority: 3
-  status: in_progress
+  status: completed
   added: 2026-03-12 14:19
   source: slack
   started: 2026-03-13 01:42
+  completed: 2026-03-14 10:35
+  commits: 7
+- objective: The model may need some clearer logic to understand where to put a half
+    crossover or full crossover. A half crossover on the left or right is typically
+    on the leftmost or rightmost valid crossover position. It is the leftmost or rightmost
+    because there is not another valid crossover position to the left or right of
+    it. In some cases, creating a half crossover may truncate off the remaining strands,
+    which will have an exposed 3 prime or 5 prime end, depending on which side of
+    the structure they are on. Those strands get deleted. As an example, design and
+    screenshot the cadnano design for a flat 4-helix sheet. Between helices 0 and
+    1, it would have two half crossovers, one on the left and one on the right. Between
+    helices 1 and 2, it would half a single full crossover in the midpoint of the
+    strands. Then, between helices 2 and 3, it would have two half crossovers again,
+    one on the left and one on the right, but not necessarily in the same positions
+    as those between helices 0 and 1.
+  priority: 3
+  status: completed
+  added: 2026-03-14 02:11
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-14 10:35
+  completed: 2026-03-15 15:17
+  commits: 1
+- objective: report to Slack about whether you were able to complete the task for
+    designing the flat 4-helix sheet
+  priority: 3
+  status: completed
+  added: 2026-03-14 10:31
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-15 22:26
+  completed: 2026-03-15 22:35
+- objective: return screenshots of your cadnano design of the 4-helix sheet
+  priority: 3
+  status: completed
+  added: 2026-03-14 19:45
+  source: slack
+  channel_id: C0AKX3J0EQL
+  completed: 2026-03-15 22:35
+- objective: almost there on the 4-helix sheet. The half crossovers on the right are
+    correct, and so is the full crossover. On the left, the half crossovers are on
+    the wrong half. The position is correct, but they need to use the half crossovers
+    that is one index position to the right of where they currently are. Remake the
+    4-helix sheet with this correction and send another screenshot.
+  priority: 3
+  status: completed
+  added: 2026-03-15 16:50
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-15 22:27
+  completed: 2026-03-15 22:45
+  commits: 1
+- objective: If I were to actually get AI-assisted cadnano working, how would I actually
+    share it with peers so it works out of the box? What is transferrable with 1:1
+    reproducibility in functionality?
+  priority: 3
+  status: pending
+  added: 2026-03-15 22:20
+  source: slack
+  channel_id: C0AKX3J0EQL

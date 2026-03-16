@@ -613,5 +613,33 @@ objectives:
     further crossover exists), double crossovers at interior midpoints.
     Different neighbor directions (p0, p1, p2) yield different valid position
     offsets, so H0-H1 edges (idx 1, 116) differ from H2-H3 edges (idx 4, 120).
+  connects_to: obj-024
+  completed_date: '2026-03-15'
+
+- id: obj-024
+  status: completed
+  statement: Correct left half crossover positions to use High index in 4-helix sheet
+  methodology: >-
+    PI identified that left half crossovers were using the Low index of the
+    crossover pair when they should use the High index (one position to the right).
+    Right half crossovers and the double crossover were correct. Fixed by changing
+    left half crossover creation to use high_idx instead of low_idx from the
+    suggestCrossovers position data. H0-H1 left: idx 1→2, H2-H3 left: idx 4→5.
+    Built tools/gen_4helix_sheet.py for reproducible generation.
+  metrics:
+    helices: 4
+    strand_length: 126bp
+    half_crossovers: 4
+    double_crossovers: 1
+    corrected_positions: "H0-H1 left: 1→2, H2-H3 left: 4→5"
+    orphan_fragments_deleted: 4
+  figures:
+  - results/obj-024-4helix-flat-sheet-corrected.png
+  conclusions: >-
+    Each valid crossover position is a Low/High pair at adjacent indices. For
+    left-side half crossovers (where the scaffold turns at the low end of the
+    structure), the High index is correct — the crossover connects at the rightmost
+    of the two adjacent positions in the pair. This distinction matters for correct
+    scaffold routing topology.
   connects_to: null
   completed_date: '2026-03-15'
