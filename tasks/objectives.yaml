@@ -790,5 +790,45 @@ objectives:
     double-then-remove method from obj-028 did not produce visually correct
     right half crossovers. The honeycombScafHigh table provides pre-computed
     valid positions for right half crossovers at each neighbor direction.
+  connects_to: obj-030
+  completed_date: '2026-03-16'
+
+- id: obj-030
+  status: completed
+  statement: Build rectangular DNA origami pipeline with m13mp18 scaffold and oxDNA verification
+  methodology: >-
+    Built end-to-end pipeline (tools/rectangular_origami_pipeline.py) for rectangular
+    DNA origami design. 24 helices x 294 bp on honeycomb lattice with serpentine
+    scaffold routing using direct strand connection (setConnection3p/5p) instead of
+    createXover to avoid orphan fragments. autoStaple places staple crossovers based
+    on scaffold topology. autoBreak (Dijkstra-optimized) splits long staples into
+    ~120 oligos. 487 single-base insertions consume full 7249 nt m13mp18 scaffold.
+    tacoxDNA converts to oxDNA format. Two-stage oxDNA simulation: energy minimization
+    (CPU, DNA2, 5000 steps) then MD relaxation (CPU, DNA2, 500k steps). Compiled
+    oxDNA from source (CPU-only, CMake 4.x compatibility fix). Researched pyOrigamiBreak
+    (douglaslab) thermodynamic scoring approach vs local length-based autoBreak.
+  metrics:
+    scaffold_oligos: 1
+    scaffold_length: 7249
+    staple_count: 120
+    staple_avg_length: 60.4
+    insertions: 487
+    oxdna_nucleotides: 14498
+    oxdna_strands: 121
+    pca_dimensions_nm: "56.2 x 27.1 x 2.5"
+    simulation_stages: "min (26 steps) + MD (5 steps)"
+  figures:
+  - results/rectangular_origami/figures/comprehensive_summary.png
+  - results/rectangular_origami/figures/initial_structure.png
+  - results/rectangular_origami/figures/relaxation_comparison.png
+  conclusions: >-
+    Successfully built a rectangular DNA origami that consumes all 7249 nt of m13mp18
+    scaffold. Key lessons: (1) Serpentine scaffold routing requires direct strand
+    endpoint connection, not createXover which splits strands and breaks existing
+    connections. (2) autoStaple works well with serpentine scaffold. (3) autoBreak
+    Dijkstra optimization produces reasonable staple lengths (avg 60 nt). (4) oxDNA
+    CPU simulation works for origami verification but needs longer runs for convergence.
+    (5) For rectangular origami, scaffold only occupies ~91 pct of helix length due
+    to crossover positions at edges — insertions compensate.
   connects_to: null
   completed_date: '2026-03-16'

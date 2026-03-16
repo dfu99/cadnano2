@@ -2,9 +2,10 @@
 
 ## Current Priorities
 
-1. **Re-export augmented HuggingFace dataset** — Re-run augmentation with expanded 85-operation library
-2. **Push dataset to HuggingFace Hub** — Make training data publicly available (requires `huggingface-cli login`)
-3. **Begin VLM fine-tuning experiments** — Use expanded dataset across 6 layouts
+1. **Tune oxDNA simulation parameters** — Current simulation barely converges (26 min + 5 MD steps). Need longer runs, possibly mutual trap forces from tacoxDNA, and CUDA build for speed.
+2. **Improve staple breaking** — Max staple is 293 nt (should be <60). Some staples span multiple helices without enough break points. Consider pyOrigamiBreak thermodynamic scoring.
+3. **Re-export augmented HuggingFace dataset** — Re-run augmentation with expanded 85-operation library
+4. **Push dataset to HuggingFace Hub** — Make training data publicly available (requires `huggingface-cli login`)
 
 ## Next Steps (require user input)
 
@@ -13,6 +14,7 @@
 
 ## Recently Completed
 
+- **Rectangular DNA origami pipeline with oxDNA** (2026-03-16): End-to-end pipeline: 24 helices × 294 bp, serpentine scaffold routing consuming all 7249 nt of m13mp18, autoStaple + autoBreak for 120 staples, tacoxDNA conversion, oxDNA energy minimization + MD relaxation. Compiled oxDNA CPU-only. Pipeline at `tools/rectangular_origami_pipeline.py`. Figures at `results/rectangular_origami/figures/`.
 - **Fixed 4-helix sheet with direct createHalfCrossover** (2026-03-16): PI correction — double-then-remove still produced left half crossovers. Now uses `createHalfCrossover` directly at pre-computed High index positions (idx 2, 5) for right half crossovers on left side. Low positions (idx 116, 120) for left half crossovers on right side. Figure at `results/obj-029-4helix-sheet-v4.png`.
 - **Redone 4-helix sheet with double-then-remove + JSON export** (2026-03-16): Create double crossover, remove one half to get correct handedness. Verified single closed scaffold loop through all 4 helices. Exported JSON for PI to verify in GUI. Figure at `results/obj-028-4helix-sheet-v3.png`.
 - **Distribution strategy analysis** (2026-03-16): Domain knowledge lives in code (85 methods, tool schemas, system prompts), not model weights or memory files. The repo IS the package — any LLM that can call functions works as the agent. Training is for hard-task frontier, not basic distribution. Figure at `results/obj-027-distribution-strategy.png`.

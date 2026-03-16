@@ -1,0 +1,33 @@
+# Stage 2: MD Relaxation
+# Molecular dynamics to relax the structure
+
+backend = CPU
+sim_type = MD
+interaction_type = DNA2
+
+# Backbone force capping (still needed during early relaxation)
+max_backbone_force = 5.
+max_backbone_force_far = 10.
+
+time_scale = linear
+dt = 0.002
+T = 300K
+thermostat = bussi
+bussi_tau = 1000
+newtonian_steps = 53
+salt_concentration = 0.5
+
+steps = 500000
+verlet_skin = 0.15
+
+topology = topology.top
+conf_file = minimized.conf
+trajectory_file = trajectory.dat
+energy_file = energy_relax.dat
+lastconf_file = relaxed.conf
+
+refresh_vel = 1
+restart_step_counter = 1
+print_conf_interval = 10000
+print_energy_every = 1000
+no_stdout_energy = false
