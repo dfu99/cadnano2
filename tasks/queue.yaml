@@ -124,7 +124,78 @@ queue:
     share it with peers so it works out of the box? What is transferrable with 1:1
     reproducibility in functionality?
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-15 22:20
   source: slack
   channel_id: C0AKX3J0EQL
+  started: 2026-03-15 22:58
+  completed: 2026-03-16 01:30
+  commits: 1
+- objective: Regarding the 4-helix sheet. A full crossover has a left and right half
+    crossover, okay? The half crossover on the right side of the structure should
+    be a left half crossover, you got that correct. But on the left side of the structure,
+    you also used a left half crossover, that is incorrect. When I said to move to
+    1 higher index, you simply moved the left half crossover. That's a good example
+    of moving a crossover, but not what I meant. You need to make a right half crossover
+    there. And I believe cadnano should have a pre-computed valid crossover position
+    already somewhere around there.
+  priority: 3
+  status: completed
+  added: 2026-03-16 01:28
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-16 01:30
+  completed: 2026-03-16 01:34
+  commits: 1
+- objective: If I were to actually get AI-assisted cadnano working, how would I actually
+    share it with peers so it works out of the box? What is transferrable with 1:1
+    reproducibility in functionality? Should I train a local model? Save skills? Are
+    memory.md files sufficient? How can I actually let others download this workflow
+    and replicate my success with it, as a package or module that just works?
+  priority: 3
+  status: completed
+  added: 2026-03-16 01:29
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-16 01:34
+  completed: 2026-03-16 02:06
+  commits: 2
+- objective: Fix the 4-helix sheet. It still does not look right. First of all, a
+    full crossover has a left and right half crossover. A half crossover is simply
+    either the left half or the right half of a full crossover. The half crossover
+    on the right side of the structure should be a left half crossover, you got that
+    correct. But on the left side of the structure, you also used a left half crossover,
+    that is incorrect. When I said to move to 1 higher index, you simply moved the
+    left half crossover. That's a good example of moving a crossover, but not what
+    I meant. You need to make a right half crossover there. And I believe cadnano
+    should have a pre-computed valid crossover position already somewhere around there.
+    Redo the design and send a screenshot again.
+  priority: 3
+  status: completed
+  added: 2026-03-16 01:37
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-16 02:06
+  completed: 2026-03-16 13:00
+  commits: 3
+  notes: Auto-completed via 3 commit(s).
+- objective: Good, now see if you can use cadnano's autostaple, plus the autobreak
+    methods here (github, douglaslab, pyOrigamiBreak), plus building an end-to-end
+    pipeline with oxDNA. The objective is to build a rectangular DNA origami that
+    will use up a 7249 bp length ssDNA m13mp18 scaffold. Use what you have learned
+    about full and half crossover placement to create the scaffold routing. Learn
+    from autostaple and autobreak how to place staples, staple crossovers, and staple
+    nicks. Use oxDNA to verify your designs for stability (e.g., if all strands are
+    coming apart, perhaps the design was wrong. also consider the simulation typically
+    proceeds in a 2-stage recipe as well. first use DNA2 CPU min for energy minimization,
+    and then use MD with CUDA backend to relax the structure). The objective is to
+    learn how to build a rectangular DNA origami, such like people have done before.
+  priority: 3
+  status: completed
+  added: 2026-03-16 13:02
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-16 13:02
+  completed: 2026-03-16 14:56
+  commits: 2
+  notes: Auto-completed via 2 commit(s).

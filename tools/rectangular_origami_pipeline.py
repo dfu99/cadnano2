@@ -574,15 +574,43 @@ def convert_to_oxdna(json_path):
     return std_conf, std_top, n_nuc, n_strands
 
 
-def write_oxdna_input_files():
-    """Write oxDNA input files for energy minimization and MD relaxation."""
+def detect_cuda_oxdna():
+    """Check if the oxDNA binary was compiled with CUDA support."""
+    if not os.path.exists(OXDNA_BIN):
+        return False
+    try:
+        result = subprocess.run(
+            [OXDNA_BIN],
+            capture_output=True, text=True, timeout=5
+        )
+        # oxDNA prints usage/version info; CUDA builds mention CUDA
+        output = result.stdout + result.stderr
+        return 'CUDA' in output
+    except Exception:
+        return False
+
+
+def write_oxdna_input_files(use_cuda=None, pace_mode=False):
+    """Write oxDNA input files for energy minimization and MD relaxation.
+
+    Parameters:
+        use_cuda: Force CUDA on/off. None = auto-detect from oxDNA binary.
+        pace_mode: If True, use full PACE production parameters (1e7 steps
+                   per relax stage). If False, use shorter runs for local
+                   testing (1e6 steps, single relax stage).
+    """
     print("\n" + "=" * 60)
     print("STEP 3: Writing oxDNA input files")
     print("=" * 60)
 
-    # Stage 1: Energy minimization (CPU)
+    if use_cuda is None:
+        use_cuda = detect_cuda_oxdna()
+
+    # ── Stage 1: Energy Minimization (CPU) ──────────────────────
+    # Based on PACE recipe: 1e4 steps, salt=1.0, same force capping
     input_min = """# Stage 1: Energy Minimization (CPU)
 # Steepest descent to remove steric clashes from tacoxDNA placement
+# Parameters from PACE bricks_crystal recipe
 
 backend = CPU
 sim_type = min
@@ -592,14 +620,14 @@ interaction_type = DNA2
 max_backbone_force = 5.
 max_backbone_force_far = 10.
 
-steps = 5000
+steps = 10000
 dt = 0.005
 T = 300K
 verlet_skin = 0.15
-salt_concentration = 0.5
+salt_concentration = 1.0
 
 time_scale = linear
-refresh_vel = true
+refresh_vel = 1
 
 topology = topology.top
 conf_file = start.conf
@@ -607,48 +635,55 @@ lastconf_file = minimized.conf
 trajectory_file = traj_min.dat
 energy_file = energy_min.dat
 
-print_conf_interval = 1000
-print_energy_every = 100
+print_conf_interval = 10000
+print_energy_every = 20
 no_stdout_energy = false
 restart_step_counter = 1
 """
 
-    # Stage 2: MD Relaxation
-    # Check if CUDA backend is available in the oxDNA build
-    # We compiled CPU-only, so always use CPU for now
-    use_cuda = False  # Set True when oxDNA is compiled with -DCUDA=ON
-
+    # ── MD backend configuration ────────────────────────────────
     if use_cuda:
         backend_section = """backend = CUDA
 backend_precision = mixed
 CUDA_list = verlet
+CUDA_sort_every = 0
 use_edge = 1
-edge_n_forces = 1
-CUDA_sort_every = 0"""
+edge_n_forces = 1"""
     else:
         backend_section = "backend = CPU"
 
-    input_relax = f"""# Stage 2: MD Relaxation
-# Molecular dynamics to relax the structure
+    # ── Stage 2: MD Relaxation (gentle) ─────────────────────────
+    # Key difference from old pipeline: max_backbone_force_far=0.1
+    # (was 10). This gentle cap prevents the structure from blowing
+    # apart during early dynamics. John thermostat with diff_coeff=2.5
+    # is the PACE-tested choice for DNA origami relaxation.
+    # CPU: ~120k steps in 10 min for 14k nucleotides. Use 1e5 for local
+    # testing (completes in ~8 min), 1e7 for PACE GPU (finishes in ~1 hr).
+    relax_steps = int(1e7) if pace_mode else int(1e5)
+    print_conf = int(5e6) if pace_mode else int(1e4)
+    print_energy = int(5e6) if pace_mode else int(1000)
+
+    input_relax = f"""# Stage 2: MD Relaxation (gentle force cap)
+# max_backbone_force_far=0.1 prevents structure from blowing apart
+# John thermostat (Langevin) with diff_coeff=2.5 — PACE-tested
 
 {backend_section}
 sim_type = MD
 interaction_type = DNA2
 
-# Backbone force capping (still needed during early relaxation)
 max_backbone_force = 5.
-max_backbone_force_far = 10.
+max_backbone_force_far = 0.1
 
-time_scale = linear
-dt = 0.002
+dt = 0.003
 T = 300K
-thermostat = bussi
-bussi_tau = 1000
-newtonian_steps = 53
+thermostat = john
+diff_coeff = 2.5
+newtonian_steps = 103
 salt_concentration = 0.5
+max_density_multiplier = 15
 
-steps = 500000
-verlet_skin = 0.15
+steps = {relax_steps}
+verlet_skin = 0.5
 
 topology = topology.top
 conf_file = minimized.conf
@@ -658,11 +693,54 @@ lastconf_file = relaxed.conf
 
 refresh_vel = 1
 restart_step_counter = 1
-print_conf_interval = 10000
-print_energy_every = 1000
+time_scale = linear
+print_conf_interval = {print_conf}
+print_energy_every = {print_energy}
 no_stdout_energy = false
 """
 
+    # ── Stage 3: MD Relaxation (production force cap) ───────────
+    # Only used in pace_mode. Raises force_far from 0.1 → 1.0
+    # so the structure settles under more realistic forces.
+    input_relax2 = None
+    if pace_mode:
+        input_relax2 = f"""# Stage 3: MD Relaxation (production force cap)
+# Raises max_backbone_force_far from 0.1 to 1.0
+# Structure is pre-relaxed, so this is safe
+
+{backend_section}
+sim_type = MD
+interaction_type = DNA2
+
+max_backbone_force = 5.
+max_backbone_force_far = 1.0
+
+dt = 0.003
+T = 300K
+thermostat = john
+diff_coeff = 2.5
+newtonian_steps = 103
+salt_concentration = 0.5
+max_density_multiplier = 15
+
+steps = {relax_steps}
+verlet_skin = 0.5
+
+topology = topology.top
+conf_file = relaxed.conf
+trajectory_file = trajectory2.dat
+energy_file = energy_relax2.dat
+lastconf_file = relaxed2.conf
+
+refresh_vel = 1
+restart_step_counter = 1
+time_scale = linear
+print_conf_interval = {print_conf}
+print_energy_every = {print_energy}
+no_stdout_energy = false
+"""
+
+    # ── Write files ─────────────────────────────────────────────
     min_path = os.path.join(WORK_DIR, 'input_min')
     relax_path = os.path.join(WORK_DIR, 'input_relax')
 
@@ -671,11 +749,22 @@ no_stdout_energy = false
     with open(relax_path, 'w') as f:
         f.write(input_relax)
 
+    paths = [min_path, relax_path]
+
+    if input_relax2:
+        relax2_path = os.path.join(WORK_DIR, 'input_relax2')
+        with open(relax2_path, 'w') as f:
+            f.write(input_relax2)
+        paths.append(relax2_path)
+        print(f"  Written: {relax2_path}")
+
     print(f"  Written: {min_path}")
     print(f"  Written: {relax_path}")
     print(f"  Backend for MD: {'CUDA' if use_cuda else 'CPU'}")
+    print(f"  Mode: {'PACE production (3-stage)' if pace_mode else 'Local test (2-stage)'}")
+    print(f"  Relax steps: {relax_steps:,}")
 
-    return min_path, relax_path
+    return paths
 
 
 def run_oxdna_simulation(stage_name, input_file):
@@ -693,7 +782,7 @@ def run_oxdna_simulation(stage_name, input_file):
         capture_output=True,
         text=True,
         cwd=WORK_DIR,
-        timeout=600  # 10 min max per stage
+        timeout=3600  # 60 min max per stage (1e6+ steps take time on CPU)
     )
     elapsed = time.time() - start_time
 
@@ -706,31 +795,43 @@ def run_oxdna_simulation(stage_name, input_file):
     return True
 
 
-def run_simulations():
-    """Run the two-stage oxDNA simulation."""
+def run_simulations(pace_mode=False):
+    """Run the oxDNA simulation pipeline.
+
+    2-stage (local): min → relax (gentle, 1e6 steps)
+    3-stage (PACE):  min → relax (gentle, 1e7) → relax2 (production, 1e7)
+    """
     print("\n" + "=" * 60)
     print("STEP 4: Running oxDNA simulations")
     print("=" * 60)
 
-    min_path = os.path.join(WORK_DIR, 'input_min')
-    relax_path = os.path.join(WORK_DIR, 'input_relax')
+    stages = [
+        ("energy minimization (CPU)", os.path.join(WORK_DIR, 'input_min'),
+         os.path.join(WORK_DIR, 'minimized.conf')),
+        ("MD relaxation (gentle)", os.path.join(WORK_DIR, 'input_relax'),
+         os.path.join(WORK_DIR, 'relaxed.conf')),
+    ]
 
-    # Stage 1: Energy minimization
-    stage1_ok = run_oxdna_simulation("energy minimization (CPU)", min_path)
+    if pace_mode:
+        stages.append(
+            ("MD relaxation (production)", os.path.join(WORK_DIR, 'input_relax2'),
+             os.path.join(WORK_DIR, 'relaxed2.conf')),
+        )
 
-    if not stage1_ok:
-        return False
+    for stage_name, input_file, expected_output in stages:
+        if not os.path.exists(input_file):
+            print(f"  WARNING: {input_file} not found, skipping {stage_name}")
+            return False
 
-    # Check that minimized.conf was produced
-    min_conf = os.path.join(WORK_DIR, 'minimized.conf')
-    if not os.path.exists(min_conf):
-        print("  ERROR: minimized.conf not produced")
-        return False
+        ok = run_oxdna_simulation(stage_name, input_file)
+        if not ok:
+            return False
 
-    # Stage 2: MD relaxation
-    stage2_ok = run_oxdna_simulation("MD relaxation", relax_path)
+        if not os.path.exists(expected_output):
+            print(f"  ERROR: {expected_output} not produced")
+            return False
 
-    return stage2_ok
+    return True
 
 
 def analyze_energy(energy_file, stage_name):
@@ -803,11 +904,10 @@ def analyze_results(n_nuc):
         energy_path = os.path.join(WORK_DIR, fname)
         energy_data = analyze_energy(energy_path, stage)
         if energy_data is not None:
+            # oxDNA energy file values are already per-nucleotide
             pe_final = energy_data['potential'][-1]
-            pe_per_nuc = pe_final / n_nuc if n_nuc > 0 else 0
             print(f"\n  {stage.title()}:")
-            print(f"    Final potential energy: {pe_final:.2f}")
-            print(f"    Per nucleotide: {pe_per_nuc:.4f}")
+            print(f"    Final PE/nucleotide: {pe_final:.4f} (oxDNA units)")
             print(f"    Steps recorded: {len(energy_data['time'])}")
 
             # Check stability
@@ -815,9 +915,9 @@ def analyze_results(n_nuc):
                 last_20pct = energy_data['potential'][int(len(energy_data['potential']) * 0.8):]
                 pe_std = np.std(last_20pct)
                 pe_mean = np.mean(last_20pct)
-                print(f"    Last 20% mean PE: {pe_mean:.2f} (std: {pe_std:.2f})")
+                print(f"    Last 20% mean PE/nt: {pe_mean:.4f} (std: {pe_std:.4f})")
                 results['pe_converged'] = pe_std < abs(pe_mean) * 0.01
-                results['pe_per_nuc'] = pe_mean / n_nuc
+                results['pe_per_nuc'] = pe_mean
 
             results[f'{stage}_energy'] = {
                 'time': energy_data['time'].tolist(),
@@ -937,10 +1037,9 @@ def generate_figures(design_info, n_nuc, n_strands):
             axes[i].legend()
             axes[i].grid(True, alpha=0.3)
 
-            # Add per-nucleotide annotation
+            # oxDNA energies are already per-nucleotide
             pe_final = data['potential'][-1]
-            pe_per_nuc = pe_final / n_nuc
-            axes[i].annotate(f'Final: {pe_final:.1f}\n({pe_per_nuc:.3f}/nt)',
+            axes[i].annotate(f'Final PE/nt: {pe_final:.4f}',
                              xy=(0.95, 0.95), xycoords='axes fraction',
                              ha='right', va='top',
                              bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
@@ -1059,7 +1158,86 @@ def generate_figures(design_info, n_nuc, n_strands):
     return figures
 
 
+def generate_pace_slurm_scripts(job_name='oxDNA_origami'):
+    """Generate SLURM scripts for submitting to PACE cluster.
+
+    Produces min.sh (CPU), relax.sh (GPU), relax2.sh (GPU) in WORK_DIR.
+    User copies files to PACE scratch and submits with dependency chaining.
+    """
+    print("\n  Generating PACE SLURM scripts...")
+
+    oxdna_pace_bin = '/storage/coda1/p-yke8/0/shared/oxDNA/build/bin/oxDNA'
+
+    min_sh = f"""#!/bin/bash
+#SBATCH -J {job_name}_min
+#SBATCH -A gts-yke8
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=daniel.fu@emory.edu
+
+cd $SLURM_SUBMIT_DIR
+module load cuda
+
+srun {oxdna_pace_bin} input_min
+"""
+
+    relax_sh = f"""#!/bin/bash
+#SBATCH -J {job_name}_relax
+#SBATCH -A gts-yke8
+#SBATCH -N1 --gres=gpu:RTX_6000:1
+#SBATCH --time=10:00:00
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=daniel.fu@emory.edu
+
+cd $SLURM_SUBMIT_DIR
+module load cuda
+
+srun {oxdna_pace_bin} input_relax
+"""
+
+    relax2_sh = f"""#!/bin/bash
+#SBATCH -J {job_name}_relax2
+#SBATCH -A gts-yke8
+#SBATCH -N1 --gres=gpu:RTX_6000:1
+#SBATCH --time=10:00:00
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=daniel.fu@emory.edu
+
+cd $SLURM_SUBMIT_DIR
+module load cuda
+
+srun {oxdna_pace_bin} input_relax2
+"""
+
+    for name, content in [('min.sh', min_sh), ('relax.sh', relax_sh),
+                          ('relax2.sh', relax2_sh)]:
+        path = os.path.join(WORK_DIR, name)
+        with open(path, 'w') as f:
+            f.write(content)
+        os.chmod(path, 0o755)
+        print(f"    {path}")
+
+    print("\n  To submit on PACE:")
+    print("    rsync -av results/rectangular_origami/ dfu71@login-phoenix.pace.gatech.edu:~/scratch/myoxDNAjobs/rect_origami/")
+    print("    ssh dfu71@login-phoenix.pace.gatech.edu")
+    print("    cd ~/scratch/myoxDNAjobs/rect_origami")
+    print("    CPU_ID=$(sbatch min.sh | awk '{print $NF}')")
+    print("    GPU_ID=$(sbatch --dependency=afterok:$CPU_ID relax.sh | awk '{print $NF}')")
+    print("    sbatch --dependency=afterok:$GPU_ID relax2.sh")
+
+
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Rectangular DNA origami pipeline')
+    parser.add_argument('--pace', action='store_true',
+                        help='PACE production mode: 3-stage, 1e7 steps, SLURM scripts')
+    parser.add_argument('--cuda', action='store_true', default=None,
+                        help='Force CUDA backend (auto-detected by default)')
+    parser.add_argument('--no-sim', action='store_true',
+                        help='Skip simulation (generate input files only)')
+    args = parser.parse_args()
+
+    pace_mode = args.pace
+
     os.makedirs(WORK_DIR, exist_ok=True)
 
     # Step 1: Create the design
@@ -1069,10 +1247,18 @@ def main():
     conf_path, top_path, n_nuc, n_strands = convert_to_oxdna(json_path)
 
     # Step 3: Write simulation input files
-    write_oxdna_input_files()
+    write_oxdna_input_files(use_cuda=args.cuda, pace_mode=pace_mode)
 
-    # Step 4: Run simulations
-    sim_ok = run_simulations()
+    # Generate SLURM scripts for PACE submission
+    if pace_mode:
+        generate_pace_slurm_scripts()
+
+    if args.no_sim:
+        print("\n  --no-sim: Skipping simulation. Input files written.")
+        sim_ok = False
+    else:
+        # Step 4: Run simulations
+        sim_ok = run_simulations(pace_mode=pace_mode)
 
     # Step 5: Analyze results
     results = analyze_results(n_nuc)

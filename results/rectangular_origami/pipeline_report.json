@@ -14,8 +14,31 @@
     "n_nucleotides": 14498,
     "n_strands": 121
   },
-  "simulation_completed": false,
-  "analysis": {},
+  "simulation_completed": true,
+  "analysis": {
+    "pe_converged": "True",
+    "pe_per_nuc": -0.00010342935643011515,
+    "minimized_dims_nm": [
+      44.8232521087375,
+      2.8784228932022273,
+      97.428136741971
+    ],
+    "minimized_pca_nm": [
+      54.259153984358996,
+      26.156793141093704,
+      1.4736783413485857
+    ],
+    "relaxed_dims_nm": [
+      52.945108956050035,
+      20.41613447081231,
+      102.20896850840107
+    ],
+    "relaxed_pca_nm": [
+      58.313554135134076,
+      30.382631803919462,
+      3.6756682680355213
+    ]
+  },
   "figures": [
     "/home/dan/Documents/code/cadnano2/results/rectangular_origami/figures/initial_structure.png",
     "/home/dan/Documents/code/cadnano2/results/rectangular_origami/figures/energy_convergence.png",

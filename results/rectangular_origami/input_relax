@@ -1,24 +1,24 @@
-# Stage 2: MD Relaxation
-# Molecular dynamics to relax the structure
+# Stage 2: MD Relaxation (gentle force cap)
+# max_backbone_force_far=0.1 prevents structure from blowing apart
+# John thermostat (Langevin) with diff_coeff=2.5 — PACE-tested
 
 backend = CPU
 sim_type = MD
 interaction_type = DNA2
 
-# Backbone force capping (still needed during early relaxation)
 max_backbone_force = 5.
-max_backbone_force_far = 10.
+max_backbone_force_far = 0.1
 
-time_scale = linear
-dt = 0.002
+dt = 0.003
 T = 300K
-thermostat = bussi
-bussi_tau = 1000
-newtonian_steps = 53
+thermostat = john
+diff_coeff = 2.5
+newtonian_steps = 103
 salt_concentration = 0.5
+max_density_multiplier = 15
 
-steps = 500000
-verlet_skin = 0.15
+steps = 100000
+verlet_skin = 0.5
 
 topology = topology.top
 conf_file = minimized.conf
@@ -28,6 +28,7 @@ lastconf_file = relaxed.conf
 
 refresh_vel = 1
 restart_step_counter = 1
+time_scale = linear
 print_conf_interval = 10000
 print_energy_every = 1000
 no_stdout_energy = false
