@@ -379,63 +379,103 @@ def connect_strands_at_idx(part, vh1, vh2, xover_idx):
 # ── Demo: Build and route a cavity design ─────────────────────────────────
 
 
-def demo_cavity_routing():
-    """Demo: Create a 2D grid cavity design with proper scaffold routing."""
+def build_2layer_rectangle(n_cols=13, scaffold_length=8064, with_cavity=False,
+                            cavity_cols=5):
+    """Build a 2-layer (2-row) rectangle on honeycomb lattice.
+
+    For the solid rectangle: simple perimeter cycle (top row L→R, cross,
+    bottom row R→L, cross back). One contiguous scaffold loop.
+
+    For the cavity: uses a 4-row grid (2 structural rows + 2 routing rows)
+    because honeycomb cross-row connections at alternating columns make
+    2-row cavity routing topologically impossible.
+    """
     import cadnano2.cadnano as cadnano
     import numpy as np
 
     print("=" * 60)
-    print("CAVITY SCAFFOLD ROUTING DEMO")
+    print("2-LAYER RECTANGLE" + (" WITH CAVITY" if with_cavity else ""))
     print("=" * 60)
 
-    # Grid parameters
-    # Parity constraints for all corners to have degree ≥ 2:
-    #   N_ROWS must be even, N_COLS must be odd,
-    #   start_row and start_col must have different parity
-    # This ensures every corner has a cross-row connection into the grid.
-    N_ROWS = 4
-    N_COLS = 7
-    START_ROW = 10   # even
-    START_COL = 5    # odd (different parity from start_row)
+    # For solid rectangle: 2 rows
+    # For cavity: 4 rows (2 structural + 2 routing bridge)
+    START_ROW = 10
+    START_COL = 5  # odd, different parity from START_ROW
 
-    # Cavity in the middle rows, middle columns
-    CAVITY_ROW_START = 11
-    CAVITY_ROW_END = 13    # exclusive (2 rows)
-    CAVITY_COL_START = 7
-    CAVITY_COL_END = 10    # exclusive (3 cols removed)
+    if with_cavity:
+        n_rows = 4  # need 4 rows for Hamiltonian cycle with cavity
+        cavity_row_start = START_ROW + 1
+        cavity_row_end = START_ROW + 3  # middle 2 rows
+        cavity_col_offset = (n_cols - cavity_cols) // 2
+        CAVITY_COL_START = START_COL + cavity_col_offset
+        CAVITY_COL_END = CAVITY_COL_START + cavity_cols
+    else:
+        n_rows = 2
+        cavity_row_start = -1
+        cavity_row_end = -1
+        CAVITY_COL_START = -1
+        CAVITY_COL_END = -1
 
     # Build grid
-    positions, cavity = build_grid_positions(
-        N_ROWS, N_COLS, START_ROW, START_COL,
-        CAVITY_ROW_START, CAVITY_ROW_END,
-        CAVITY_COL_START, CAVITY_COL_END)
+    if with_cavity:
+        positions, cavity = build_grid_positions(
+            n_rows, n_cols, START_ROW, START_COL,
+            cavity_row_start, cavity_row_end,
+            CAVITY_COL_START, CAVITY_COL_END)
+    else:
+        positions = []
+        cavity = []
+        for r in range(START_ROW, START_ROW + n_rows):
+            for c in range(START_COL, START_COL + n_cols):
+                positions.append((r, c))
 
-    print(f"\n  Grid: {N_ROWS} rows × {N_COLS} cols = {N_ROWS * N_COLS} positions")
-    print(f"  Cavity: rows {CAVITY_ROW_START}-{CAVITY_ROW_END-1}, "
-          f"cols {CAVITY_COL_START}-{CAVITY_COL_END-1} "
-          f"({len(cavity)} removed)")
-    print(f"  Remaining: {len(positions)} helices")
+    print(f"\n  Grid: {n_rows} rows × {n_cols} cols")
+    if with_cavity:
+        print(f"  Cavity: rows {cavity_row_start}-{cavity_row_end-1}, "
+              f"cols {CAVITY_COL_START}-{CAVITY_COL_END-1} "
+              f"({len(cavity)} removed)")
+    print(f"  Helices: {len(positions)}")
 
     # Build neighbor graph
     graph = build_neighbor_graph(positions)
 
-    # Print connectivity
-    print(f"\n  Graph connectivity:")
-    for pos in sorted(positions):
-        neighbors = graph[pos]
-        nb_str = ", ".join(f"({r},{c})" for (r, c), _ in neighbors)
-        parity = "even" if (pos[0] % 2) == (pos[1] % 2) else "odd"
-        print(f"    ({pos[0]},{pos[1]}) [{parity}] degree={len(neighbors)}: {nb_str}")
+    # For 2-row solid rectangle: build perimeter cycle directly
+    # (no need for expensive Hamiltonian cycle search)
+    if not with_cavity and n_rows == 2:
+        # Perimeter: top row L→R, cross to bottom at right, bottom R→L, cross back at left
+        top_row = sorted([p for p in positions if p[0] == START_ROW],
+                          key=lambda p: p[1])
+        bot_row = sorted([p for p in positions if p[0] == START_ROW + 1],
+                          key=lambda p: p[1], reverse=True)
+        cycle = top_row + bot_row
+        print(f"\n  Perimeter cycle: {len(cycle)} nodes")
+    else:
+        # Hamiltonian cycle search for cavity designs
+        # Check for degree-1 nodes first
+        deg1 = [p for p in positions if len(graph[p]) < 2]
+        if deg1:
+            print(f"\n  WARNING: {len(deg1)} degree-1 nodes (dead ends): {deg1}")
+            print("  Cannot find Hamiltonian cycle with dead ends.")
+            print("  Checking if trimming fixes it...")
+            # Remove degree-1 nodes iteratively
+            while deg1:
+                for p in deg1:
+                    positions.remove(p)
+                    del graph[p]
+                    for nb, _ in list(graph.get(p, [])):
+                        graph[nb] = [(n, d) for n, d in graph[nb] if n != p]
+                graph = build_neighbor_graph(positions)
+                deg1 = [p for p in positions if len(graph[p]) < 2]
+            print(f"  After trimming: {len(positions)} helices")
 
-    # Find Hamiltonian cycle
-    cycle = find_hamiltonian_cycle(graph, positions)
+        cycle = find_hamiltonian_cycle(graph, positions)
 
     if cycle is None:
         print("\n  FAILED: Could not find Hamiltonian cycle")
-        print("  Try adjusting grid/cavity dimensions")
         return None
 
-    print(f"\n  Cycle: {' → '.join(f'({r},{c})' for r, c in cycle)} → back to start")
+    print(f"\n  Cycle ({len(cycle)} nodes): "
+          f"{' → '.join(f'({r},{c})' for r, c in cycle[:6])}... → back to start")
 
     # Now create in cadnano
     print("\n── Creating cadnano design ──")
@@ -447,10 +487,9 @@ def demo_cavity_routing():
     doc = dc.document()
     part = doc.selectedPart()
 
-    # Compute helix length for p8064
-    SCAFFOLD_LENGTH = 8064
+    # Compute helix length
     n_helices = len(positions)
-    target_routed = int(SCAFFOLD_LENGTH * 0.92)
+    target_routed = int(scaffold_length * 0.92)
     helix_length = int(ceil(target_routed / n_helices / 21)) * 21
     print(f"  Helix length: {helix_length} bp ({helix_length // 21} steps)")
 
@@ -517,9 +556,9 @@ def demo_cavity_routing():
 
     # Draw cavity
     cavity_x0 = (CAVITY_COL_START - START_COL) * 1.0 - 0.4
-    cavity_y0 = -(CAVITY_ROW_START - START_ROW) * 1.2 - 0.4
+    cavity_y0 = -(cavity_row_start - START_ROW) * 1.2 - 0.4
     cavity_w = (CAVITY_COL_END - CAVITY_COL_START) * 1.0
-    cavity_h = (CAVITY_ROW_END - CAVITY_ROW_START) * 1.2
+    cavity_h = (cavity_row_end - cavity_row_start) * 1.2
     rect = plt.Rectangle((cavity_x0, cavity_y0), cavity_w - 0.2, cavity_h - 0.4,
                           fill=True, facecolor='lightyellow', edgecolor='red',
                           linewidth=2, linestyle='--', zorder=1)
@@ -542,11 +581,11 @@ def demo_cavity_routing():
                                      lw=1.5, connectionstyle='arc3,rad=0.1'),
                      zorder=2)
 
-    ax.set_xlim(-1, N_COLS + 0.5)
-    ax.set_ylim(-(N_ROWS) * 1.2, 1)
+    ax.set_xlim(-1, n_cols + 0.5)
+    ax.set_ylim(-(n_rows) * 1.2, 1)
     ax.set_aspect('equal')
     ax.set_title(f'Scaffold Routing: Hamiltonian Cycle Around Cavity\n'
-                  f'{N_ROWS}×{N_COLS} grid, {len(positions)} helices, '
+                  f'{n_rows}×{n_cols} grid, {len(positions)} helices, '
                   f'{len(cavity)} removed for cavity',
                   fontsize=11, fontweight='bold')
     ax.axis('off')
@@ -560,7 +599,7 @@ def demo_cavity_routing():
     print("\n" + "=" * 60)
     print("RESULT")
     print("=" * 60)
-    print(f"  Helices: {len(positions)} in {N_ROWS}×{N_COLS} grid")
+    print(f"  Helices: {len(positions)} in {n_rows}×{n_cols} grid")
     print(f"  Cavity: {len(cavity)} helices removed")
     print(f"  Scaffold: {len(scaffold_oligos)} oligo(s), "
           f"{sum(o.length() for o in scaffold_oligos)} bp")
@@ -572,4 +611,17 @@ def demo_cavity_routing():
 
 
 if __name__ == '__main__':
-    demo_cavity_routing()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cols', type=int, default=13,
+                        help='Number of columns (default: 13)')
+    parser.add_argument('--cavity', action='store_true',
+                        help='Add cavity')
+    parser.add_argument('--cavity-cols', type=int, default=5,
+                        help='Columns removed for cavity (default: 5)')
+    parser.add_argument('--scaffold', type=int, default=8064,
+                        help='Scaffold length in nt (default: 8064)')
+    args = parser.parse_args()
+    build_2layer_rectangle(n_cols=args.cols, scaffold_length=args.scaffold,
+                            with_cavity=args.cavity,
+                            cavity_cols=args.cavity_cols)
