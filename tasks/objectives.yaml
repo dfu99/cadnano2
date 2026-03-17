@@ -830,5 +830,69 @@ objectives:
     CPU simulation works for origami verification but needs longer runs for convergence.
     (5) For rectangular origami, scaffold only occupies ~91 pct of helix length due
     to crossover positions at edges — insertions compensate.
-  connects_to: null
+  connects_to: obj-031
   completed_date: '2026-03-16'
+
+- id: obj-031
+  status: completed
+  statement: Parametric origami pipeline with cavity and polyT brush support
+  methodology: >-
+    Built tools/parametric_origami_pipeline.py — configurable scaffold type,
+    cavity dimensions, polyT brush extensions, staple break parameters. Cavity
+    via staple removal. Three variants: solid p8064 rectangle, cavity 126bp×8h,
+    widened cavity 147bp×8h. Single parameter change triggers full redesign.
+  metrics:
+    solid_staples: 113
+    cavity_staples: 107
+    widened_staples: 122
+    redesign_time_seconds: 30
+  figures:
+  - results/paper_figures/fig4_parametric_sweep.png
+  conclusions: >-
+    Parametric pipeline enables instant redesign. Staple-removal cavity works
+    for creating windows but does not route scaffold around the hole.
+  connects_to: obj-032
+  completed_date: '2026-03-17'
+
+- id: obj-032
+  status: completed
+  statement: Hamiltonian cycle scaffold routing around cavity in multi-row grid
+  methodology: >-
+    Built tools/cavity_routing.py — DFS finds Hamiltonian cycle through
+    honeycomb grid with cavity removed. 2-row grids cannot route around cavities
+    (alternating cross-row connections create dead ends). 4 rows minimum. Parity
+    constraints: N_ROWS even, N_COLS odd, start_row != start_col parity.
+  metrics:
+    solid_2x13_helices: 26
+    cavity_4x13_helices: 42
+    cavity_removed: 10
+    scaffold_oligos: 1
+    cycle_time_ms: "<1"
+  figures:
+  - results/cavity_routed/cavity_routing_cycle.png
+  - results/cavity_routed/solid_2x13.png
+  conclusions: >-
+    Proper cavity routing requires multi-row grids on honeycomb lattice.
+    2-row works for solid rectangles but not cavities. Parity constraints
+    are fundamental to honeycomb geometry.
+  connects_to: obj-033
+  completed_date: '2026-03-17'
+
+- id: obj-033
+  status: completed
+  statement: Paper draft and 4 publication figures for parametric origami
+  methodology: >-
+    Paper with 4 parts: failed embedded agent vs coding agent, proof of concept,
+    cavity design, parametric redesign. 4 figures with subfigure labels at 300 DPI.
+  metrics:
+    paper_sections: 4
+    figures_generated: 4
+  figures:
+  - results/paper_figures/fig1_architecture.png
+  - results/paper_figures/fig2_proof_of_concept.png
+  - results/paper_figures/fig3_cavity_design.png
+  - results/paper_figures/fig4_parametric_sweep.png
+  conclusions: >-
+    Paper frames value as parametric redesign, not initial design.
+  connects_to: null
+  completed_date: '2026-03-17'
