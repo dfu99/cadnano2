@@ -2,15 +2,14 @@
 
 ## Current Priorities
 
-1. **Integrate cavity routing into parametric pipeline** — Merge `cavity_routing.py` Hamiltonian cycle approach into `parametric_origami_pipeline.py` so the full pipeline (design → tacoxDNA → oxDNA) works for cavity designs with proper scaffold routing.
-2. **Run oxDNA simulations on PACE GPU** — The local CPU simulations are too short for convergence. Submit the p8064 rectangle and cavity designs to PACE for 1e7-step GPU relaxation.
-3. **Update paper draft** — Revise Part 3 to use the proper Hamiltonian cycle cavity routing instead of staple removal. Update figures.
-4. **Parameter sweep demo** — Run 5 cavity width variants (84-168bp) through the full pipeline and compare oxDNA results.
+1. **BLOCKED: Clarify "2-layer" grid dimensions** — Asked PI which cross-section matches "2-layer": 2 grid rows (1 honeycomb row) or 4 grid rows (2 honeycomb rows). Figure at `results/paper_figures/honeycomb_layer_comparison.png`. Cannot proceed with cavity routing until this is resolved.
+2. **Integrate cavity routing into parametric pipeline** — Once grid dimensions are confirmed, merge `cavity_routing.py` Hamiltonian cycle approach into `parametric_origami_pipeline.py`.
+3. **Run oxDNA simulations on PACE GPU** — Submit designs to PACE for 1e7-step GPU relaxation.
+4. **Update paper draft** — Revise to use correct grid dimensions and cavity routing.
 
 ## Next Steps (require user input)
 
-- PI review of paper draft structure and figures
-- Decision on cavity approach: 4-row Hamiltonian cycle vs 2-row staple-removal (tradeoffs)
+- **CRITICAL: Which cross-section is "2-layer"?** See `results/paper_figures/honeycomb_layer_comparison.png` — 2 grid rows or 4 grid rows?
 - oxDNA simulation length for paper-quality results
 
 ## Recently Completed
