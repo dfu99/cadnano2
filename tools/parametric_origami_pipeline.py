@@ -79,10 +79,11 @@ class OrigamiParams:
     scaffold_type: str = 'p8064'
 
     # Helix layout
-    n_helices: int = 26           # total helices in the structure
-    helix_length_bp: int = 336    # must be multiple of 21
+    n_rows: int = 2               # grid rows (2 = 2-layer/1 honeycomb row)
+    n_cols: int = 13              # columns per row
+    helix_length_bp: int = 294    # must be multiple of 21
     start_row: int = 10           # honeycomb row for first helix
-    start_col: int = 4            # honeycomb column for first helix
+    start_col: int = 5            # honeycomb column (odd for cross-row at corners)
 
     # Cavity (set to 0 for no cavity)
     cavity_width_bp: int = 0      # width of cavity in bp (along helix axis)
@@ -102,6 +103,10 @@ class OrigamiParams:
     design_name: str = ''
 
     @property
+    def n_helices(self) -> int:
+        return self.n_rows * self.n_cols
+
+    @property
     def scaffold_length(self) -> int:
         return SCAFFOLD_LENGTHS[self.scaffold_type]
 
@@ -110,19 +115,29 @@ class OrigamiParams:
         return self.cavity_width_bp > 0 and self.cavity_height_helices > 0
 
     @property
-    def cavity_start_helix(self) -> int:
-        """First helix index (0-based) that is split by the cavity."""
+    def cavity_start_col(self) -> int:
+        """First column (0-based from start_col) affected by cavity."""
         if not self.has_cavity:
             return -1
-        n_above = (self.n_helices - self.cavity_height_helices) // 2
+        n_above = (self.n_cols - self.cavity_height_helices) // 2
         return n_above
 
     @property
-    def cavity_end_helix(self) -> int:
-        """Last helix index (exclusive) that is split by the cavity."""
+    def cavity_end_col(self) -> int:
+        """Last column (exclusive, 0-based from start_col) affected by cavity."""
         if not self.has_cavity:
             return -1
-        return self.cavity_start_helix + self.cavity_height_helices
+        return self.cavity_start_col + self.cavity_height_helices
+
+    @property
+    def cavity_start_helix(self) -> int:
+        """For backward compat — maps to cavity_start_col."""
+        return self.cavity_start_col
+
+    @property
+    def cavity_end_helix(self) -> int:
+        """For backward compat — maps to cavity_end_col."""
+        return self.cavity_end_col
 
     @property
     def cavity_start_bp(self) -> int:
@@ -209,14 +224,20 @@ def init_cadnano():
 
 
 def create_helices(part, params: OrigamiParams):
-    """Create virtual helices on the honeycomb lattice."""
+    """Create virtual helices on the honeycomb lattice.
+
+    For n_rows=1: single row (original 1-layer layout)
+    For n_rows=2: 2-layer layout (2 grid rows × n_cols)
+    """
     step = part.stepSize()
     if params.helix_length_bp - 1 > part.maxBaseIdx():
         delta = int(ceil((params.helix_length_bp - 1 - part.maxBaseIdx()) / step)) * step
         part.resizeVirtualHelices(0, delta, useUndoStack=True)
 
-    positions = [[params.start_row, params.start_col + i]
-                 for i in range(params.n_helices)]
+    positions = []
+    for r in range(params.n_rows):
+        for c in range(params.n_cols):
+            positions.append([params.start_row + r, params.start_col + c])
 
     # Verify positions are within grid bounds (default 30 rows × 32 cols)
     for r, c in positions:
@@ -226,8 +247,9 @@ def create_helices(part, params: OrigamiParams):
     for pos in positions:
         part.createVirtualHelix(pos[0], pos[1], useUndoStack=True)
 
+    # Sort by column first (primary sort for serpentine), then by row
     helices = sorted(part.getVirtualHelices(), key=lambda vh: vh.coord()[1])
-    print(f"  Created {len(helices)} helices")
+    print(f"  Created {len(helices)} helices ({params.n_rows} rows × {params.n_cols} cols)")
     return helices
 
 
@@ -281,51 +303,86 @@ def get_positions_in_range(positions, lo, hi):
 
 
 def route_scaffold_simple(part, helices, params: OrigamiParams):
-    """Route scaffold through a simple rectangle (no cavity). Serpentine path."""
+    """Route scaffold through a rectangle. Handles 1-row and multi-row layouts.
+
+    1-row: linear serpentine (h0→h1→...→hN)
+    2-row: perimeter cycle (top row L→R, cross, bottom row R→L, cross back)
+    """
     from cadnano2.model.strand import Strand
 
-    n = len(helices)
     L = params.helix_length_bp
 
-    # Compute crossover (turn) positions between each pair
+    if params.n_rows >= 2:
+        # Multi-row: order helices as perimeter cycle
+        # Top row: left to right
+        top_row = [vh for vh in helices if vh.coord()[0] == params.start_row]
+        top_row.sort(key=lambda vh: vh.coord()[1])
+        # Bottom row: right to left
+        bot_row = [vh for vh in helices if vh.coord()[0] == params.start_row + 1]
+        bot_row.sort(key=lambda vh: vh.coord()[1], reverse=True)
+        # Additional rows if present (for future expansion)
+        ordered = top_row + bot_row
+        is_cycle = True  # last connects back to first
+    else:
+        # Single row: linear serpentine (sorted by column)
+        ordered = sorted(helices, key=lambda vh: vh.coord()[1])
+        is_cycle = False
+
+    n = len(ordered)
+
+    # Compute crossover positions between consecutive helices in the ordering
+    num_transitions = n if is_cycle else (n - 1)
     xover_positions = []
-    for i in range(n - 1):
-        all_pos = get_crossover_positions(part, helices[i], helices[i + 1], L)
-        turn = get_turn_position(all_pos, helices[i])
+    for i in range(num_transitions):
+        j = (i + 1) % n
+        all_pos = get_crossover_positions(part, ordered[i], ordered[j], L)
+        turn = get_turn_position(all_pos, ordered[i])
         if turn is None:
-            raise RuntimeError(f"No crossover positions for helices "
-                               f"{helices[i].number()}-{helices[i+1].number()}")
+            raise RuntimeError(
+                f"No crossover positions for helices "
+                f"{ordered[i].number()} ({ordered[i].coord()}) → "
+                f"{ordered[j].number()} ({ordered[j].coord()})")
         xover_positions.append(turn)
 
     # Compute strand ranges
     strand_ranges = []
     for i in range(n):
-        vh = helices[i]
-        if i == 0:
-            xo = xover_positions[0]['low_idx']
-            strand_ranges.append((0, xo) if vh.isEvenParity() else (xo, L - 1))
-        elif i == n - 1:
-            xo = xover_positions[-1]['low_idx']
-            strand_ranges.append((xo, L - 1) if vh.isEvenParity() else (0, xo))
+        if is_cycle:
+            xo_entry = xover_positions[(i - 1) % n]['low_idx']
+            xo_exit = xover_positions[i]['low_idx']
         else:
-            xo_prev = xover_positions[i - 1]['low_idx']
-            xo_next = xover_positions[i]['low_idx']
-            strand_ranges.append((min(xo_prev, xo_next), max(xo_prev, xo_next)))
+            if i == 0:
+                xo_entry = 0 if ordered[i].isEvenParity() else L - 1
+                xo_exit = xover_positions[0]['low_idx']
+            elif i == n - 1:
+                xo_entry = xover_positions[-1]['low_idx']
+                xo_exit = L - 1 if ordered[i].isEvenParity() else 0
+            else:
+                xo_entry = xover_positions[i - 1]['low_idx']
+                xo_exit = xover_positions[i]['low_idx']
+
+        strand_ranges.append((min(xo_entry, xo_exit), max(xo_entry, xo_exit)))
 
     # Create scaffold strands
-    for vh, (lo, hi) in zip(helices, strand_ranges):
+    for vh, (lo, hi) in zip(ordered, strand_ranges):
         scaf_ss = vh.scaffoldStrandSet()
         result = scaf_ss.createStrand(lo, hi, useUndoStack=True)
         if result < 0:
             raise RuntimeError(f"Failed to create strand on helix "
                                f"{vh.number()} [{lo}:{hi}]")
 
-    # Connect strands at crossover points
+    # Connect strands
     total_bp = sum(hi - lo + 1 for lo, hi in strand_ranges)
-    xovers_placed = connect_serpentine(part, helices, xover_positions)
+    xovers_placed = 0
+    for i in range(num_transitions):
+        j = (i + 1) % n
+        ok = connect_strands_at(part, ordered[i], ordered[j],
+                                 xover_positions[i]['low_idx'])
+        if ok:
+            xovers_placed += 1
 
     return {
-        'type': 'simple_serpentine',
+        'type': 'perimeter_cycle' if is_cycle else 'simple_serpentine',
         'xovers_placed': xovers_placed,
         'total_scaffold_bp': total_bp,
         'strand_ranges': strand_ranges,
@@ -347,15 +404,17 @@ def remove_cavity_staples(part, helices, params: OrigamiParams):
     if not params.has_cavity:
         return 0
 
-    cs = params.cavity_start_helix
-    ce = params.cavity_end_helix
     cb_start = params.cavity_start_bp
     cb_end = params.cavity_end_bp
+    cavity_col_start = params.start_col + params.cavity_start_col
+    cavity_col_end = params.start_col + params.cavity_end_col
 
-    # Get helix numbers for cavity region
+    # Get helix numbers for cavity region (any row, columns in cavity range)
     cavity_helix_nums = set()
-    for i in range(cs, ce):
-        cavity_helix_nums.add(helices[i].number())
+    for vh in helices:
+        r, c = vh.coord()
+        if cavity_col_start <= c < cavity_col_end:
+            cavity_helix_nums.add(vh.number())
 
     # Find staple oligos entirely within cavity
     oligos_to_remove = []
@@ -681,17 +740,7 @@ def create_origami(params: OrigamiParams):
     staple_count_pre = sum(1 for o in part.oligos() if o.isStaple())
     print(f"  Staples placed: {staple_count_pre}")
 
-    # Step 3b: Remove cavity staples
-    if params.has_cavity:
-        print("\n── Step 3b: Remove cavity staples ──")
-        cavity_removed = remove_cavity_staples(part, helices, params)
-        staple_count_post = sum(1 for o in part.oligos() if o.isStaple())
-        print(f"  Removed {cavity_removed} staples from cavity region")
-        print(f"  Remaining staples: {staple_count_post}")
-    else:
-        cavity_removed = 0
-
-    # Step 4: Break staples
+    # Step 4: Break staples (BEFORE cavity removal — need short staples first)
     print("\n── Step 4: Break staples (autoBreak) ──")
     break_result = break_staples_direct(part, params)
     if 'error' in break_result:
@@ -700,7 +749,17 @@ def create_origami(params: OrigamiParams):
     else:
         print(f"  Break result: {break_result}")
 
-    # Step 5: PolyT brushes (after staple breaking to avoid short-staple issues)
+    # Step 4b: Remove cavity staples (after breaking, so staples are short enough)
+    if params.has_cavity:
+        print("\n── Step 4b: Remove cavity staples ──")
+        cavity_removed = remove_cavity_staples(part, helices, params)
+        staple_count_post = sum(1 for o in part.oligos() if o.isStaple())
+        print(f"  Removed {cavity_removed} staples from cavity region")
+        print(f"  Remaining staples: {staple_count_post}")
+    else:
+        cavity_removed = 0
+
+    # Step 5: PolyT brushes
     print("\n── Step 5: PolyT brush extensions ──")
     polyt_count = add_polyt_brushes(part, helices, params)
     print(f"  Extensions added: {polyt_count}")
@@ -1127,6 +1186,8 @@ def run_pipeline(params: OrigamiParams, skip_sim=False):
     if params.design_name == '':
         params.design_name = 'design'
 
+    # Ensure absolute path for tacoxDNA compatibility
+    params.output_dir = os.path.abspath(params.output_dir)
     os.makedirs(params.output_dir, exist_ok=True)
 
     # Step 1: Create design
@@ -1206,8 +1267,10 @@ def main():
     parser.add_argument('--scaffold', default='p8064',
                         choices=['m13mp18', 'p8064'],
                         help='Scaffold type (default: p8064)')
-    parser.add_argument('--n-helices', type=int, default=26,
-                        help='Number of helices (default: 26)')
+    parser.add_argument('--rows', type=int, default=2,
+                        help='Grid rows (2=2-layer, default: 2)')
+    parser.add_argument('--cols', type=int, default=13,
+                        help='Grid columns (default: 13)')
     parser.add_argument('--helix-length', type=int, default=0,
                         help='Helix length in bp (0=auto, default: 0)')
     parser.add_argument('--cavity-width', type=int, default=0,
@@ -1227,7 +1290,8 @@ def main():
 
     params = OrigamiParams(
         scaffold_type=args.scaffold,
-        n_helices=args.n_helices,
+        n_rows=args.rows,
+        n_cols=args.cols,
         cavity_width_bp=args.cavity_width,
         cavity_height_helices=args.cavity_height,
         polyt_length=args.polyt,
@@ -1241,7 +1305,8 @@ def main():
     else:
         params.auto_dimensions()
 
-    print(f"\nAuto-computed helix length: {params.helix_length_bp} bp")
+    print(f"\nGrid: {params.n_rows} rows × {params.n_cols} cols = {params.n_helices} helices")
+    print(f"Helix length: {params.helix_length_bp} bp")
 
     run_pipeline(params, skip_sim=args.no_sim)
 

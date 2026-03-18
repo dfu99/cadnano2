@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Build correct 2-layer cavity design** — PI confirmed: 2 grid rows = 1 honeycomb row = "2xN" in their notation. A "2-layer rectangle" = 4 grid rows (2 honeycomb rows). The cavity is in the Z (side) view along the helix axis. Need to integrate the Hamiltonian cycle routing (which already works for 4 grid rows) with the parametric pipeline for the full design→tacoxDNA→oxDNA flow.
+1. **Build 2-layer cavity full pipeline** — PI confirmed definitively: 2 grid rows = 2-layer rectangle. Cavity is in Z (side) view (along helix axis). Use staple removal for cavity (scaffold routing around Z-direction cavity in 2 rows is topologically impossible). Run full pipeline: design → tacoxDNA → oxDNA for solid, cavity, and widened-cavity variants.
 2. **Integrate cavity routing into parametric pipeline** — Once grid dimensions are confirmed, merge `cavity_routing.py` Hamiltonian cycle approach into `parametric_origami_pipeline.py`.
 3. **Run oxDNA simulations on PACE GPU** — Submit designs to PACE for 1e7-step GPU relaxation.
 4. **Update paper draft** — Revise to use correct grid dimensions and cavity routing.

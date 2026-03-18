@@ -4,20 +4,20 @@
     "scaffold_length": 8064,
     "n_helices": 26,
     "helix_length_bp": 294,
-    "cavity_width_bp": 0,
-    "cavity_height_helices": 0,
+    "cavity_width_bp": 126,
+    "cavity_height_helices": 8,
     "polyt_length": 0
   },
   "design": {
     "scaffold_oligos": 1,
     "scaffold_bases": 8064,
-    "staple_count": 181,
-    "staple_avg_len": 44.552486187845304,
+    "staple_count": 151,
+    "staple_avg_len": 46.34437086092715,
     "staple_min_len": 12,
     "staple_max_len": 479,
     "insertions_added": 668,
     "polyt_extensions": 0,
-    "cavity_staples_removed": 0,
+    "cavity_staples_removed": 30,
     "route_info": {
       "type": "perimeter_cycle",
       "xovers_placed": 26,
@@ -129,26 +129,27 @@
         ]
       ]
     },
-    "n_nucleotides": 16128,
-    "n_strands": 182
+    "n_nucleotides": 15062,
+    "n_strands": 152
   },
   "structure": {
     "initial": {
       "pca_nm": [
-        54.2770864468877,
-        14.090423350369651,
-        3.4307838300019595
+        55.79459188326751,
+        14.482180473358735,
+        3.4291422090102452
       ],
       "bbox_nm": [
         23.594877824855736,
-        5.365275418190059,
+        5.365557778278067,
         96.28000000000037
       ],
-      "n_nucleotides": 16128
+      "n_nucleotides": 15062
     }
   },
   "simulation_completed": false,
   "figures": [
-    "/home/dan/Documents/code/cadnano2/results/origami_p8064_26h/figures/structure_initial.png"
+    "/home/dan/Documents/code/cadnano2/results/origami_2layer_cavity_126/figures/structure_initial.png",
+    "/home/dan/Documents/code/cadnano2/results/origami_2layer_cavity_126/figures/cavity_schematic.png"
   ]
 }
