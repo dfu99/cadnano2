@@ -2,14 +2,13 @@
 
 ## Current Priorities
 
-1. **Build 2-layer cavity full pipeline** — PI confirmed definitively: 2 grid rows = 2-layer rectangle. Cavity is in Z (side) view (along helix axis). Use staple removal for cavity (scaffold routing around Z-direction cavity in 2 rows is topologically impossible). Run full pipeline: design → tacoxDNA → oxDNA for solid, cavity, and widened-cavity variants.
-2. **Integrate cavity routing into parametric pipeline** — Once grid dimensions are confirmed, merge `cavity_routing.py` Hamiltonian cycle approach into `parametric_origami_pipeline.py`.
-3. **Run oxDNA simulations on PACE GPU** — Submit designs to PACE for 1e7-step GPU relaxation.
-4. **Update paper draft** — Revise to use correct grid dimensions and cavity routing.
+1. **Scale up PI's cavity template to p8064** — Two approaches in progress: (a) load `2x12_rectangle_cavity.json`, scale helix lengths from 252→420bp, re-route; (b) build from scratch matching the dense crossover pattern. Compare screenshots. Key learning: PI's design uses *dense scaffold crossovers* (multiple double crossovers per helix pair), NOT serpentine (one per pair).
+2. **Run oxDNA simulations on PACE GPU** — Submit designs to PACE for 1e7-step GPU relaxation.
+3. **Update paper draft** — Revise with correct 2-layer cavity design and dense crossover routing.
 
 ## Next Steps (require user input)
 
-- **RESOLVED:** 2 grid rows = 1 honeycomb row = "2xN". "2-layer" = 2 honeycomb rows = 4 grid rows.
+- PI review of scaled-up vs from-scratch comparison screenshots
 - oxDNA simulation length for paper-quality results
 
 ## Recently Completed
