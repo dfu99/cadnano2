@@ -2,14 +2,14 @@
 
 ## Current Priorities
 
-1. **BLOCKED: Clarify "2-layer" grid dimensions** — Asked PI which cross-section matches "2-layer": 2 grid rows (1 honeycomb row) or 4 grid rows (2 honeycomb rows). Figure at `results/paper_figures/honeycomb_layer_comparison.png`. Cannot proceed with cavity routing until this is resolved.
+1. **Build correct 2-layer cavity design** — PI confirmed: 2 grid rows = 1 honeycomb row = "2xN" in their notation. A "2-layer rectangle" = 4 grid rows (2 honeycomb rows). The cavity is in the Z (side) view along the helix axis. Need to integrate the Hamiltonian cycle routing (which already works for 4 grid rows) with the parametric pipeline for the full design→tacoxDNA→oxDNA flow.
 2. **Integrate cavity routing into parametric pipeline** — Once grid dimensions are confirmed, merge `cavity_routing.py` Hamiltonian cycle approach into `parametric_origami_pipeline.py`.
 3. **Run oxDNA simulations on PACE GPU** — Submit designs to PACE for 1e7-step GPU relaxation.
 4. **Update paper draft** — Revise to use correct grid dimensions and cavity routing.
 
 ## Next Steps (require user input)
 
-- **CRITICAL: Which cross-section is "2-layer"?** See `results/paper_figures/honeycomb_layer_comparison.png` — 2 grid rows or 4 grid rows?
+- **RESOLVED:** 2 grid rows = 1 honeycomb row = "2xN". "2-layer" = 2 honeycomb rows = 4 grid rows.
 - oxDNA simulation length for paper-quality results
 
 ## Recently Completed
