@@ -234,8 +234,11 @@ def step3_move_midseam(design, cavity_pairs, row12_pairs, row13_pairs):
     for ha, hb in row12_pairs:
         if (ha, hb) not in cavity_pairs:
             move_seam(ha, hb, 120, 121, new_seam_r12)
+    # Last pair (H22-H23) has NO midseam — only edge crossovers.
+    # This is where the two scaffold halves connect; adding a midseam breaks routing.
+    LAST_PAIR = (22, 23)
     for ha, hb in row13_pairs:
-        if (ha, hb) not in cavity_pairs:
+        if (ha, hb) not in cavity_pairs and (ha, hb) != LAST_PAIR:
             move_seam(ha, hb, 116, 117, new_seam_r13)
     return result
 
