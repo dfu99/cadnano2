@@ -132,50 +132,12 @@ def step2_extend(design, new_len, cavity_helices):
                     break
 
             if last_before < 0:
-                # R13 case: nothing in [160..169], right segment was entirely at CUT.
-                # We need to create a bridge from the cavity gap right boundary
-                # to the shifted right segment.
-                # The cavity gap right boundary: find last empty before CUT
-                # that's part of the original cavity gap.
-                # For R13: cavity gap was 75-169. Right segment at 170 shifted to 170+shift.
-                # We need to fill 170 to 170+shift-1, connecting to position 74 on one end
-                # and 170+shift on the other. But we must NOT fill 75-169 (cavity gap).
-                # So we start filling at CUT=170.
-
-                # Find first occupied after CUT
-                first_after = -1
-                for i in range(CUT, new_len):
-                    if scaf[i] != EMPTY:
-                        first_after = i
-                        break
-                if first_after < 0 or first_after <= CUT:
-                    continue
-
-                # Determine direction from the shifted right segment
-                entry = scaf[first_after]
-                # The right segment goes right-to-left on odd helices (R13)
-                # Scaffold direction: check if 3' goes to lower index
-                direction = -1 if (entry[2] == num and entry[3] < first_after) else 1
-
-                # Fill extension gap [CUT, first_after-1]
-                for i in range(first_after - 1, CUT - 1, -1):
-                    if scaf[i] != EMPTY:
-                        continue
-                    if direction == 1:
-                        scaf[i] = [num, i - 1, num, i + 1]
-                    else:
-                        scaf[i] = [num, i + 1, num, i - 1]
-
-                # Fix boundary at first_after
-                if scaf[first_after][0] == num:
-                    scaf[first_after][1] = first_after - 1
-
-                # Now connect extension gap to the left segment's right boundary
-                # (the cavity crossover at position 74/67)
-                # The entry at CUT should connect 5' to the cavity gap boundary
-                # DON'T connect — leave the cavity gap open
-                # The entry at CUT[0] should be -1 (5' end) to start a new strand segment
-                # Or it connects to the crossover partner
+                # R13 case: right segment was entirely at CUT (170), now shifted.
+                # DON'T fill the extension gap here — step4 will handle it
+                # by placing the cavity right boundary crossover and filling
+                # from there to the shifted right segment. If we fill now,
+                # positions inside the expanded cavity gap get scaffold data
+                # that step4 doesn't clean up.
                 continue
 
             # R12 case: last_before found (e.g., 169)
@@ -304,33 +266,49 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
     def move_cavity_boundary(ha, hb, old_right, new_right):
         sa = vs_by_num[ha]['scaf']
         sb = vs_by_num[hb]['scaf']
+
+        # Step 1: Remove old crossover at old_right
         for s, h, partner in [(sa, ha, hb), (sb, hb, ha)]:
             if s[old_right] != EMPTY:
                 if s[old_right][0] == partner:
                     s[old_right][0] = h
-                    s[old_right][1] = old_right - 1
+                    s[old_right][1] = old_right + 1 if h % 2 == 0 else old_right - 1
                 if s[old_right][2] == partner:
                     s[old_right][2] = h
-                    s[old_right][3] = old_right - 1
-        if sa[new_right] != EMPTY and sb[new_right] != EMPTY:
-            sa[new_right][0] = hb
-            sa[new_right][1] = new_right
-            sb[new_right][2] = ha
-            sb[new_right][3] = new_right
+                    s[old_right][3] = old_right - 1 if h % 2 == 0 else old_right + 1
+
         if new_right > old_right:
+            # Expanding gap: clear data between old and new boundary
             for s in [sa, sb]:
                 for i in range(old_right, new_right):
                     s[i] = EMPTY
+
         elif new_right < old_right:
+            # Shrinking gap: fill data between new and old boundary
             for s, h in [(sa, ha), (sb, hb)]:
-                _, _, th, ti = s[new_right]
-                direction = 1 if (th == h) else -1
-                for i in range(new_right + 1, old_right + 1):
+                direction = 1 if (h % 2 == 0) else -1
+                # Fill from new_right to old_right (inclusive)
+                for i in range(new_right, old_right + 1):
                     if s[i] == EMPTY:
                         if direction == 1:
                             s[i] = [h, i - 1, h, i + 1]
                         else:
                             s[i] = [h, i + 1, h, i - 1]
+
+        # Step 2: Place crossover at new_right
+        # Ensure both helices have scaffold entries at new_right
+        for s, h in [(sa, ha), (sb, hb)]:
+            if s[new_right] == EMPTY:
+                if h % 2 == 0:
+                    s[new_right] = [h, new_right - 1, h, new_right + 1]
+                else:
+                    s[new_right] = [h, new_right + 1, h, new_right - 1]
+
+        # Place the crossover: ha's 5' connects to hb, hb's 3' connects to ha
+        sa[new_right][0] = hb
+        sa[new_right][1] = new_right
+        sb[new_right][2] = ha
+        sb[new_right][3] = new_right
 
     for ha, hb in cavity_pairs_r12:
         sa = vs_by_num[ha]['scaf']
