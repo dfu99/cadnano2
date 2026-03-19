@@ -4,7 +4,7 @@
 
 1. **Scale up PI's cavity template to p8064** — Two approaches in progress: (a) load `2x12_rectangle_cavity.json`, scale helix lengths from 252→420bp, re-route; (b) build from scratch matching the dense crossover pattern. Compare screenshots. Key learning: PI's design uses *dense scaffold crossovers* (multiple double crossovers per helix pair), NOT serpentine (one per pair).
 2. **Run oxDNA simulations on PACE GPU** — Submit designs to PACE for 1e7-step GPU relaxation.
-3. **Update paper draft** — Revise with correct 2-layer cavity design and dense crossover routing.
+3. **Paper draft for DNA 32** — `results/paper_draft_dna32.md` written. Single narrative for DNA nanotech audience. Needs PI review and figure generation for the 4 proposed figures.
 
 ## Next Steps (require user input)
 
