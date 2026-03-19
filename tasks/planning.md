@@ -13,6 +13,8 @@
 - Conference submission deadline / format requirements
 - Which cavity variant(s) to take forward for oxDNA simulation
 
+_All priorities blocked on PI input as of 2026-03-19._
+
 ## Recently Completed
 
 - **Parametric cavity width sweep with centered crossovers** (2026-03-19): Fixed 5 bugs in the 4-step template scaling pipeline to achieve 1 scaffold oligo with centered, variable-width cavities. All 3 gap sizes (20/30/40nm) load correctly in cadnano. Key bugs: step2 direction detection from shifted refs, step4 crossover on EMPTY positions, step3 spurious midseam on H22-H23. Script: `tools/cavity_variant_sweep.py`, screenshots: `results/cavity_variants/screenshot_{20,30,40}nm.png`.
