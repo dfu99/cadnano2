@@ -244,6 +244,16 @@ def step3_move_midseam(design, cavity_pairs, row12_pairs, row13_pairs):
 
 
 def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_gap_bp):
+    """Set cavity width by moving BOTH left and right boundary crossovers.
+
+    Centers the cavity within the helix length. Moves both the left-edge
+    and right-edge half-crossovers for cavity pairs to achieve the target
+    gap width while keeping the cavity centered.
+
+    Template boundaries:
+      R12 (H4-H5, H6-H7): left=67, right=163, gap=96bp
+      R13 (H16-H17, H18-H19): left=74, right=170, gap=96bp
+    """
     result = copy.deepcopy(design)
     vs_by_num = {v['num']: v for v in result['vstrands']}
     new_len = len(result['vstrands'][0]['scaf'])
@@ -258,84 +268,173 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
                     best = pos
         return best
 
-    r12_left = 67
-    r12_target_right = r12_left + target_gap_bp + 1
-    r12_new_right = nearest_valid(r12_target_right, [4, 5, 15, 16])
+    # Compute centered cavity positions
+    gap_center = new_len // 2
+    half_gap = target_gap_bp // 2
 
-    r13_left = 74
-    r13_target_right = r13_left + target_gap_bp + 1
-    r13_new_right = nearest_valid(r13_target_right, [1, 2, 11, 12])
+    # R12: valid offsets [4, 5, 15, 16]
+    r12_new_left = nearest_valid(gap_center - half_gap, [4, 5, 15, 16])
+    r12_new_right = nearest_valid(gap_center + half_gap, [4, 5, 15, 16])
+    # Ensure right > left
+    if r12_new_right <= r12_new_left:
+        r12_new_right = nearest_valid(r12_new_left + target_gap_bp, [4, 5, 15, 16])
 
-    def move_cavity_boundary(ha, hb, old_right, new_right):
+    # R13: valid offsets [1, 2, 11, 12]
+    r13_new_left = nearest_valid(gap_center - half_gap, [1, 2, 11, 12])
+    r13_new_right = nearest_valid(gap_center + half_gap, [1, 2, 11, 12])
+    if r13_new_right <= r13_new_left:
+        r13_new_right = nearest_valid(r13_new_left + target_gap_bp, [1, 2, 11, 12])
+
+    # Original template boundaries
+    R12_ORIG_LEFT = 67
+    R12_ORIG_RIGHT = 163
+    R13_ORIG_LEFT = 74
+    R13_ORIG_RIGHT = 170
+
+    def move_boundary(ha, hb, old_pos, new_pos, side):
+        """Move a single cavity boundary crossover.
+
+        side='left': moving the left boundary (gap starts after this position)
+        side='right': moving the right boundary (gap ends before this position)
+        """
         sa = vs_by_num[ha]['scaf']
         sb = vs_by_num[hb]['scaf']
 
-        # Step 1: Remove old crossover at old_right
+        # Step 1: Remove old crossover at old_pos
         for s, h, partner in [(sa, ha, hb), (sb, hb, ha)]:
-            if s[old_right] != EMPTY:
-                if s[old_right][0] == partner:
-                    s[old_right][0] = h
-                    s[old_right][1] = old_right + 1 if h % 2 == 0 else old_right - 1
-                if s[old_right][2] == partner:
-                    s[old_right][2] = h
-                    s[old_right][3] = old_right - 1 if h % 2 == 0 else old_right + 1
+            if s[old_pos] != EMPTY:
+                if s[old_pos][0] == partner:
+                    s[old_pos][0] = h
+                    s[old_pos][1] = old_pos - 1 if h % 2 == 0 else old_pos + 1
+                if s[old_pos][2] == partner:
+                    s[old_pos][2] = h
+                    s[old_pos][3] = old_pos + 1 if h % 2 == 0 else old_pos - 1
 
-        if new_right > old_right:
-            # Expanding gap: clear data between old and new boundary
-            for s in [sa, sb]:
-                for i in range(old_right, new_right):
-                    s[i] = EMPTY
+        if side == 'left':
+            if new_pos < old_pos:
+                # Moving left boundary leftward (expanding gap on left)
+                # Clear positions from new_pos+1 to old_pos (they become part of gap)
+                for s in [sa, sb]:
+                    for i in range(new_pos + 1, old_pos + 1):
+                        s[i] = EMPTY
+            elif new_pos > old_pos:
+                # Moving left boundary rightward (shrinking gap on left)
+                # Fill positions from old_pos+1 to new_pos
+                for s, h in [(sa, ha), (sb, hb)]:
+                    direction = 1 if (h % 2 == 0) else -1
+                    for i in range(old_pos, new_pos + 1):
+                        if s[i] == EMPTY:
+                            if direction == 1:
+                                s[i] = [h, i - 1, h, i + 1]
+                            else:
+                                s[i] = [h, i + 1, h, i - 1]
+        elif side == 'right':
+            if new_pos > old_pos:
+                # Moving right boundary rightward (expanding gap on right)
+                # Clear positions from old_pos to new_pos-1
+                for s in [sa, sb]:
+                    for i in range(old_pos, new_pos):
+                        s[i] = EMPTY
+            elif new_pos < old_pos:
+                # Moving right boundary leftward (shrinking gap on right)
+                # Fill positions from new_pos to old_pos
+                for s, h in [(sa, ha), (sb, hb)]:
+                    direction = 1 if (h % 2 == 0) else -1
+                    for i in range(new_pos, old_pos + 1):
+                        if s[i] == EMPTY:
+                            if direction == 1:
+                                s[i] = [h, i - 1, h, i + 1]
+                            else:
+                                s[i] = [h, i + 1, h, i - 1]
 
-        elif new_right < old_right:
-            # Shrinking gap: fill data between new and old boundary
-            for s, h in [(sa, ha), (sb, hb)]:
-                direction = 1 if (h % 2 == 0) else -1
-                # Fill from new_right to old_right (inclusive)
-                for i in range(new_right, old_right + 1):
-                    if s[i] == EMPTY:
-                        if direction == 1:
-                            s[i] = [h, i - 1, h, i + 1]
-                        else:
-                            s[i] = [h, i + 1, h, i - 1]
-
-        # Step 2: Place crossover at new_right
-        # Ensure both helices have scaffold entries at new_right
+        # Step 2: Ensure scaffold entry exists at new_pos
         for s, h in [(sa, ha), (sb, hb)]:
-            if s[new_right] == EMPTY:
+            if s[new_pos] == EMPTY:
                 if h % 2 == 0:
-                    s[new_right] = [h, new_right - 1, h, new_right + 1]
+                    s[new_pos] = [h, new_pos - 1, h, new_pos + 1]
                 else:
-                    s[new_right] = [h, new_right + 1, h, new_right - 1]
+                    s[new_pos] = [h, new_pos + 1, h, new_pos - 1]
 
-        # Place the crossover: ha's 5' connects to hb, hb's 3' connects to ha
-        sa[new_right][0] = hb
-        sa[new_right][1] = new_right
-        sb[new_right][2] = ha
-        sb[new_right][3] = new_right
+        # Step 3: Place crossover at new_pos
+        # Template pattern: ha's 3' connects to hb at left boundary,
+        # ha's 5' connects to hb at right boundary
+        if side == 'left':
+            # Left boundary: ha[pos] 3'→hb, hb[pos] 5'→ha
+            sa[new_pos][2] = hb
+            sa[new_pos][3] = new_pos
+            sb[new_pos][0] = ha
+            sb[new_pos][1] = new_pos
+        else:
+            # Right boundary: ha[pos] 5'→hb, hb[pos] 3'→ha
+            sa[new_pos][0] = hb
+            sa[new_pos][1] = new_pos
+            sb[new_pos][2] = ha
+            sb[new_pos][3] = new_pos
 
-    for ha, hb in cavity_pairs_r12:
+    # Find current boundary positions (may differ from template after step2)
+    def find_boundary(ha, hb, search_start, search_end, direction='forward'):
         sa = vs_by_num[ha]['scaf']
-        current_right = 163
-        for i in range(68, new_len):
-            if sa[i] != EMPTY:
-                entry = sa[i]
-                if entry[0] == hb or entry[2] == hb:
-                    current_right = i
-                    break
-        move_cavity_boundary(ha, hb, current_right, r12_new_right)
+        if direction == 'forward':
+            for i in range(search_start, search_end):
+                if sa[i] != EMPTY:
+                    entry = sa[i]
+                    if entry[0] == hb or entry[2] == hb:
+                        return i
+        else:
+            for i in range(search_end - 1, search_start - 1, -1):
+                if sa[i] != EMPTY:
+                    entry = sa[i]
+                    if entry[0] == hb or entry[2] == hb:
+                        return i
+        return None
 
+    # Move R12 cavity boundaries
+    for ha, hb in cavity_pairs_r12:
+        # Find current left boundary (search backward from gap start)
+        cur_left = find_boundary(ha, hb, 5, 170, direction='forward')
+        if cur_left is None:
+            cur_left = R12_ORIG_LEFT
+        # Only take the FIRST crossover after the edge (skip edge at pos 5)
+        sa = vs_by_num[ha]['scaf']
+        # The left boundary is the last crossover before the gap
+        # Search backward from original gap start
+        cur_left = None
+        for i in range(R12_ORIG_LEFT + 5, 4, -1):
+            if sa[i] != EMPTY and (sa[i][0] == hb or sa[i][2] == hb):
+                cur_left = i
+                break
+        if cur_left is None:
+            cur_left = R12_ORIG_LEFT
+
+        # Find current right boundary
+        cur_right = find_boundary(ha, hb, R12_ORIG_LEFT + 1, new_len, direction='forward')
+        if cur_right is None:
+            cur_right = R12_ORIG_RIGHT
+
+        # Move left boundary
+        move_boundary(ha, hb, cur_left, r12_new_left, 'left')
+        # Move right boundary
+        move_boundary(ha, hb, cur_right, r12_new_right, 'right')
+
+    # Move R13 cavity boundaries
     for ha, hb in cavity_pairs_r13:
         sa = vs_by_num[ha]['scaf']
-        current_right = 338
-        for i in range(75, new_len):
-            if sa[i] != EMPTY:
-                entry = sa[i]
-                if entry[0] == hb or entry[2] == hb:
-                    current_right = i
-                    break
-        move_cavity_boundary(ha, hb, current_right, r13_new_right)
+        cur_left = None
+        for i in range(R13_ORIG_LEFT + 5, 1, -1):
+            if sa[i] != EMPTY and (sa[i][0] == hb or sa[i][2] == hb):
+                cur_left = i
+                break
+        if cur_left is None:
+            cur_left = R13_ORIG_LEFT
 
-    return result, r12_new_right, r13_new_right
+        cur_right = find_boundary(ha, hb, R13_ORIG_LEFT + 1, new_len, direction='forward')
+        if cur_right is None:
+            cur_right = R13_ORIG_RIGHT
+
+        move_boundary(ha, hb, cur_left, r13_new_left, 'left')
+        move_boundary(ha, hb, cur_right, r13_new_right, 'right')
+
+    return result, r12_new_left, r12_new_right, r13_new_left, r13_new_right
 
 
 def fix_scaffold_directions(design):
@@ -509,7 +608,7 @@ def generate_2x12_variant(gap_nm):
     s1 = step1_remove_staples(template)
     s2 = step2_extend(s1, helix_len, cavity_helices)
     s3 = step3_move_midseam(s2, cavity_pairs, row12_pairs, row13_pairs)
-    s4, r12_right, r13_right = step4_set_cavity_width(
+    s4, r12_left, r12_right, r13_left, r13_right = step4_set_cavity_width(
         s3, cavity_pairs_r12, cavity_pairs_r13, gap_bp)
 
     # Fix all scaffold directions to match helix parity
@@ -517,11 +616,11 @@ def generate_2x12_variant(gap_nm):
 
     issues = validate_design(s5)
     scaf_bp = count_scaffold(s5)
-    actual_gap_r12 = r12_right - 67
+    actual_gap_r12 = r12_right - r12_left
     actual_gap_nm = round(actual_gap_r12 * NM_PER_BP, 1)
 
-    # Find cavity boundaries for visualization
-    cavity_left_bp = 67
+    # Cavity boundaries for visualization
+    cavity_left_bp = r12_left
     cavity_right_bp = r12_right
 
     name = f"cavity_{gap_nm}nm_2x12_8064bp"
