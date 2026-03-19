@@ -49,6 +49,16 @@ def step1_remove_staples(design):
 
 
 def step2_extend(design, new_len, cavity_helices):
+    """Extend arrays to new_len, shift right side, fill extension gaps.
+
+    For ALL helices (including cavity), fills the extension gap created
+    by shifting. For cavity helices, preserves the cavity gap while
+    filling only the extension portion.
+
+    Template cavity gap boundaries:
+      R12 (H4-H7):   gap [68-162], right segment starts at 163
+      R13 (H16-H19): gap [75-169], right segment starts at 170
+    """
     result = copy.deepcopy(design)
     old_len = len(result['vstrands'][0]['scaf'])
     shift = new_len - old_len
@@ -72,6 +82,7 @@ def step2_extend(design, new_len, cavity_helices):
                 v[arr].append(0)
 
     CUT = 170
+    # Shift data at positions >= CUT to the right by shift
     for v in result['vstrands']:
         scaf = v['scaf']
         for i in range(old_len - 1, CUT - 1, -1):
@@ -79,6 +90,7 @@ def step2_extend(design, new_len, cavity_helices):
                 scaf[i + shift] = list(scaf[i])
                 scaf[i] = EMPTY
 
+    # Update cross-references that point to shifted positions
     for v in result['vstrands']:
         scaf = v['scaf']
         for i in range(new_len):
@@ -90,34 +102,131 @@ def step2_extend(design, new_len, cavity_helices):
             if vh3p >= 0 and idx3p >= CUT:
                 scaf[i][3] = idx3p + shift
 
+    # Cavity right segment boundaries (in original template coordinates)
+    # R12 cavity (H4-H7): right segment starts at 163 (below CUT, stays in place)
+    # R13 cavity (H16-H19): right segment starts at 170 (= CUT, gets shifted)
+    R12_CAVITY_RIGHT_START = 163  # these positions stay at 163-169
+    R13_CAVITY_RIGHT_START = 170  # these get shifted to 170+shift
+
+    # Fill extension gaps for ALL helices
     for v in result['vstrands']:
         num = v['num']
-        if num in cavity_helices:
-            continue
         scaf = v['scaf']
-        last_before = -1
-        for i in range(CUT - 1, -1, -1):
-            if scaf[i] != EMPTY:
-                last_before = i
-                break
-        first_after = -1
-        for i in range(CUT, new_len):
-            if scaf[i] != EMPTY:
-                first_after = i
-                break
-        if last_before < 0 or first_after < 0 or first_after - last_before <= 1:
-            continue
-        _, _, th, ti = scaf[last_before]
-        direction = 1 if (th == num and ti == last_before + 1) else -1
+
+        if num in cavity_helices:
+            # For cavity helices, fill ONLY the extension gap (170 to 170+shift-1).
+            # The cavity gap (68-162 for R12, 75-169 for R13) must be preserved.
+            #
+            # R12 cavity (H4-H7): right segment at 163-169 stayed in place,
+            #   extension gap is 170 to 170+shift-1. last_before=169.
+            # R13 cavity (H16-H19): right segment at 170 got shifted to 170+shift,
+            #   extension gap is 170 to 170+shift-1. We must NOT search below 170
+            #   or we'll find position 74 (end of left segment) and fill the cavity gap.
+
+            # Find last occupied in range [CUT-7, CUT-1] (the tail of the
+            # right segment that stayed below CUT, if any)
+            last_before = -1
+            for i in range(CUT - 1, max(CUT - 10, 0) - 1, -1):
+                if scaf[i] != EMPTY:
+                    last_before = i
+                    break
+
+            if last_before < 0:
+                # R13 case: nothing in [160..169], right segment was entirely at CUT.
+                # We need to create a bridge from the cavity gap right boundary
+                # to the shifted right segment.
+                # The cavity gap right boundary: find last empty before CUT
+                # that's part of the original cavity gap.
+                # For R13: cavity gap was 75-169. Right segment at 170 shifted to 170+shift.
+                # We need to fill 170 to 170+shift-1, connecting to position 74 on one end
+                # and 170+shift on the other. But we must NOT fill 75-169 (cavity gap).
+                # So we start filling at CUT=170.
+
+                # Find first occupied after CUT
+                first_after = -1
+                for i in range(CUT, new_len):
+                    if scaf[i] != EMPTY:
+                        first_after = i
+                        break
+                if first_after < 0 or first_after <= CUT:
+                    continue
+
+                # Determine direction from the shifted right segment
+                entry = scaf[first_after]
+                # The right segment goes right-to-left on odd helices (R13)
+                # Scaffold direction: check if 3' goes to lower index
+                direction = -1 if (entry[2] == num and entry[3] < first_after) else 1
+
+                # Fill extension gap [CUT, first_after-1]
+                for i in range(first_after - 1, CUT - 1, -1):
+                    if scaf[i] != EMPTY:
+                        continue
+                    if direction == 1:
+                        scaf[i] = [num, i - 1, num, i + 1]
+                    else:
+                        scaf[i] = [num, i + 1, num, i - 1]
+
+                # Fix boundary at first_after
+                if scaf[first_after][0] == num:
+                    scaf[first_after][1] = first_after - 1
+
+                # Now connect extension gap to the left segment's right boundary
+                # (the cavity crossover at position 74/67)
+                # The entry at CUT should connect 5' to the cavity gap boundary
+                # DON'T connect — leave the cavity gap open
+                # The entry at CUT[0] should be -1 (5' end) to start a new strand segment
+                # Or it connects to the crossover partner
+                continue
+
+            # R12 case: last_before found (e.g., 169)
+            first_after = -1
+            for i in range(CUT, new_len):
+                if scaf[i] != EMPTY:
+                    first_after = i
+                    break
+            if last_before < 0 or first_after < 0 or first_after - last_before <= 1:
+                continue
+        else:
+            # Non-cavity: fill entire gap between left and right segments
+            last_before = -1
+            for i in range(CUT - 1, -1, -1):
+                if scaf[i] != EMPTY:
+                    last_before = i
+                    break
+            first_after = -1
+            for i in range(CUT, new_len):
+                if scaf[i] != EMPTY:
+                    first_after = i
+                    break
+            if last_before < 0 or first_after < 0 or first_after - last_before <= 1:
+                continue
+
+        # Determine scaffold direction from helix parity
+        # Even helices: scaffold goes right (5' at i-1, 3' at i+1)
+        # Odd helices: scaffold goes left (5' at i+1, 3' at i-1)
+        direction = 1 if (num % 2 == 0) else -1
+
+        # Fill the gap
         for i in range(last_before + 1, first_after):
+            if scaf[i] != EMPTY:
+                continue  # don't overwrite existing data
             if direction == 1:
                 scaf[i] = [num, i - 1, num, i + 1]
             else:
                 scaf[i] = [num, i + 1, num, i - 1]
-        if scaf[last_before][2] == num:
+
+        # Fix boundary connections: connect last_before's 3' to the fill,
+        # and first_after's 5' to the fill
+        if direction == 1:
+            scaf[last_before][2] = num
             scaf[last_before][3] = last_before + 1
-        if scaf[first_after][0] == num:
+            scaf[first_after][0] = num
             scaf[first_after][1] = first_after - 1
+        else:
+            scaf[last_before][0] = num
+            scaf[last_before][1] = last_before + 1
+            scaf[first_after][2] = num
+            scaf[first_after][3] = first_after - 1
 
     return result
 
@@ -248,6 +357,119 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
     return result, r12_new_right, r13_new_right
 
 
+def fix_scaffold_directions(design):
+    """Post-process: fix all non-crossover scaffold entries to match helix parity.
+
+    Even helices (num%2==0): scaffold goes right → [num, i-1, num, i+1]
+    Odd helices (num%2==1): scaffold goes left → [num, i+1, num, i-1]
+
+    Only fixes entries where BOTH 5' and 3' are on the same helix (intra-helix).
+    Crossover entries (referencing other helices) are left untouched.
+    """
+    result = copy.deepcopy(design)
+    for v in result['vstrands']:
+        num = v['num']
+        scaf = v['scaf']
+
+        for i in range(len(scaf)):
+            entry = scaf[i]
+            if entry == EMPTY:
+                continue
+
+            vh5p, idx5p, vh3p, idx3p = entry
+
+            # Only fix intra-helix entries (both neighbors on same helix)
+            if vh5p == num and vh3p == num:
+                if num % 2 == 0:
+                    # Even: scaffold goes right → 5' at i-1, 3' at i+1
+                    scaf[i] = [num, i - 1, num, i + 1]
+                else:
+                    # Odd: scaffold goes left → 5' at i+1, 3' at i-1
+                    scaf[i] = [num, i + 1, num, i - 1]
+
+            # Fix mixed entries where one side is same helix, other is crossover
+            elif vh5p == num and vh3p != num:
+                # 5' on same helix, 3' is crossover
+                if num % 2 == 0:
+                    scaf[i][1] = i - 1  # 5' to the left
+                else:
+                    scaf[i][1] = i + 1  # 5' to the right
+            elif vh5p != num and vh3p == num:
+                # 5' is crossover, 3' on same helix
+                if num % 2 == 0:
+                    scaf[i][3] = i + 1  # 3' to the right
+                else:
+                    scaf[i][3] = i - 1  # 3' to the left
+
+    # Fix boundary entries: first and last occupied positions
+    for v in result['vstrands']:
+        num = v['num']
+        scaf = v['scaf']
+        occupied = [i for i, e in enumerate(scaf) if e != EMPTY]
+        if not occupied:
+            continue
+
+        lo, hi = min(occupied), max(occupied)
+
+        # Find gap boundaries for cavity helices
+        gaps = []
+        in_data = False
+        gap_start = None
+        for i in range(lo, hi + 1):
+            if scaf[i] != EMPTY:
+                if gap_start is not None:
+                    gaps.append((gap_start, i - 1))
+                    gap_start = None
+                in_data = True
+            else:
+                if in_data and gap_start is None:
+                    gap_start = i
+
+        # Fix edges and gap boundaries
+        # Strand segment endpoints need -1 for their outward connection
+        endpoints = set()
+        endpoints.add(lo)
+        endpoints.add(hi)
+        for g_start, g_end in gaps:
+            endpoints.add(g_start - 1)  # last before gap
+            endpoints.add(g_end + 1)    # first after gap
+
+        for ep in endpoints:
+            if ep < 0 or ep >= len(scaf) or scaf[ep] == EMPTY:
+                continue
+            vh5p, idx5p, vh3p, idx3p = scaf[ep]
+
+            # If this is a strand start (5' end), 5' should be -1 OR crossover
+            # If this is a strand end (3' end), 3' should be -1 OR crossover
+            if num % 2 == 0:
+                # Even: strand goes right. Start has 5'=-1 or xover. End has 3'=-1 or xover.
+                if ep == lo or (ep > 0 and scaf[ep - 1] == EMPTY):
+                    # Start of segment
+                    if vh5p == num:
+                        scaf[ep][0] = -1
+                        scaf[ep][1] = -1
+                if ep == hi or (ep + 1 < len(scaf) and scaf[ep + 1] == EMPTY):
+                    # End of segment
+                    if vh3p == num:
+                        scaf[ep][2] = -1
+                        scaf[ep][3] = -1
+            else:
+                # Odd: strand goes left. Start has 5'=-1 or xover at right end.
+                # End has 3'=-1 or xover at left end.
+                if ep == hi or (ep + 1 < len(scaf) and scaf[ep + 1] == EMPTY):
+                    # Start of segment (5' end, at high index)
+                    if vh5p == num:
+                        scaf[ep][0] = -1
+                        scaf[ep][1] = -1
+                if ep == lo or (ep > 0 and scaf[ep - 1] == EMPTY):
+                    # End of segment (3' end, at low index)
+                    if vh3p == num:
+                        scaf[ep][2] = -1
+                        scaf[ep][3] = -1
+
+    return result
+
+
 def count_scaffold(design):
     return sum(1 for v in design['vstrands'] for e in v['scaf'] if e != EMPTY)
 
@@ -309,8 +531,11 @@ def generate_2x12_variant(gap_nm):
     s4, r12_right, r13_right = step4_set_cavity_width(
         s3, cavity_pairs_r12, cavity_pairs_r13, gap_bp)
 
-    issues = validate_design(s4)
-    scaf_bp = count_scaffold(s4)
+    # Fix all scaffold directions to match helix parity
+    s5 = fix_scaffold_directions(s4)
+
+    issues = validate_design(s5)
+    scaf_bp = count_scaffold(s5)
     actual_gap_r12 = r12_right - 67
     actual_gap_nm = round(actual_gap_r12 * NM_PER_BP, 1)
 
@@ -322,7 +547,7 @@ def generate_2x12_variant(gap_nm):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     path = os.path.join(OUTPUT_DIR, f"{name}.json")
     with open(path, 'w') as f:
-        json.dump(s4, f, separators=(',', ':'))
+        json.dump(s5, f, separators=(',', ':'))
 
     return {
         'config': '2x12',
@@ -341,7 +566,7 @@ def generate_2x12_variant(gap_nm):
         'issues': len(issues),
         'status': 'generated',
         'path': path,
-        'design': s4,
+        'design': s5,
     }
 
 
