@@ -947,3 +947,38 @@ objectives:
     decision required human domain knowledge to unblock.
   connects_to: null
   completed_date: '2026-03-18'
+
+- id: obj-036
+  status: completed
+  statement: Parametric cavity width sweep with centered crossovers and 1 scaffold oligo
+  methodology: >-
+    Extended the 4-step template scaling pipeline to move both left and right
+    cavity boundary half-crossovers, centering the gap within the helix.
+    Fixed 5 bugs: step2 direction detection from shifted refs, step2 R13
+    extension fill creating dangling strands, step4 crossover placement on
+    EMPTY positions, step4 direction from shifted refs, step3 spurious midseam
+    on last pair H22-H23. All crossover positions snapped to valid honeycomb
+    lattice offsets (mod 21). Verified via cadnano decode segment validation
+    and in-app loading.
+  metrics:
+    variants_generated: 3
+    gap_sizes_nm: [20, 30, 40]
+    scaffold_oligos: 1
+    scaffold_bp_range: "8368-8616"
+    center_offset_max_bp: 0.5
+    bugs_fixed: 5
+    cadnano_loadable: true
+  figures:
+  - results/obj-036-parametric-cavity-sweep.png
+  - results/cavity_variants/screenshot_20nm.png
+  - results/cavity_variants/screenshot_30nm.png
+  - results/cavity_variants/screenshot_40nm.png
+  conclusions: >-
+    The 4-step template scaling process is now fully parametric: change gap_nm
+    and the cavity automatically resizes and re-centers while preserving 1
+    scaffold oligo. Key insight: scaffold direction must be determined from
+    helix parity, never from crossover references that may have been shifted.
+    Cavity boundary crossovers require creating scaffold entries at EMPTY
+    positions before placing the crossover.
+  connects_to: null
+  completed_date: '2026-03-19'
