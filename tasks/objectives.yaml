@@ -894,5 +894,56 @@ objectives:
   - results/paper_figures/fig4_parametric_sweep.png
   conclusions: >-
     Paper frames value as parametric redesign, not initial design.
-  connects_to: null
+  connects_to: obj-034
   completed_date: '2026-03-17'
+
+- id: obj-034
+  status: completed
+  statement: Scale PI's 2x12 cavity template to p8064 scaffold in 4 verified steps
+  methodology: >-
+    Scaled PI's 2x12_rectangle_cavity.json (252bp, 5036bp scaffold) to 420bp
+    for p8064 in 4 steps, each verified loading in cadnano: (1) remove staples,
+    (2) extend right side by 168bp, (3) move midseam crossovers to center,
+    (4) expand cavity with aligned edges between layers. Fixed 3 error classes:
+    cavity gaps filled incorrectly, crossover skew, stray staple references.
+  metrics:
+    original_scaffold_bp: 5036
+    final_scaffold_bp: 7688
+    helix_length_bp: 420
+    scaffold_oligos: 1
+    steps_verified: 4
+    cavity_edge_alignment_bp: 2
+  figures:
+  - results/scale_steps/step1_screenshot.png
+  - results/scale_steps/step2_screenshot.png
+  - results/scale_steps/step3_screenshot.png
+  - results/scale_steps/step4_screenshot.png
+  conclusions: >-
+    Step-by-step JSON manipulation with cadnano load verification after each
+    step is the reliable approach. Bulk scaling breaks references; surgical
+    crossover edits succeed. Cavity gaps must stay empty. Crossovers must
+    be aligned (same index on both helices).
+  connects_to: obj-035
+  completed_date: '2026-03-18'
+
+- id: obj-035
+  status: completed
+  statement: Rewrite paper as single-narrative DNA 32 conference submission
+  methodology: >-
+    Rewrote paper_draft_dna32.md with focused story arc for DNA nanotechnology
+    audience: embedded agent failed → coding agent hit 8 domain knowledge walls
+    → PI unblocked each → parametric pipeline emerged. Framed for ISNSCE DNA 32
+    Track B or Poster. Honest about failures; the 8 errors ARE the paper.
+  metrics:
+    sections: 6
+    error_classes_documented: 8
+    target_conference: "ISNSCE DNA 32"
+  figures:
+  - results/paper_figures/pi_template_routing.png
+  - results/scale_steps/step4_screenshot.png
+  conclusions: >-
+    The agent is not a designer but a parametric design tool. You design the
+    template; the agent scales, modifies, and verifies. Every non-trivial design
+    decision required human domain knowledge to unblock.
+  connects_to: null
+  completed_date: '2026-03-18'

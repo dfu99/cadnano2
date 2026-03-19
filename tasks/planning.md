@@ -2,17 +2,20 @@
 
 ## Current Priorities
 
-1. **Scale up PI's cavity template to p8064** — Two approaches in progress: (a) load `2x12_rectangle_cavity.json`, scale helix lengths from 252→420bp, re-route; (b) build from scratch matching the dense crossover pattern. Compare screenshots. Key learning: PI's design uses *dense scaffold crossovers* (multiple double crossovers per helix pair), NOT serpentine (one per pair).
-2. **Run oxDNA simulations on PACE GPU** — Submit designs to PACE for 1e7-step GPU relaxation.
-3. **Paper draft for DNA 32** — `results/paper_draft_dna32.md` written. Single narrative for DNA nanotech audience. Needs PI review and figure generation for the 4 proposed figures.
+1. **PI review of DNA 32 paper draft** — `results/paper_draft_dna32.md`. Awaiting feedback on narrative, scope, and which figures to generate.
+2. **Generate final paper figures** — 4 figures proposed in the draft. Need to create publication-quality versions.
+3. **Run oxDNA simulations on PACE GPU** — Submit the scaled cavity design for production relaxation.
+4. **Automate the 4-step scaling process** — Turn the manual step1→step4 JSON manipulation into a single script that takes a template + target scaffold length and produces a verified scaled design.
 
 ## Next Steps (require user input)
 
-- PI review of scaled-up vs from-scratch comparison screenshots
-- oxDNA simulation length for paper-quality results
+- PI review of DNA 32 paper draft narrative and figure selection
+- Conference submission deadline / format requirements
 
 ## Recently Completed
 
+- **DNA 32 paper draft** (2026-03-18): Single-narrative extended abstract for ISNSCE DNA 32 conference. Story: embedded agent failed → coding agent hit 8 domain knowledge walls → PI unblocked each → parametric pipeline emerged. At `results/paper_draft_dna32.md`.
+- **4-step cavity template scale-up** (2026-03-18): Scaled PI's 2x12 template from 252→420bp in 4 verified steps. Fixed cavity gap filling, crossover alignment, stray staple references. Final: 1 scaffold oligo, 7688bp, cavity edges aligned to within 2bp between layers.
 - **2-layer rectangle with 2×13 grid layout** (2026-03-17): Fixed helix layout from wrong 4×7 to correct 2×13 (2 rows × 13 columns). Perimeter scaffold routing: top row L→R, cross, bottom row R→L, cross back. 1 scaffold oligo, 26 helices, p8064.
 - **Cavity scaffold routing with Hamiltonian cycle** (2026-03-17): Proper scaffold routing around cavity using DFS-based Hamiltonian cycle finder. On honeycomb lattice, 2-row cavity routing is impossible (cross-row connections at alternating columns → dead ends). Minimum 4-row grid needed. Demo: 4×13 grid, 10 helices removed, 42-node cycle found in <1ms. 1 scaffold oligo.
 - **Parametric origami pipeline** (2026-03-17): Built `tools/parametric_origami_pipeline.py` with configurable scaffold type, helix count, cavity dimensions, polyT brushes, twist correction. Solid rectangle and staple-removal cavity both verified. "Widen cavity by 5nm" = one parameter change → 30 seconds.
