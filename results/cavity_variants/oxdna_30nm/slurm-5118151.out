@@ -1,0 +1,23 @@
+---------------------------------------
+Begin Slurm Prolog: Mar-19-2026 21:43:25
+Job ID:    5118151
+User ID:   dfu71
+Account:   gts-yke8
+Job name:  cavity30nm_min
+Partition: cpu-small
+QOS:       inferno
+---------------------------------------
+[2026-03-19T21:43:26.870] error: execve(): /storage/coda1/p-yke8/0/shared/oxDNA/build/bin/oxDNA: No such file or directory
+srun: error: atl1-1-02-005-7-1: task 0: Exited with exit code 2
+---------------------------------------
+Begin Slurm Epilog: Mar-19-2026 21:43:28
+Job ID:        5118151
+User ID:       dfu71
+Account:       gts-yke8
+Job name:      cavity30nm_min
+Resources:     cpu=1,mem=4G,node=1
+Rsrc Used:     cput=00:00:04,vmem=0,walltime=00:00:04,mem=9032K,energy_used=0
+Partition:     cpu-small
+QOS:           inferno
+Nodes:         atl1-1-02-005-7-1
+---------------------------------------
