@@ -982,3 +982,46 @@ objectives:
     positions before placing the crossover.
   connects_to: null
   completed_date: '2026-03-19'
+
+- id: obj-037
+  status: completed
+  statement: Full pipeline on 30nm cavity variant through oxDNA PACE GPU relaxation
+  methodology: >-
+    Applied complete pipeline to the 30nm centered cavity design:
+    autoStaple (69 staples) → autoBreak with all3 rules minStapleLegLen=3
+    (207 staples, majority 30-39bp) → tacoxDNA conversion (17,232 nt,
+    208 strands, honeycomb lattice) → 3-stage oxDNA relaxation on PACE
+    RTX_6000 GPU (10K min CPU + 10M gentle relax GPU + 10M production
+    relax GPU). Fixed oxDNA binary path issue (shared install removed
+    during RHEL9 migration, used user-built binary at ~/scratch/oxDNA/).
+  metrics:
+    staples_after_autostaple: 69
+    staples_after_autobreak: 207
+    staple_length_range: "12-168bp"
+    staple_avg_length: 41.6
+    nucleotides: 17232
+    strands: 208
+    min_time: "28 min"
+    relax_time: "2h 25m"
+    relax2_time: "2h 30m"
+    energy_minimized: -1.84
+    energy_relaxed: -1.50
+    structure_initial_nm: "21.7 x 5.4 x 129.8"
+    structure_relaxed_nm: "29.3 x 21.0 x 132.0"
+    cavity_maintained: true
+  figures:
+  - results/cavity_variants/oxdna_30nm/relaxation_comparison.png
+  - results/cavity_variants/oxdna_30nm/energy_convergence.png
+  - results/cavity_variants/oxdna_30nm/structure_initial.png
+  - results/cavity_variants/screenshot_30nm_autostapled.png
+  - results/cavity_variants/screenshot_30nm_autobroken.png
+  conclusions: >-
+    The parametric cavity design survives oxDNA molecular dynamics relaxation
+    at 300K. The cavity hole is preserved after 20M MD steps. The 2-layer
+    structure is thin (5.4nm initial Y dimension) and expands thermally to
+    21nm, but maintains its longitudinal shape (130nm Z). Energy converged
+    smoothly with no blowups using the staged force-cap approach. The full
+    pipeline (cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA) is now
+    end-to-end automated for any gap size.
+  connects_to: null
+  completed_date: '2026-03-20'
