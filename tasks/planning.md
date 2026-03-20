@@ -13,6 +13,8 @@
 - Conference submission deadline / format requirements
 - PI review of oxDNA relaxation results — cavity maintained after 20M MD steps
 
+_Priorities 1-2 blocked on PI input. Priority 3 (autobreak exploration) is actionable. 2026-03-20._
+
 ## Recently Completed
 
 - **Full pipeline on 30nm cavity variant** (2026-03-20): Complete end-to-end: autoStaple (69 staples) → autoBreak all3 minLegLen=3 (207 staples, 18-50bp target) → tacoxDNA (17,232 nt, 208 strands) → oxDNA 3-stage PACE GPU relaxation (min 28min + gentle 2h25m + production 2h30m). Structure maintained cavity shape after 20M MD steps. Results: `results/cavity_variants/oxdna_30nm/`.
