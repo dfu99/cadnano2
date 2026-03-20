@@ -7,6 +7,6 @@
 #SBATCH --mail-user=daniel.fu@emory.edu
 
 cd $SLURM_SUBMIT_DIR
-module load cuda
+module load cuda/12.1.1 gcc/12.3.0
 
-srun /storage/coda1/p-yke8/0/shared/oxDNA/build/bin/oxDNA input_relax2
+srun /storage/home/hcoda1/6/dfu71/scratch/oxDNA/build/bin/oxDNA input_relax2
