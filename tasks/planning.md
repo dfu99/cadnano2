@@ -3,20 +3,19 @@
 ## Current Priorities
 
 1. **PI review of DNA 32 paper draft** — `results/paper_draft_dna32.md`. Awaiting feedback on narrative, scope, and which figures to generate.
-2. **Generate final paper figures** — Cavity sweep screenshots now available as Fig 4 candidates. Need PI direction on which figures to finalize.
-3. **Run oxDNA simulations on PACE GPU** — Submit cavity variant designs for production relaxation.
+2. **Generate final paper figures** — Cavity sweep screenshots + oxDNA relaxation figures available. Need PI direction on which to finalize.
+3. **Autobreak parameter exploration** — PI noted this is a good AI use case for the paper. Explore parameter space automatically.
 4. **Multi-layer/wider cavity designs** — 3×12, 4×12, 2×14, 2×16 configs analytically confirmed to fit p8064. Need from-scratch template creation for these (current pipeline is 2×12-template-only).
 
 ## Next Steps (require user input)
 
 - PI review of DNA 32 paper draft narrative and figure selection
 - Conference submission deadline / format requirements
-- Which cavity variant(s) to take forward for oxDNA simulation
-
-_All priorities blocked on PI input as of 2026-03-19._
+- PI review of oxDNA relaxation results — cavity maintained after 20M MD steps
 
 ## Recently Completed
 
+- **Full pipeline on 30nm cavity variant** (2026-03-20): Complete end-to-end: autoStaple (69 staples) → autoBreak all3 minLegLen=3 (207 staples, 18-50bp target) → tacoxDNA (17,232 nt, 208 strands) → oxDNA 3-stage PACE GPU relaxation (min 28min + gentle 2h25m + production 2h30m). Structure maintained cavity shape after 20M MD steps. Results: `results/cavity_variants/oxdna_30nm/`.
 - **Parametric cavity width sweep with centered crossovers** (2026-03-19): Fixed 5 bugs in the 4-step template scaling pipeline to achieve 1 scaffold oligo with centered, variable-width cavities. All 3 gap sizes (20/30/40nm) load correctly in cadnano. Key bugs: step2 direction detection from shifted refs, step4 crossover on EMPTY positions, step3 spurious midseam on H22-H23. Script: `tools/cavity_variant_sweep.py`, screenshots: `results/cavity_variants/screenshot_{20,30,40}nm.png`.
 - **Parametric cavity variant feasibility analysis** (2026-03-19): 7 design variants across gap sizes (20/30/40nm), layers (3×12, 4×12), and widths (2×14, 2×16). All fit p8064 scaffold (96.9–112.3%). 4 analytical figures generated.
 
