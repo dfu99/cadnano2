@@ -2,18 +2,16 @@
 
 ## Current Priorities
 
-1. **PI review of DNA 32 paper draft** — `results/paper_draft_dna32.md`. Awaiting feedback on narrative, scope, and which figures to generate.
-2. **Generate final paper figures** — Cavity sweep screenshots + oxDNA relaxation figures available. Need PI direction on which to finalize.
-3. **Autobreak parameter exploration** — PI noted this is a good AI use case for the paper. Explore parameter space automatically.
-4. **Multi-layer/wider cavity designs** — 3×12, 4×12, 2×14, 2×16 configs analytically confirmed to fit p8064. Need from-scratch template creation for these (current pipeline is 2×12-template-only).
+1. **Integrin cavity — fix scaffold to 1 oligo** — 8-column cavity in 2×12 template, correct shape (20.8×15.0nm), 8 scaffold oligos remaining. Fix midseam-to-cavity conversion breaks, then run full pipeline through oxDNA PACE.
+2. **PI review of DNA 32 paper draft** — `results/paper_draft_dna32.md`. Awaiting feedback.
+3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
+4. **Generate final paper figures** — Cavity sweep + integrin + oxDNA figures available.
 
 ## Next Steps (require user input)
 
+- PI review of integrin cavity design once scaffold is 1 oligo
 - PI review of DNA 32 paper draft narrative and figure selection
 - Conference submission deadline / format requirements
-- PI review of oxDNA relaxation results — cavity maintained after 20M MD steps
-
-_Priorities 1-2 blocked on PI input. Priority 3 (autobreak exploration) is actionable. 2026-03-20._
 
 ## Recently Completed
 

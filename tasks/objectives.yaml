@@ -1025,3 +1025,33 @@ objectives:
     end-to-end automated for any gap size.
   connects_to: null
   completed_date: '2026-03-20'
+
+- id: obj-038
+  status: in_progress
+  statement: Integrin cavity design — 8-column cavity in 2×12 template for αvβ3 protein
+  methodology: >-
+    Expanded the 4-step template scaling pipeline to support wider cavities
+    (8 columns instead of 4) within the existing 2×12 grid. Key insight:
+    use ORIGINAL cavity helices in steps 2-3, ALL cavity helices in step 4.
+    Found and fixed 3 bugs: right boundary search finding left boundary,
+    right boundary expansion destroying left boundary crossover, and
+    step2/3 treating new cavity pairs as cavity too early. Added explicit
+    post-step gap-clearing. From-scratch approach rejected (65 oligos).
+  metrics:
+    cavity_dimensions_nm: "20.8 x 15.0"
+    target_protein: "integrin avb3"
+    scaffold_oligos: 8
+    scaffold_bp: 8596
+    target_oligos: 1
+    bugs_fixed: 3
+    cadnano_loadable: true
+  figures:
+  - results/integrin_cavity/screenshot_integrin_2x12_8cav.png
+  conclusions: >-
+    Cavity shape is correct for integrin (20.8nm x 15.0nm). Template-based
+    approach preserves more scaffold connectivity than from-scratch (8 oligos
+    vs 65). Remaining breaks from midseam-to-cavity conversion need fixing.
+    The approach of expanding cavity within the existing grid avoids needing
+    to create new templates for wider designs.
+  connects_to: null
+  completed_date: null
