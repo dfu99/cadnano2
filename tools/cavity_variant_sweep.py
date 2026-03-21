@@ -330,11 +330,11 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
                                 s[i] = [h, i + 1, h, i - 1]
         elif side == 'right':
             if new_pos > old_pos:
-                # Moving right boundary rightward (expanding gap on right)
-                # Clear positions from old_pos to new_pos-1
-                for s in [sa, sb]:
-                    for i in range(old_pos, new_pos):
-                        s[i] = EMPTY
+                # Moving right boundary rightward — DON'T clear here.
+                # The post-step gap-clearing handles it. Clearing here
+                # can destroy the left boundary crossover when old_right
+                # is to the left of the new left boundary.
+                pass
             elif new_pos < old_pos:
                 # Moving right boundary leftward (shrinking gap on right)
                 # Fill positions from new_pos to old_pos
@@ -406,10 +406,17 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
         if cur_left is None:
             cur_left = R12_ORIG_LEFT
 
-        # Find current right boundary
-        cur_right = find_boundary(ha, hb, R12_ORIG_LEFT + 1, new_len, direction='forward')
-        if cur_right is None:
-            cur_right = R12_ORIG_RIGHT
+        # Find current right boundary BEFORE moving anything
+        # Search for second intra-pair crossover (first is left boundary)
+        sa = vs_by_num[ha]['scaf']
+        all_xo_to_partner = []
+        for i in range(len(sa)):
+            if sa[i] != EMPTY and (sa[i][0] == hb or sa[i][2] == hb):
+                all_xo_to_partner.append(i)
+        # Right boundary is the second crossover (after left edge and left boundary)
+        # Skip edge crossover (pos 5) and left boundary (cur_left)
+        candidates = [p for p in all_xo_to_partner if p > cur_left]
+        cur_right = candidates[0] if candidates else R12_ORIG_RIGHT
 
         # Move left boundary
         move_boundary(ha, hb, cur_left, r12_new_left, 'left')
@@ -427,12 +434,42 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
         if cur_left is None:
             cur_left = R13_ORIG_LEFT
 
-        cur_right = find_boundary(ha, hb, R13_ORIG_LEFT + 1, new_len, direction='forward')
-        if cur_right is None:
-            cur_right = R13_ORIG_RIGHT
+        # Find right boundary BEFORE moving
+        all_xo = []
+        for i in range(len(sa)):
+            if sa[i] != EMPTY and (sa[i][0] == hb or sa[i][2] == hb):
+                all_xo.append(i)
+        candidates = [p for p in all_xo if p > cur_left]
+        cur_right = candidates[0] if candidates else R13_ORIG_RIGHT
 
+        # Move left, then right
         move_boundary(ha, hb, cur_left, r13_new_left, 'left')
         move_boundary(ha, hb, cur_right, r13_new_right, 'right')
+
+    # CRITICAL: Clear the gap region between left and right boundaries
+    # for ALL cavity pairs. This handles newly-converted pairs that had
+    # scaffold data in what is now the cavity gap.
+    for ha, hb in cavity_pairs_r12:
+        for h in [ha, hb]:
+            scaf = vs_by_num[h]['scaf']
+            for i in range(r12_new_left + 1, r12_new_right):
+                # Clear everything EXCEPT the boundary crossovers themselves
+                if scaf[i] != EMPTY:
+                    # Check if this is a boundary crossover (references partner)
+                    partner = hb if h == ha else ha
+                    if scaf[i][0] == partner or scaf[i][2] == partner:
+                        continue  # keep boundary crossover
+                    scaf[i] = EMPTY
+
+    for ha, hb in cavity_pairs_r13:
+        for h in [ha, hb]:
+            scaf = vs_by_num[h]['scaf']
+            for i in range(r13_new_left + 1, r13_new_right):
+                if scaf[i] != EMPTY:
+                    partner = hb if h == ha else ha
+                    if scaf[i][0] == partner or scaf[i][2] == partner:
+                        continue
+                    scaf[i] = EMPTY
 
     return result, r12_new_left, r12_new_right, r13_new_left, r13_new_right
 
