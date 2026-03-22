@@ -9,9 +9,16 @@
 
 ## Next Steps (require user input)
 
-- PI review of integrin cavity design once scaffold is 1 oligo
-- PI review of DNA 32 paper draft narrative and figure selection
+- PI review of integrin cavity oxDNA results (PACE jobs 5357952/5357953)
+- Reframe DNA 32 paper around distributable tools + failure analysis narrative
 - Conference submission deadline / format requirements
+
+## Distributable Artifacts
+
+- `tools/cadnano_verifier.py` — standalone design verification (catches 8 failure modes)
+- `results/failure_analysis.md` — documented failure modes with root causes + fixes
+- `tools/cavity_variant_sweep.py` — parametric cavity pipeline (variable gap, width, height)
+- `tools/build_single_integrin.py` — end-to-end integrin cavity builder
 
 ## Recently Completed
 
