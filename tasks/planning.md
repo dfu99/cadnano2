@@ -2,16 +2,17 @@
 
 ## Current Priorities
 
-1. **Integrin cavity — monitor PACE results** — 1 scaffold oligo achieved, full pipeline submitted. Jobs 5357952/5357953. Early stop 500K steps to check stability.
-2. **PI review of DNA 32 paper draft** — `results/paper_draft_dna32.md`. Awaiting feedback.
+1. **Integrin cavity — monitor PACE results** — Jobs 5357952/5357953. Early stop 500K steps.
+2. **DNA 32 Track B paper — pipeline narrative** — Reframe around: agent builds verifiers, PI provides domain feedback, together they build a full pipeline (cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA). Distributable artifacts: verifier, failure analysis, parametric pipeline.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
-4. **Generate final paper figures** — Cavity sweep + integrin + oxDNA figures available.
+
+**CLOSED:** RLVR local model training (qwen3:1.7b). PI directive: not the strongest use case. The pipeline + verifier approach is the compelling story for DNA 32 Track B.
 
 ## Next Steps (require user input)
 
 - PI review of integrin cavity oxDNA results (PACE jobs 5357952/5357953)
-- Reframe DNA 32 paper around distributable tools + failure analysis narrative
-- Conference submission deadline / format requirements
+- DNA 32 Track B submission format/deadline
+- Which failure analysis figures to include in the paper
 
 ## Distributable Artifacts
 
@@ -22,6 +23,9 @@
 
 ## Recently Completed
 
+- **Failure analysis figures for DNA 32 paper** (2026-03-22): 3 publication figures: oligo journey bar chart (65→1), failure mode table (8 failures with symptoms/fixes), verifier before/after comparison. At `results/paper_figures/fig_*.png`.
+- **Distributable verifier + failure analysis** (2026-03-22): `tools/cadnano_verifier.py` catches 8 failure modes. `results/failure_analysis.md` documents each with symptom→root cause→fix. Both the integrin design and PI template pass all checks.
+- **Integrin cavity: 1 scaffold oligo, full pipeline** (2026-03-22): 8-column cavity (20.8nm×15.0nm) in 2×12 template. Fixed edge crossover destruction, stray midseam fragments, boundary search order. 208 staples, 17,176 nt. Submitted to PACE (jobs 5357952/5357953).
 - **Full pipeline on 30nm cavity variant** (2026-03-20): Complete end-to-end: autoStaple (69 staples) → autoBreak all3 minLegLen=3 (207 staples, 18-50bp target) → tacoxDNA (17,232 nt, 208 strands) → oxDNA 3-stage PACE GPU relaxation (min 28min + gentle 2h25m + production 2h30m). Structure maintained cavity shape after 20M MD steps. Results: `results/cavity_variants/oxdna_30nm/`.
 - **Parametric cavity width sweep with centered crossovers** (2026-03-19): Fixed 5 bugs in the 4-step template scaling pipeline to achieve 1 scaffold oligo with centered, variable-width cavities. All 3 gap sizes (20/30/40nm) load correctly in cadnano. Key bugs: step2 direction detection from shifted refs, step4 crossover on EMPTY positions, step3 spurious midseam on H22-H23. Script: `tools/cavity_variant_sweep.py`, screenshots: `results/cavity_variants/screenshot_{20,30,40}nm.png`.
 - **Parametric cavity variant feasibility analysis** (2026-03-19): 7 design variants across gap sizes (20/30/40nm), layers (3×12, 4×12), and widths (2×14, 2×16). All fit p8064 scaffold (96.9–112.3%). 4 analytical figures generated.

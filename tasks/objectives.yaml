@@ -1055,3 +1055,29 @@ objectives:
     to create new templates for wider designs.
   connects_to: null
   completed_date: null
+
+- id: obj-039
+  status: completed
+  statement: Failure analysis figures and distributable verifier for DNA 32 paper
+  methodology: >-
+    Generated 3 publication-quality figures documenting the 8 failure modes
+    discovered during AI-assisted parametric DNA origami design: (1) scaffold
+    oligo count journey bar chart (65→54→10→8→4→1), (2) failure mode table
+    with symptoms and fixes, (3) verifier before/after comparison. Created
+    cadnano_verifier.py as standalone distributable tool.
+  metrics:
+    figures_generated: 3
+    failure_modes_documented: 8
+    verifier_checks: 7
+    designs_verified: 2
+  figures:
+  - results/paper_figures/fig_oligo_journey.png
+  - results/paper_figures/fig_failure_table.png
+  - results/paper_figures/fig_verifier_comparison.png
+  conclusions: >-
+    The conference narrative shifts from "AI designed origami" to "AI failed
+    8 specific ways, each revealing a domain knowledge gap; the distributable
+    output is the verifier + failure catalog that makes future users faster."
+    This crosses the threshold from demo to knowledge transfer.
+  connects_to: null
+  completed_date: '2026-03-22'
