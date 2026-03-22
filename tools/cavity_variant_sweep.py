@@ -389,34 +389,25 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
         return None
 
     # Move R12 cavity boundaries
-    for ha, hb in cavity_pairs_r12:
-        # Find current left boundary (search backward from gap start)
-        cur_left = find_boundary(ha, hb, 5, 170, direction='forward')
-        if cur_left is None:
-            cur_left = R12_ORIG_LEFT
-        # Only take the FIRST crossover after the edge (skip edge at pos 5)
-        sa = vs_by_num[ha]['scaf']
-        # The left boundary is the last crossover before the gap
-        # Search backward from original gap start
-        cur_left = None
-        for i in range(R12_ORIG_LEFT + 5, 4, -1):
-            if sa[i] != EMPTY and (sa[i][0] == hb or sa[i][2] == hb):
-                cur_left = i
-                break
-        if cur_left is None:
-            cur_left = R12_ORIG_LEFT
+    R12_EDGE = 5   # edge crossover position (must NOT be used as cavity boundary)
+    R13_EDGE = 2
 
-        # Find current right boundary BEFORE moving anything
-        # Search for second intra-pair crossover (first is left boundary)
+    for ha, hb in cavity_pairs_r12:
         sa = vs_by_num[ha]['scaf']
-        all_xo_to_partner = []
+
+        # Find ALL intra-pair crossovers, sorted by position
+        all_xo = []
         for i in range(len(sa)):
             if sa[i] != EMPTY and (sa[i][0] == hb or sa[i][2] == hb):
-                all_xo_to_partner.append(i)
-        # Right boundary is the second crossover (after left edge and left boundary)
-        # Skip edge crossover (pos 5) and left boundary (cur_left)
-        candidates = [p for p in all_xo_to_partner if p > cur_left]
-        cur_right = candidates[0] if candidates else R12_ORIG_RIGHT
+                all_xo.append(i)
+
+        # Left boundary = second crossover (first is edge at pos 5)
+        # Right boundary = third crossover (or later)
+        non_edge = [p for p in all_xo if p > R12_EDGE + 1]
+        cur_left = non_edge[0] if non_edge else R12_ORIG_LEFT
+        # Right = next crossover after left boundary
+        after_left = [p for p in non_edge if p > cur_left]
+        cur_right = after_left[0] if after_left else R12_ORIG_RIGHT
 
         # Move left boundary
         move_boundary(ha, hb, cur_left, r12_new_left, 'left')
@@ -426,13 +417,16 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
     # Move R13 cavity boundaries
     for ha, hb in cavity_pairs_r13:
         sa = vs_by_num[ha]['scaf']
-        cur_left = None
-        for i in range(R13_ORIG_LEFT + 5, 1, -1):
+
+        all_xo = []
+        for i in range(len(sa)):
             if sa[i] != EMPTY and (sa[i][0] == hb or sa[i][2] == hb):
-                cur_left = i
-                break
-        if cur_left is None:
-            cur_left = R13_ORIG_LEFT
+                all_xo.append(i)
+
+        non_edge = [p for p in all_xo if p > R13_EDGE + 1]
+        cur_left = non_edge[0] if non_edge else R13_ORIG_LEFT
+        after_left = [p for p in non_edge if p > cur_left]
+        cur_right = after_left[0] if after_left else R13_ORIG_RIGHT
 
         # Find right boundary BEFORE moving
         all_xo = []
@@ -447,18 +441,15 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
         move_boundary(ha, hb, cur_right, r13_new_right, 'right')
 
     # CRITICAL: Clear the gap region between left and right boundaries
-    # for ALL cavity pairs. This handles newly-converted pairs that had
-    # scaffold data in what is now the cavity gap.
+    # for ALL cavity pairs. Clear EVERYTHING inside the gap — the boundary
+    # crossovers are AT the boundary positions (not inside the gap).
+    # Previously preserved entries referencing partner, but this kept
+    # stray midseam fragments that looked like boundary crossovers.
     for ha, hb in cavity_pairs_r12:
         for h in [ha, hb]:
             scaf = vs_by_num[h]['scaf']
             for i in range(r12_new_left + 1, r12_new_right):
-                # Clear everything EXCEPT the boundary crossovers themselves
                 if scaf[i] != EMPTY:
-                    # Check if this is a boundary crossover (references partner)
-                    partner = hb if h == ha else ha
-                    if scaf[i][0] == partner or scaf[i][2] == partner:
-                        continue  # keep boundary crossover
                     scaf[i] = EMPTY
 
     for ha, hb in cavity_pairs_r13:
@@ -466,9 +457,6 @@ def step4_set_cavity_width(design, cavity_pairs_r12, cavity_pairs_r13, target_ga
             scaf = vs_by_num[h]['scaf']
             for i in range(r13_new_left + 1, r13_new_right):
                 if scaf[i] != EMPTY:
-                    partner = hb if h == ha else ha
-                    if scaf[i][0] == partner or scaf[i][2] == partner:
-                        continue
                     scaf[i] = EMPTY
 
     return result, r12_new_left, r12_new_right, r13_new_left, r13_new_right
