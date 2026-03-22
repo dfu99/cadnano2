@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Integrin cavity — fix scaffold to 1 oligo** — 8-column cavity in 2×12 template, correct shape (20.8×15.0nm), 8 scaffold oligos remaining. Fix midseam-to-cavity conversion breaks, then run full pipeline through oxDNA PACE.
+1. **Integrin cavity — monitor PACE results** — 1 scaffold oligo achieved, full pipeline submitted. Jobs 5357952/5357953. Early stop 500K steps to check stability.
 2. **PI review of DNA 32 paper draft** — `results/paper_draft_dna32.md`. Awaiting feedback.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 4. **Generate final paper figures** — Cavity sweep + integrin + oxDNA figures available.
