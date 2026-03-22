@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Integrin cavity — monitor PACE results** — Jobs 5357952/5357953. Early stop 500K steps.
+1. **Integrin cavity — PACE results fetched, structure valid** — Cavity maintained after 500K MD steps. Ready for production run or PI review.
 2. **DNA 32 Track B paper — pipeline narrative** — Reframe around: agent builds verifiers, PI provides domain feedback, together they build a full pipeline (cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA). Distributable artifacts: verifier, failure analysis, parametric pipeline.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
