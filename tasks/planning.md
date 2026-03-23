@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Integrin cavity — PACE results fetched, structure valid** — Cavity maintained after 500K MD steps. Ready for production run or PI review.
+1. **Parametric cavity production oxDNA runs** — 20nm (jobs 5390360-63), 40nm (jobs 5390364-66) submitted for 3-stage production relaxation. 30nm already complete. Monitor and fetch results.
 2. **DNA 32 Track B paper — pipeline narrative** — Reframe around: agent builds verifiers, PI provides domain feedback, together they build a full pipeline (cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA). Distributable artifacts: verifier, failure analysis, parametric pipeline.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
