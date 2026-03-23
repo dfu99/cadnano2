@@ -1081,3 +1081,52 @@ objectives:
     This crosses the threshold from demo to knowledge transfer.
   connects_to: null
   completed_date: '2026-03-22'
+
+- id: obj-040
+  status: completed
+  statement: Production oxDNA relaxation for all 3 parametric cavity variants (20/30/40nm)
+  methodology: >-
+    Ran full autoStaple + autoBreak + tacoxDNA + 3-stage oxDNA production
+    pipeline on 20nm and 40nm cavity variants (30nm already done). Each
+    variant: 10K CPU min + 10M GPU gentle relax (f=0.1) + 10M GPU
+    production relax (f=1.0) on PACE RTX_6000. All maintain cavity
+    shape after 20M MD steps at 300K.
+  metrics:
+    variants: 3
+    scaffold_oligos: 1
+    cavity_gaps_nm: [20, 30, 40]
+    total_pace_time: "~5h per variant"
+    structures_stable: true
+  figures:
+  - results/paper_figures/fig_all_cavities_oxdna.png
+  conclusions: >-
+    All 3 parametric cavity variants survive production oxDNA relaxation.
+    The cavity is maintained in all cases. The parametric pipeline
+    successfully produces structurally valid designs across a range
+    of cavity sizes — a key result for the DNA 32 paper.
+  connects_to: null
+  completed_date: '2026-03-23'
+
+- id: obj-041
+  status: in_progress
+  statement: Template extension to 2x14+ grid with correct scaffold routing
+  methodology: >-
+    Attempted to extend the 2x12 template by adding column pairs on the
+    right edge. Fixed clone bugs (stale inter-pair refs, wrong partner
+    detection, parity mismatch). All structural checks pass but scaffold
+    connectivity remains at 4 oligos. Root cause: adding inter-pair
+    crossovers at H0[64/65/200/201] creates extra segment boundaries
+    that the scaffold path cannot visit.
+  metrics:
+    target_oligos: 1
+    current_oligos: 4
+    structural_checks_passing: 6
+    clone_bugs_fixed: 3
+  figures: []
+  conclusions: >-
+    Template extension requires understanding how the scaffold routing
+    pattern adapts when columns are added. The inter-pair crossover
+    positions must interleave correctly with existing crossovers to
+    maintain single-oligo connectivity. Blocked pending PI guidance.
+  connects_to: null
+  completed_date: null

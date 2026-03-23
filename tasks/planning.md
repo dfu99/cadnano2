@@ -2,9 +2,8 @@
 
 ## Current Priorities
 
-1. **Template extension (2×14+) — blocked on scaffold routing** — Adding inter-pair crossovers creates extra segment boundaries on H0 that break connectivity. Need to learn how the routing pattern adapts when columns are added. May need PI guidance.
-2. **Parametric cavity production oxDNA runs** — 20nm (jobs 5390360-63), 40nm (jobs 5390364-66) submitted. 30nm complete. Monitor and fetch results.
-2. **DNA 32 Track B paper — pipeline narrative** — Reframe around: agent builds verifiers, PI provides domain feedback, together they build a full pipeline (cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA). Distributable artifacts: verifier, failure analysis, parametric pipeline.
+1. **Template extension (2×14+) — blocked on scaffold routing** — Inter-pair crossovers create extra segment boundaries. Need PI guidance on how routing adapts when columns are added.
+2. **DNA 32 Track B paper — pipeline narrative** — All 3 cavity production oxDNA results now available.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
 **CLOSED:** RLVR local model training (qwen3:1.7b). PI directive: not the strongest use case. The pipeline + verifier approach is the compelling story for DNA 32 Track B.
@@ -24,6 +23,7 @@
 
 ## Recently Completed
 
+- **Production oxDNA for all 3 cavity variants** (2026-03-23): 20nm and 40nm submitted and completed on PACE. All 3 variants (20/30/40nm) maintain cavity shape after 20M MD steps. Figure: `results/paper_figures/fig_all_cavities_oxdna.png`.
 - **Failure analysis figures for DNA 32 paper** (2026-03-22): 3 publication figures: oligo journey bar chart (65→1), failure mode table (8 failures with symptoms/fixes), verifier before/after comparison. At `results/paper_figures/fig_*.png`.
 - **Distributable verifier + failure analysis** (2026-03-22): `tools/cadnano_verifier.py` catches 8 failure modes. `results/failure_analysis.md` documents each with symptom→root cause→fix. Both the integrin design and PI template pass all checks.
 - **Integrin cavity: 1 scaffold oligo, full pipeline** (2026-03-22): 8-column cavity (20.8nm×15.0nm) in 2×12 template. Fixed edge crossover destruction, stray midseam fragments, boundary search order. 208 staples, 17,176 nt. Submitted to PACE (jobs 5357952/5357953).
