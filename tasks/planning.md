@@ -2,7 +2,8 @@
 
 ## Current Priorities
 
-1. **Parametric cavity production oxDNA runs** — 20nm (jobs 5390360-63), 40nm (jobs 5390364-66) submitted for 3-stage production relaxation. 30nm already complete. Monitor and fetch results.
+1. **Template extension (2×14+) — blocked on scaffold routing** — Adding inter-pair crossovers creates extra segment boundaries on H0 that break connectivity. Need to learn how the routing pattern adapts when columns are added. May need PI guidance.
+2. **Parametric cavity production oxDNA runs** — 20nm (jobs 5390360-63), 40nm (jobs 5390364-66) submitted. 30nm complete. Monitor and fetch results.
 2. **DNA 32 Track B paper — pipeline narrative** — Reframe around: agent builds verifiers, PI provides domain feedback, together they build a full pipeline (cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA). Distributable artifacts: verifier, failure analysis, parametric pipeline.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
