@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Template extension (2×14+) — blocked on scaffold routing** — Inter-pair crossovers create extra segment boundaries. Need PI guidance on how routing adapts when columns are added.
+1. **Template extension (2×14+) — PI guidance received** — PI confirmed: inter-pair crossovers go on the INNER helix of new pair (H25), not on H0. Routing order: H24→H25→H0→H1→...→H22→H23→H26→H27. Use `part.renumber()` after building. Implementing fix now.
 2. **DNA 32 Track B paper — pipeline narrative** — All 3 cavity production oxDNA results now available.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
