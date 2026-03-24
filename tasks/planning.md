@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **20nm×40nm integrin cavity with 6-helix padding** — Centered 2×16 with 6-helix padding achieved (1 oligo, 6968bp). Next: apply 4-step cavity scaling to set 20nm height × 40nm width, expand cavity columns for integrin dimensions, run full pipeline.
+1. **2×20 cavity oxDNA relaxation** — PACE relax job 5453142 pending GPU. Min completed (21min). Fetch results when GPU job completes.
 2. **DNA 32 Track B paper — pipeline narrative** — All 3 cavity production oxDNA results now available.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
@@ -23,6 +23,7 @@
 
 ## Recently Completed
 
+- **2×20 centered cavity design (20nm×40nm)** (2026-03-24): Full pipeline: 2×20 template extension (4 LEFT + 4 RIGHT cols), 4-step cavity scaling (8 cols, 117bp gap), autoStaple+autoBreak (238 staples), tacoxDNA (17320 nt). Scaffold: 8660bp, 1 oligo. PACE min completed; GPU relax pending.
 - **Production oxDNA for all 3 cavity variants** (2026-03-23): 20nm and 40nm submitted and completed on PACE. All 3 variants (20/30/40nm) maintain cavity shape after 20M MD steps. Figure: `results/paper_figures/fig_all_cavities_oxdna.png`.
 - **Failure analysis figures for DNA 32 paper** (2026-03-22): 3 publication figures: oligo journey bar chart (65→1), failure mode table (8 failures with symptoms/fixes), verifier before/after comparison. At `results/paper_figures/fig_*.png`.
 - **Distributable verifier + failure analysis** (2026-03-22): `tools/cadnano_verifier.py` catches 8 failure modes. `results/failure_analysis.md` documents each with symptom→root cause→fix. Both the integrin design and PI template pass all checks.

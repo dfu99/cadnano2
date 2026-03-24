@@ -1130,3 +1130,39 @@ objectives:
     maintain single-oligo connectivity. Blocked pending PI guidance.
   connects_to: null
   completed_date: null
+
+- id: obj-042
+  status: completed
+  statement: Build 2x20 centered cavity design (20nm x 40nm) with full pipeline
+  methodology: >-
+    Built 2x20 template extension (4 LEFT + 4 RIGHT column pairs from 2x12).
+    Applied 4-step cavity scaling: extend to 273bp, expand cavity to 8 cols
+    (ORIG in steps 2-3, ALL in step 4), set 117bp centered gap. Excluded
+    last pair (38,39) from step3. AutoStaple (77→238 staples), tacoxDNA
+    (17320 nt, 239 strands). Submitted to PACE for oxDNA relaxation.
+  metrics:
+    grid: "2x20"
+    helices: 40
+    helix_length_bp: 273
+    scaffold_bp: 8660
+    scaffold_oligos: 1
+    cavity_cols: 8
+    cavity_height_nm: 20.8
+    cavity_width_nm: 39.8
+    padding_helices: 6
+    staples: 238
+    nucleotides: 17320
+    strands: 239
+  figures:
+  - results/integrin_cavity/screenshot_2x20_scaled_pathview.png
+  - results/integrin_cavity/screenshot_2x20_scaled_sliceview.png
+  - results/integrin_cavity/design_2x20_pipeline/structure_initial.png
+  - results/integrin_cavity/design_2x20_pipeline/minimization_comparison.png
+  conclusions: >-
+    Successfully designed a 2x20 DNA origami with 20nm x 40nm centered cavity
+    and 6-helix padding on all sides. Template extension (add columns on both
+    sides) + cavity scaling pipeline produces valid designs with 1 scaffold
+    oligo. The 8660bp scaffold fits within p8064 capacity. oxDNA minimization
+    completed; GPU relaxation pending in PACE queue.
+  connects_to: null
+  completed_date: '2026-03-24'
