@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Template extension to 2×16+ and full pipeline** — 2×14 achieved (1 scaffold oligo, 6002bp). Next: generalize add-column pattern to 2×16/2×18, apply 4-step cavity scaling, run full pipeline.
+1. **20nm×40nm integrin cavity with 6-helix padding** — Centered 2×16 with 6-helix padding achieved (1 oligo, 6968bp). Next: apply 4-step cavity scaling to set 20nm height × 40nm width, expand cavity columns for integrin dimensions, run full pipeline.
 2. **DNA 32 Track B paper — pipeline narrative** — All 3 cavity production oxDNA results now available.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
