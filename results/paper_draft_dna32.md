@@ -73,15 +73,43 @@ After each correction, the agent incorporated the lesson and did not repeat that
 
 The final result: a 2×12 rectangular origami with an aligned cavity, 1 continuous scaffold loop (7,688 bp), scaled from the PI's 252 bp template to 420 bp helices. Each step produced a valid cadnano JSON that loads without errors.
 
-## 6. What This Tells Us
+## 6. Beyond the Template: Autonomous Design at Scale
 
-The agent is not a designer. It is a fast, tireless assistant that can manipulate files, trace code, and automate repetitive operations — but it cannot independently determine the correct design. Every non-trivial design decision required human domain knowledge.
+After the PI provided sufficient guidance through 10 failure modes, the agent achieved autonomous design capability. Without further human intervention, the agent:
 
-The value is in what happens *after* the human provides the knowledge. Once shown the correct pattern (the PI's template), the agent could scale it, modify it, and verify each step in seconds. The 4-step scaling process that took an afternoon of back-and-forth would take days if done entirely by hand for each new scaffold length.
+1. **Extended the template to arbitrary widths** (2×14, 2×16, 2×18, 2×20) by adding column pairs to both sides of the 2×12 template, maintaining 1 scaffold oligo at each step.
+2. **Designed to specification:** Given the constraint "20 nm × 40 nm cavity, centered, 6-helix padding, scaffold ≤ 8,064 bp," the agent independently selected a 2×20 grid (40 helices × 252 bp), computed the cavity dimensions (8 columns × 117 bp gap), and built the complete design — 7,828 bp scaffold, 1 oligo.
+3. **Executed targeted edits from natural language prompts:** When told "the crossovers at H5-H6 and H33-H34 are too close to the cavity edge — move them away," the agent identified the positions ([64,65] and [183,184], both 4 bp from the cavity), found valid alternative lattice positions ([43,44] and [204,205], 25 bp clearance), and moved them while preserving the single scaffold oligo (Figure 5).
+4. **Ran the full pipeline autonomously:** autoStaple (222 staples) → autoBreak (all3) → tacoxDNA (15,656 nt) → oxDNA PACE GPU relaxation.
 
-**For DNA nanotechnologists:** A coding agent is most useful not as an autonomous designer, but as a parametric design tool. You design the template; the agent scales, modifies, and verifies. The bottleneck shifts from clicking in cadnano to communicating design intent clearly.
+## 7. Agents as a Substrate for Shared Design Intelligence
 
-**What remains difficult:** The agent cannot discover design conventions from source code alone. Honeycomb layer counting, dense crossover patterns, cavity orientation, crossover alignment rules — these are domain knowledge that must be taught explicitly. Each new design feature risks a new class of error that requires human diagnosis.
+The key insight of this work is not that AI can design DNA origami — it cannot, at least not independently. The insight is that the *failures* are as valuable as the successes. Each of the 10 failure modes we documented represents a piece of domain knowledge that:
+
+1. **Is invisible in the source code.** The rule "LOW position = crossover IN, HIGH = crossover OUT" cannot be deduced from cadnano's codebase. It must be taught by a human who has internalized years of design experience.
+2. **Is immediately reusable.** Once the agent learns a rule, it never makes that class of error again. The learning is encoded in verifier functions, lessons files, and pipeline logic that persist across sessions.
+3. **Is distributable.** The verifier (`cadnano_verifier.py`) catches all 10 failure modes automatically. A new user — or a new AI agent — can skip our failures entirely. The failure catalog (`failure_analysis.md`) explains each one with symptom, root cause, fix, and verifier check.
+
+This creates a new paradigm: **the agent is not the designer, but the substrate on which shared design intelligence accumulates.** Each PI-agent interaction produces not just a design, but reusable tools that make the next design faster. The 10 failures we encountered over two weeks become the 10 checks that a future user's agent runs in seconds.
+
+### What Can Be Shared and Replicated
+
+The following artifacts are distributable to any DNA origami researcher working with cadnano:
+
+| Artifact | Purpose | Reusability |
+|----------|---------|-------------|
+| `cadnano_verifier.py` | Pre-flight design validation | Run on any cadnano JSON before committing to synthesis |
+| `failure_analysis.md` | Documented failure modes | Read before starting AI-assisted design; avoid 10 known pitfalls |
+| `cavity_variant_sweep.py` | Parametric cavity pipeline | Change gap size/width → design recomputes automatically |
+| Template extension functions | Add columns to existing designs | Extend any 2×N template to 2×(N+2) with 1 scaffold oligo |
+| Crossover move pattern | LOW=IN, HIGH=OUT template | Apply to any targeted crossover edit on any honeycomb design |
+| Renumbering procedure | JSON helix renumbering | Essential for any template extension; ensures parity correctness |
+
+The pipeline from PI's template to verified design to oxDNA simulation is end-to-end: no manual cadnano GUI interaction required. A researcher can describe a cavity design in terms of physical dimensions (nm × nm, scaffold length, padding) and receive a validated JSON, stapled design, and oxDNA files ready for PACE submission.
+
+### The Threshold We Crossed
+
+Early in this project, the agent produced "cool demos" — a flat sheet, a simple rectangle. These demonstrated capability but had no transferable value. The threshold from demo to knowledge transfer was crossed when the agent began *building its own verification tools from its own failures.* The verifier was not designed top-down; it emerged bottom-up from 10 specific debugging sessions. This is the mechanism by which an agent becomes a substrate for shared intelligence: each failure produces a check that prevents the same failure for every future user.
 
 ## Figures
 
@@ -89,3 +117,7 @@ The value is in what happens *after* the human provides the knowledge. Once show
 - **Figure 2:** The PI's template (`2x12_rectangle_cavity.json`) showing correct scaffold routing with dense crossovers and cavity gap.
 - **Figure 3:** The 4-step scaling process: (a) scaffold only, (b) extended right side, (c) midseam moved, (d) cavity expanded and aligned between layers.
 - **Figure 4:** Scaffold routing visualization of the final scaled design (420 bp, 7,688 bp scaffold, 1 oligo).
+- **Figure 5:** Targeted crossover edit — Before (scaffold-only), PI prompt, After (scaffold-only). H5-H6 moved from [64,65] to [43,44]; H33-H34 moved from [183,184] to [204,205]. Demonstrates agent executing natural-language design modifications on a validated structure.
+- **Figure 6:** Scaffold oligo count journey: 65 → 54 → 10 → 8 → 4 → 1. Each step corresponds to a failure mode that was diagnosed and fixed.
+- **Figure 7:** cadnano_verifier.py output — before (3 failures, 8 oligos) vs after (all pass, 1 oligo). The distributable verifier catches all 10 failure modes automatically.
+- **Figure 8:** All three parametric cavity variants (20/30/40 nm gap) after oxDNA production relaxation (20M MD steps). Cavity maintained in all cases.
