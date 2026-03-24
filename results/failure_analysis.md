@@ -102,6 +102,32 @@ job is to scale and reshape without breaking it.
 
 ---
 
+## Failure 9: Helix Parity Mismatch (num%2 ≠ (row+col)%2)
+
+**Symptom:** Verifier reports wrong scaffold directions; cadnano loads with extra oligos.
+**Root cause:** All parity logic used `num%2`, which matches `(row+col)%2` only for
+the original 2×12 template. New helices (e.g., H24 at (12,21)) have `num%2=0` but
+`(12+21)%2=1` — opposite parity.
+**Fix:** Renumber helices so `num%2 == (row+col)%2`. Use routing order: row 12 from
+highest col to lowest, row 13 from lowest to highest. Change every `num` key and every
+helix reference in all `scaf` and `stap` tuples.
+**Verifier check:** `verify_scaffold_directions()`
+
+## Failure 10: Inverted Crossover Direction at Inter-Pair Positions
+
+**Symptom:** Scaffold forms mini-loops at double crossover positions instead of zigzagging.
+BFS reaches only 234bp from H0[5] (should reach all 6002bp).
+**Root cause:** Inter-pair crossover entries at positions 64/65 had inverted direction
+compared to the template. Template: LOW position (64) = crossover IN (5' from partner).
+My version: LOW position (64) = crossover OUT (3' to partner). This created 4-position
+loops instead of connecting to the rest of the scaffold.
+**Fix:** Directly match the template's crossover pattern:
+  `H_odd[low] = [partner, low, self, low-1]` (5' from partner, 3' to self)
+  `H_odd[high] = [self, high+1, partner, high]` (5' from self, 3' to partner)
+**Verifier check:** `verify_scaffold_connectivity()`
+
+---
+
 ## Key Principles (Learned from Failures)
 
 1. **Scaffold direction = helix parity.** Never derive direction from
@@ -116,3 +142,9 @@ job is to scale and reshape without breaking it.
    Never overwrite them during cavity operations.
 5. **The last pair is special.** It connects the two scaffold halves with
    edges only. Adding a midseam splits the scaffold.
+6. **Renumber after extending.** When adding columns to a template, always
+   renumber helices so num%2 matches (row+col)%2. Use routing order
+   (row 12 right→left, row 13 left→right) for sequential numbering.
+7. **LOW = IN, HIGH = OUT.** At double crossovers, the LOW position receives
+   from the partner (5' crossover), the HIGH position exits to the partner
+   (3' crossover). Inverting this creates loops instead of zigzags.
