@@ -595,18 +595,28 @@ queue:
     with cadnano_verifier.py. Success: design_2x20_centered.json with 40 helices,
     1 oligo.'
   priority: 3
-  status: in_progress
+  status: completed
   added: 2026-03-24 03:40
   source: afk
   started: 2026-03-24 03:42
+  completed: 2026-03-24 03:50
+  commits: 1
+  notes: 'AFK T1 complete: 2x20 centered template extension built.
+
+    40 helices, 8900bp, 1 scaffold oligo. All verifier checks PASS.
+
+    Cols 5-24, template cavity at cols 13-16 (4 cols).
+
+    Next: T2 — expand cavity to 8 cols, scale to 273bp, set 117bp gap.'
 - objective: 'AFK T2: Apply 4-step cavity scaling to 2x20 — extend helices to 273bp,
     expand cavity to 8 cols (ORIG set in steps 2-3, ALL 8 cols in step 4), set 117bp
     centered gap, fix directions. Verify 1 oligo, correct gaps. Success: scaled JSON
     with 273bp helices, 8-col cavity, 117bp gap.'
   priority: 3
-  status: pending
+  status: in_progress
   added: 2026-03-24 03:40
   source: afk
+  started: 2026-03-24 03:50
 - objective: 'AFK T3: Load scaled 2x20 in cadnano, verify 1 scaffold oligo. Take scaffold-only
     path view + slice view screenshots (max 1800px). Success: cadnano confirms 1 oligo,
     2 screenshots saved.'
