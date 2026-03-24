@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Template extension (2×14+) — PI guidance received** — PI confirmed: inter-pair crossovers go on the INNER helix of new pair (H25), not on H0. Routing order: H24→H25→H0→H1→...→H22→H23→H26→H27. Use `part.renumber()` after building. Implementing fix now.
+1. **Template extension to 2×16+ and full pipeline** — 2×14 achieved (1 scaffold oligo, 6002bp). Next: generalize add-column pattern to 2×16/2×18, apply 4-step cavity scaling, run full pipeline.
 2. **DNA 32 Track B paper — pipeline narrative** — All 3 cavity production oxDNA results now available.
 3. **Autobreak parameter exploration** — PI noted this as a good AI paper use case.
 
