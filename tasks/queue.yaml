@@ -199,3 +199,452 @@ queue:
   completed: 2026-03-16 14:56
   commits: 2
   notes: Auto-completed via 2 commit(s).
+- objective: This is not how the helical lattice design of the 2-layer rectangle should
+    be. Whereas the one layer was like a 1x24 grid of helices and created a rectangular
+    cross-section on the top (XY) view, the two-layer should be a 2x12 grid of helices
+    and should also create a taller but less wide cross-section on the top (XY) view.
+    Try again.
+  priority: 3
+  status: completed
+  added: 2026-03-17 13:33
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-17 13:33
+  completed: 2026-03-17 14:18
+  commits: 1
+  notes: Fixed 2-layer layout to 2x13 grid (2 rows × 13 cols). Solid rectangle uses
+    perimeter cycle. Cavity uses 4-row grid with Hamiltonian cycle (2-row cavity routing
+    impossible on honeycomb due to alternating cross-row connections). Committed,
+    Slack response staged.
+- objective: This is not how the helical lattice design of the 2-layer rectangle should
+    be. Whereas the one layer was like a 1x24 grid of helices and created a rectangular
+    cross-section on the top (XY) view, the two-layer should be a 2x12 grid of helices
+    and should also create a taller but less wide cross-section on the top (XY) view.
+    Try again.
+  priority: 3
+  status: completed
+  added: 2026-03-17 13:43
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-17 14:18
+  completed: 2026-03-17 14:31
+  commits: 3
+  notes: 'CHECKPOINT complete. 2-layer layout fixed to 2x13. Objectives obj-031/032/033
+    logged. Lessons updated. Blocker: PI decision needed on cavity approach (2-row
+    impossible for scaffold routing on honeycomb).'
+- objective: the cavity should not be in the XY view, but in the Z view
+  priority: 3
+  status: completed
+  added: 2026-03-17 15:30
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-17 15:32
+  completed: 2026-03-17 15:35
+  commits: 1
+  notes: Fixed cavity orientation to Z (side) view. Cavity cuts through helix length
+    (bp 84-210) for helices H4-H11, not the XY grid arrangement. Figure generated
+    and committed.
+- objective: Do you remember that 4 section document I told you to keep? I plan to
+    try and submit this work to the ISNSCE DNA 32 conference, perhaps as Track B (extended
+    abstract, earns a talk, but not published in proceedings) or as a Poster. This
+    is probably not really interested to Core ML people, who will think of this is
+    standard agentic practices, and don't know what the hell DNA nanotechnology is,
+    but this might be interesting from the opposite angle, DNA nanotechnologists that
+    have not delved as deeply into agentic sciences. It should detail what was tried,
+    what was difficult, what had to get unblocked by systems, domain, examples, prompting,
+    etc. and then what was possible after unblocking. Recount our story. Focus on
+    a single narrative. Do not stray and wander and clutter our paper with every result
+    and side result. Focus on a very clear "This is the problem. This is what we want
+    to achieve. This is what we tried. This is whether it worked or not. This is what
+    we got after it worked, or this is what we tried if it did not work. This is what
+    we got after we got it working. This is what it enabled us to do once it was working,
+    and this is how far we pushed it before it stopped working again."
+  priority: 3
+  status: completed
+  added: 2026-03-18 21:19
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-18 21:20
+  completed: 2026-03-18 21:24
+  commits: 2
+  notes: 'Paper draft rewritten for DNA 32 conference. Single narrative: problem →
+    embedded agent failed → coding agent hit 8 domain knowledge walls → PI unblocked
+    each → parametric pipeline emerged. Committed and staged to Slack.'
+- objective: Now that we have figured out the 2-layer rectangular structure with a
+    cavity, we must show how well that this understanding is extensible. Try shrinking
+    or enlarging the gap (maintaining the central positioning). Assume each base is
+    0.34 nm, then show that you can automatically configure the gap size to be 20
+    nm, or 30 nm, or 40 nm. Show that each design can be automatically normalized
+    to the desired scaffold length size, such as 8064 bp, by adjusting the right side
+    left half crossovers, and moving the cavity as needed to keep it center-aligned.
+    Then, I don't think 8064 will be enough, but try three layers (3 grid rows) and
+    four layers (4 grid rows) too, and also try thicker 2-layer structures, such as
+    with 14 columns or 16 columns.
+  priority: 3
+  status: completed
+  added: 2026-03-19 01:16
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-19 09:38
+  completed: 2026-03-19 09:46
+  commits: 2
+  notes: 'Cavity variant sweep complete (2026-03-19).
+
+
+    7 design variants generated, all fit p8064 scaffold:
+
+    - 2x12 20nm gap: 7812bp (96.9%)
+
+    - 2x12 30nm gap: 8056bp (99.9%)
+
+    - 2x12 40nm gap: 7860bp (97.5%)
+
+    - 3x12 30nm gap: 8333bp (103.3%)
+
+    - 4x12 30nm gap: 9059bp (112.3%)
+
+    - 2x14 30nm gap: 8268bp (102.5%)
+
+    - 2x16 30nm gap: 8268bp (102.5%)
+
+
+    Key finding: p8064 fits ALL configurations, including 3-layer and 4-layer.
+
+    More helices → shorter helix length → scaffold still consumed.
+
+
+    Figures: gap_comparison.png, feasi'
+- objective: Check on job progress of 5138787, <tel:5138788|5138788> and <tel:5138789|5138789>
+  priority: 3
+  status: completed
+  added: 2026-03-20 18:26
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-20 18:27
+  completed: 2026-03-20 18:35
+  commits: 2
+  notes: "Full pipeline complete on 30nm cavity variant (2026-03-20).\n\nAll 3 PACE\
+    \ jobs completed successfully:\n- 5138787 (min): COMPLETED, 28min, energy -1.84/nt\n\
+    - 5138788 (relax): COMPLETED, 2h25m, energy -1.81/nt  \n- 5138789 (relax2): COMPLETED,\
+    \ 2h30m, energy -1.50/nt\n\nStructure maintained cavity shape after 20M MD steps\
+    \ at 300K.\nDimensions: initial 21.7×5.4×129.8nm → relaxed 29.3×21.0×132.0nm.\n\
+    \nFigures: relaxation_comparison.png, energy_convergence.png\nResults: results/cavity_variants/oxdna_30nm/"
+- objective: how is progress on getting back to one scaffold
+  priority: 3
+  status: completed
+  added: 2026-03-21 14:47
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-21 14:48
+  completed: 2026-03-21 15:02
+  commits: 1
+  notes: 'Integrin cavity WIP (2026-03-21):
+
+    - Template-based approach, 2x12 with 8-column expanded cavity
+
+    - Cavity shape correct: 20.8nm x 15.0nm (fits integrin avb3)
+
+    - Scaffold: 8596bp in 8 oligos (target: 1 oligo)
+
+    - All boundary crossovers present, passes segment validation
+
+    - Screenshot at results/integrin_cavity/screenshot_integrin_2x12_8cav.png
+
+    - Still debugging remaining scaffold breaks from midseam conversion'
+- objective: check on progress.
+  priority: 3
+  status: completed
+  added: 2026-03-22 15:50
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-22 15:50
+  completed: 2026-03-22 16:11
+  commits: 2
+  notes: 'Integrin cavity pipeline complete (2026-03-22).
+
+
+    Key achievement: 1 scaffold oligo for 8-column integrin cavity.
+
+    - Design: 2x12 template, 8 cavity columns (H2-H9, H14-H21)
+
+    - Cavity: 20.8nm x 15.0nm (fits integrin avb3)
+
+    - Scaffold: 8588bp in 1 oligo
+
+    - 208 staples after autoBreak (all3, minLegLen=3)
+
+    - 17,176 nucleotides, 209 strands via tacoxDNA
+
+
+    Bug fixed: step4 found edge crossover (pos 5) as cur_left for
+
+    newly-converted cavity pairs, overwriting it. Fixed by skipping
+
+    edge positions in boundary '
+- objective: Yes, this is a correct scaffold routing! Good job! Before you forget,
+    retrace your steps. Remember to save things like intermediate failures and failure
+    analyses. Save and immortalize any verifiers that could be distributed to other
+    users, which would may their AI-assisted design of a DNA origami faster. This
+    is a great narrative for the DNA conference, I think. First of all, you succeeded,
+    but also showing your thinking and saving methods and functions that could make
+    others' success faster is perhaps the framing that we should aim for. I believe
+    we have finally breached the frontier of "this is something cool and that's about
+    it" into actually sharing knowledge, which is the threshold we need to breach
+    for disseminating academic work.
+  priority: 3
+  status: completed
+  added: 2026-03-22 16:28
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-22 16:30
+  completed: 2026-03-22 16:34
+  commits: 2
+  notes: 'Knowledge preservation complete (2026-03-22).
+
+
+    Created distributable artifacts:
+
+    1. tools/cadnano_verifier.py — standalone verifier catching 8 failure modes
+
+    2. results/failure_analysis.md — documented failure modes with root causes
+
+
+    Verified on: integrin cavity (PASS), PI template (PASS).'
+- objective: Make beautiful flow chart figures and cadnano UI screenshots detailing
+    failed intermediates and descriptions of their failure analyses.
+  priority: 3
+  status: completed
+  added: 2026-03-22 16:29
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-22 16:34
+  completed: 2026-03-22 18:01
+  commits: 1
+  notes: 'Failure analysis figures complete (2026-03-22).
+
+
+    3 figures generated:
+
+    1. fig_oligo_journey.png — bar chart: 65→54→10→8→4→1 oligos
+
+    2. fig_failure_table.png — 8 failure modes with symptoms/fixes
+
+    3. fig_verifier_comparison.png — verifier before/after
+
+
+    Planning pivoted per PI directive:
+
+    - RLVR local model training CLOSED
+
+    - Focus: pipeline + verifier for DNA 32 Track B'
+- objective: Now autostaple, autobreak, tacox, and oxDNA your design.
+  priority: 3
+  status: completed
+  added: 2026-03-22 16:45
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-22 18:01
+  completed: 2026-03-22 18:03
+  commits: 2
+  notes: 'Integrin cavity full pipeline complete (2026-03-22).
+
+
+    Pipeline: cadnano (1 scaffold oligo) → autoStaple (69→208 staples)
+
+    → autoBreak (all3) → tacoxDNA (17,176 nt) → oxDNA PACE GPU
+
+
+    PACE results:
+
+    - Min: 29 min, converged
+
+    - Relax (500K early stop): 30 min, stable
+
+    - Cavity maintained, no blow-off
+
+    - Dims: 21.7x5.4x129.8nm → 28.8x11.9x131.7nm'
+- objective: next, keep the same cavity, but you must figure out how to increase the
+    number of columns. adapt the full crossover and half crossover patterning rules.
+    because there are more helices, the position of the midseam full crossover will
+    move. H23 is currently the last helix, but if the design is grown larger, then
+    of course, the last helix might be H25 or H27 or H29...and so on, depending on
+    the new size of the structure. This is your next pattern to learn.
+  priority: 3
+  status: completed
+  added: 2026-03-22 16:50
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-22 18:03
+  completed: 2026-03-22 18:17
+  commits: 3
+  notes: 'Template extension to 2x14 WIP (2026-03-22).
+
+
+    Key achievement: template extension pattern works conceptually.
+
+    Clone same-parity helices, wire inter-pair xovers, move last pair.
+
+    Verifier: 1 scaffold oligo. Cadnano decode: 6 oligos.
+
+
+    CRITICAL DISCOVERY: Helix parity is (row+col)%2, NOT num%2.
+
+    These match for original 2x12 template but diverge for new helices.
+
+    All parity logic (fix_scaffold_directions, verifier) needs updating.
+
+
+    Next: fix parity logic everywhere to use (row+col)%2.'
+- objective: 'PACE TASK: Submit oxDNA production relaxation runs for all parametric
+    cavity variants (20nm, 30nm, 40nm gap). Also submit the multi-layer designs (3-layer,
+    4-layer) if they passed cadnano verification. Use GPU oxDNA CUDA on RTX_6000.
+    These production runs validate the designs for the DNA 32 paper. Report job IDs
+    via Slack.'
+  priority: 1
+  status: completed
+  added: 2026-03-23 03:08
+  source: pace-burn
+  started: 2026-03-23 03:14
+  completed: 2026-03-23 03:23
+  commits: 2
+  notes: 'PACE production runs submitted (2026-03-23).
+
+
+    20nm: Jobs 5390360 (min), 5390362 (relax), 5390363 (relax2)
+
+    40nm: Jobs 5390364 (min), 5390365 (relax), 5390366 (relax2)
+
+    30nm: Already completed from earlier run.
+
+
+    Multi-layer (3x12, 4x12): analytical only, no cadnano JSON.'
+- objective: Check on the progress of the extended redesign (e.g., the 2x14, 2x16,
+    2x18, and so on)
+  priority: 3
+  status: completed
+  added: 2026-03-23 11:05
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-23 11:06
+  completed: 2026-03-23 11:24
+  commits: 1
+  notes: 'Template extension to 2x14: blocked on scaffold routing (2026-03-24).
+
+
+    Fixed clone bugs (stale inter-pair refs, wrong partner detection).
+
+    All verifier structural checks PASS. But 4 scaffold oligos remain.
+
+
+    Root cause: adding inter-pair crossovers at H0[64/65/200/201] creates
+
+    new segment boundaries that split H0 into 5 segments. The scaffold
+
+    path only enters H0 twice (via H1), leaving middle segments unreachable.
+
+
+    The template''s H0 is traversed as ONE continuous segment because it
+
+    only has intra-'
+- objective: 'the renumbering doesn''t seem to have worked or done anything. Can you
+    renumber them yourself? Change the num key in the json, then refactor the num
+    in every scaf and stap tuple.
+
+
+    You''ve almost got it though. The breaks in H0 and H25 should be full crossovers,
+    and that should do it.'
+  priority: 3
+  status: completed
+  added: 2026-03-23 20:53
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-23 20:54
+  completed: 2026-03-23 21:15
+  commits: 2
+  notes: '2x14 template extension: 1 scaffold oligo achieved (2026-03-25).
+
+
+    28 helices, 6002bp, confirmed by both verifier and cadnano decoder.
+
+
+    Root cause of the 4-oligo bug: crossover direction at inter-pair
+
+    positions 64/65/200/201 was inverted (OUT at low position instead
+
+    of IN). Fixed by matching the template''s exact crossover pattern.
+
+
+    Renumbering: manually changed all num keys and scaf/stap refs.
+
+    H0(c22)→H1(c21)→H2(c20)→...→H27(c22). Parity-matched.
+
+
+    Next: generalize to 2x16, 2x18 by repeating the a'
+- objective: '[AFK PLAN] Plan and start 20nm×40nm cavity design'
+  priority: 3
+  status: completed
+  added: 2026-03-24 03:35
+  source: afk
+  started: 2026-03-24 03:36
+  completed: 2026-03-24 03:40
+  notes: 'Computed design: 2×20, 8 cavity cols (20.8nm), 117bp gap (39.8nm), 273bp
+    helix, 8595bp capacity. 4 col pairs per side.'
+- objective: 'AFK T1: Build 2x20 centered template extension (4 LEFT + 4 RIGHT column
+    pairs from 2x12). Use proven add_column_pair functions with exact template crossover
+    patterns (LOW=IN, HIGH=OUT). Renumber in routing order. Verify 1 scaffold oligo
+    with cadnano_verifier.py. Success: design_2x20_centered.json with 40 helices,
+    1 oligo.'
+  priority: 3
+  status: in_progress
+  added: 2026-03-24 03:40
+  source: afk
+  started: 2026-03-24 03:42
+- objective: 'AFK T2: Apply 4-step cavity scaling to 2x20 — extend helices to 273bp,
+    expand cavity to 8 cols (ORIG set in steps 2-3, ALL 8 cols in step 4), set 117bp
+    centered gap, fix directions. Verify 1 oligo, correct gaps. Success: scaled JSON
+    with 273bp helices, 8-col cavity, 117bp gap.'
+  priority: 3
+  status: pending
+  added: 2026-03-24 03:40
+  source: afk
+- objective: 'AFK T3: Load scaled 2x20 in cadnano, verify 1 scaffold oligo. Take scaffold-only
+    path view + slice view screenshots (max 1800px). Success: cadnano confirms 1 oligo,
+    2 screenshots saved.'
+  priority: 3
+  status: pending
+  added: 2026-03-24 03:40
+  source: afk
+- objective: 'AFK T4: Run autoStaple + autoBreak (all3 minLegLen=3) on the 2x20 design.
+    Verify scaffold still 1 oligo. Save stapled JSON. Success: stapled design, scaffold
+    intact.'
+  priority: 3
+  status: pending
+  added: 2026-03-24 03:40
+  source: afk
+- objective: 'AFK T5: Convert stapled 2x20 to oxDNA via tacoxDNA (honeycomb). Verify
+    output files. Generate initial 3-view structure plot. Success: start.conf + topology.top,
+    visualization saved.'
+  priority: 3
+  status: pending
+  added: 2026-03-24 03:40
+  source: afk
+- objective: 'AFK T6: Write oxDNA input files (input_min CPU 10K, input_relax GPU
+    500K early stop) and SLURM scripts for PACE RTX_6000. Success: all files written.'
+  priority: 3
+  status: pending
+  added: 2026-03-24 03:40
+  source: afk
+- objective: 'AFK T7: Submit 2x20 cavity to PACE, wait for completion, fetch results.
+    Check energy convergence and structural stability. Success: jobs completed, results
+    fetched.'
+  priority: 3
+  status: pending
+  added: 2026-03-24 03:40
+  source: afk
+- objective: 'AFK T8: Generate relaxation comparison figure (initial vs relaxed).
+    Verify cavity maintained. Commit all. Update planning + objectives. Write AFK_COMPLETE.
+    Success: figure saved, everything committed.'
+  priority: 3
+  status: pending
+  added: 2026-03-24 03:40
+  source: afk
