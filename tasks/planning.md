@@ -23,6 +23,8 @@
 
 ## Recently Completed
 
+- **Paper Section 8 + Figure 9: one-shot targeted edits** (2026-03-26): Added concluding example documenting 3 successive one-shot modifications (shrink structure, move crossovers + center cavity, autoStaple+autoBreak). Figure 9 shows 3-panel screenshot progression. Draft sent to PI for review.
+- **2×22 integrin cavity: shrink, fix crossovers, center, staple** (2026-03-26): Complete sequence: moved edge crossovers inward (252→225bp), moved 5 inter-pair crossovers away from cavity (3bp→26bp clearance), centered cavity (54bp/54bp segments), autoStaple+autoBreak x3 (220+ staples). All edits one-shot from PI prompts.
 - **2×20 centered cavity design (20nm×40nm)** (2026-03-24): Full pipeline: 2×20 template extension (4 LEFT + 4 RIGHT cols), 4-step cavity scaling (8 cols, 117bp gap), autoStaple+autoBreak (238 staples), tacoxDNA (17320 nt). Scaffold: 8660bp, 1 oligo. PACE min completed; GPU relax pending.
 - **Production oxDNA for all 3 cavity variants** (2026-03-23): 20nm and 40nm submitted and completed on PACE. All 3 variants (20/30/40nm) maintain cavity shape after 20M MD steps. Figure: `results/paper_figures/fig_all_cavities_oxdna.png`.
 - **Failure analysis figures for DNA 32 paper** (2026-03-22): 3 publication figures: oligo journey bar chart (65→1), failure mode table (8 failures with symptoms/fixes), verifier before/after comparison. At `results/paper_figures/fig_*.png`.
