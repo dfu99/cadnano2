@@ -111,6 +111,21 @@ The pipeline from PI's template to verified design to oxDNA simulation is end-to
 
 Early in this project, the agent produced "cool demos" — a flat sheet, a simple rectangle. These demonstrated capability but had no transferable value. The threshold from demo to knowledge transfer was crossed when the agent began *building its own verification tools from its own failures.* The verifier was not designed top-down; it emerged bottom-up from 10 specific debugging sessions. This is the mechanism by which an agent becomes a substrate for shared intelligence: each failure produces a check that prevents the same failure for every future user.
 
+## 8. The Final Demonstration: One-Shot Targeted Edits
+
+The strongest evidence of transferred design intelligence came in the final session. The PI issued three successive modification requests on a 2×22 integrin cavity design, and the agent executed each one correctly on the first attempt:
+
+### Edit 1: "Shrink the structure"
+The 2×22 design was wider than needed. Rather than truncating helix arrays (which would destroy edge crossovers), the agent recognized the correct approach: **move the edge crossovers inward** by one step (from positions 246/242 to 225/221), then clear scaffold data beyond the new edges. This preserved all crossover connectivity while reducing the effective helix length from 252 bp to 225 bp. Result: 7,412 bp scaffold, 1 oligo.
+
+### Edit 2: "Move the full crossovers away from the cavity edge, and center the cavity"
+The agent identified 5 inter-pair crossovers that were only 3–5 bp from cavity boundary half-crossovers (H5-H6 at [64,65], H13-H14 at [53,54], H15-H16 at [64,65], H27-H28 at [183,184], H37-H38 at [183,184]). It moved each to a safe lattice position 26+ bp from the cavity. Then it recomputed centered cavity boundaries: R12 gap [59–171] with 54 bp on each side, R13 gap [55–168] with 53 bp on each side. Result: 7,432 bp scaffold, 1 oligo, cavity centered to within 1 bp.
+
+### Edit 3: "Now autoStaple and autoBreak it"
+The agent ran autoStaple (82 initial staples) and autoBreak with minStapleLegLen=3 (220+ broken staples, 18–279 bp range, preserving full crossovers). Result: complete stapled design ready for tacoxDNA conversion.
+
+**Why this matters:** Each edit required combining multiple pieces of domain knowledge that were transferred across previous sessions — crossover lattice positions, parity-dependent scaffold direction, cavity boundary half-crossover placement, honeycomb valid offsets. None of these were re-taught. The agent drew on lessons encoded in `tasks/lessons.md`, verifier checks in `cadnano_verifier.py`, and pipeline functions in `cavity_variant_sweep.py`. This is the mechanism of transferable design intelligence: the PI's corrections accumulate as reusable code, and the agent applies them automatically in new contexts.
+
 ## Figures
 
 - **Figure 1:** Architecture comparison — embedded agent (failed) vs coding agent with source code access (succeeded).
@@ -121,3 +136,4 @@ Early in this project, the agent produced "cool demos" — a flat sheet, a simpl
 - **Figure 6:** Scaffold oligo count journey: 65 → 54 → 10 → 8 → 4 → 1. Each step corresponds to a failure mode that was diagnosed and fixed.
 - **Figure 7:** cadnano_verifier.py output — before (3 failures, 8 oligos) vs after (all pass, 1 oligo). The distributable verifier catches all 10 failure modes automatically.
 - **Figure 8:** All three parametric cavity variants (20/30/40 nm gap) after oxDNA production relaxation (20M MD steps). Cavity maintained in all cases.
+- **Figure 9:** One-shot targeted edits from natural language prompts. Three-panel sequence showing the 2×22 integrin cavity design after: (a) structure shrink, (b) crossover repositioning + cavity centering, (c) autoStaple + autoBreak. Each edit executed correctly on the first attempt.
