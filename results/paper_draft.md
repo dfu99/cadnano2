@@ -4,27 +4,27 @@ Daniel Fu, [Co-authors TBD]
 
 ## Abstract
 
-We present a coding-agent approach to DNA origami design that integrates cadnano, tacoxDNA, and oxDNA through automated Python script generation. Unlike embedded tool-using LLMs that must reason about complex domain rules through a fixed API, our approach gives a coding agent direct access to the design software's source code. The agent reads implementation details, writes integration scripts, and produces end-to-end verified designs. We demonstrate this with a parametric rectangular origami pipeline that supports configurable dimensions, scaffold type, cavity placement, polyT brush extensions, and twist correction. A design modification that takes hours by hand — widening a cavity by 5 nm and recomputing all staples, edge treatments, and insertions — completes in seconds. We show results for solid rectangles and cavity-containing structures using the p8064 scaffold, with oxDNA molecular dynamics verification.
+We present a coding-agent approach to DNA origami design that integrates cadnano, tacoxDNA, and oxDNA through automated Python script generation. Unlike embedded tool-using LLMs that must reason about complex domain rules through a fixed API, our approach gives a coding agent direct access to the design software's source code. The agent reads implementation details, writes integration scripts, and produces end-to-end verified designs. We demonstrate this with a parametric rectangular origami pipeline that supports configurable dimensions, scaffold type, cavity placement, polyT brush extensions, and twist correction. A design modification that takes hours by hand, such as widening a cavity by 5 nm and recomputing all staples, edge treatments, and insertions, completes in seconds. We show results for solid rectangles and cavity-containing structures using the p8064 scaffold, with oxDNA molecular dynamics verification.
 
 ## 1. Introduction: Two Approaches to AI-Assisted DNA Origami
 
-DNA origami design involves placing thousands of DNA strands on a lattice to fold a long scaffold strand into a target shape. The designer must reason about helix parity, crossover position tables, scaffold routing topology, staple break optimization, and twist correction — a process that is tedious and error-prone for complex structures.
+DNA origami design involves placing thousands of DNA strands on a lattice to fold a long scaffold strand into a target shape. The designer must reason about helix parity, crossover position tables, scaffold routing topology, staple break optimization, and twist correction, a process that is tedious and error-prone for complex structures.
 
-We explored two approaches to automating this process with large language models. The first failed. The second succeeded.
+We explored two approaches to automating this process with large language models. The first achieved 0% success on multi-step tasks. The second produced verified designs.
 
-### 1.1 The Embedded Agent Approach (What Failed)
+### 1.1 The Embedded Agent Approach
 
 We built an agent dialog directly into the cadnano GUI (Figure 1a). The user types a natural language command. An LLM (Ollama for local models, OpenAI API for cloud models) parses the intent and calls Python methods that modify the cadnano design. We implemented 85 methods covering helix creation, strand manipulation, crossover placement, staple breaking, and design verification.
 
-This approach failed on complex tasks. Even GPT-class models achieved approximately 0% success on scaffold routing — the multi-step task of placing crossovers to create a single continuous scaffold loop through all helices. The model must reason about helix parity (even helices run left-to-right, odd run right-to-left), crossover position tables (different offsets for each neighbor direction), and routing topology (exactly one half-crossover per routing pair at the parity-determined turn position). These rules are encoded in the method layer, but the model cannot reliably compose them into correct sequences of actions.
+This approach failed on complex tasks. Even GPT-class models achieved approximately 0% success on scaffold routing, the multi-step task of placing crossovers to create a single continuous scaffold loop through all helices. The model must reason about helix parity (even helices run left-to-right, odd run right-to-left), crossover position tables (different offsets for each neighbor direction), and routing topology (exactly one half-crossover per routing pair at the parity-determined turn position). These rules are encoded in the method layer, but the model cannot reliably compose them into correct sequences of actions.
 
-We attempted to address this with reinforcement learning from verifier rewards (RLVR), training a local model (Qwen 1.7B) with shaped rewards from a design verifier. The reward signal existed — we could score partial progress on scaffold routing — but the success rate remained at 0%. The model could not discover correct action sequences through exploration alone.
+We attempted to address this with reinforcement learning from verifier rewards (RLVR), training a local model (Qwen 1.7B) with shaped rewards from a design verifier. The reward signal existed (partial progress on scaffold routing could be scored), but the success rate remained at 0%. The model could not discover correct action sequences through exploration alone.
 
-### 1.2 The Coding Agent Approach (What Works)
+### 1.2 The Coding Agent Approach
 
 The second approach abandons the embedded agent entirely. Instead, a general-purpose coding agent (Claude Code) reads the cadnano source code and writes Python scripts that call cadnano's internal APIs (Figure 1b).
 
-The key difference is access to source code. When the standard `createXover` method failed for serpentine scaffold routing (it splits strands, breaking existing connections), the coding agent found `setConnection3p` and `setConnection5p` by reading the strand model implementation. When the autobreak plugin's import failed due to a legacy `__init__.py`, the agent traced the module system and used `importlib` to load it directly. These are debugging tasks, not DNA design tasks — and coding agents excel at them.
+The key difference is access to source code. When the standard `createXover` method failed for serpentine scaffold routing (it splits strands, breaking existing connections), the coding agent found `setConnection3p` and `setConnection5p` by reading the strand model implementation. When the autobreak plugin's import failed due to a legacy `__init__.py`, the agent traced the module system and used `importlib` to load it directly. These are debugging tasks, not DNA design tasks, and coding agents excel at them.
 
 The agent also integrates tools that cadnano alone cannot access: tacoxDNA for conversion to oxDNA format, and oxDNA for molecular dynamics verification of the 3D structure. The result is an end-to-end pipeline from design specification to verified 3D geometry.
 
@@ -45,7 +45,7 @@ The coding agent produced a 1,300-line Python script (`rectangular_origami_pipel
 
 The resulting structure measures 56.2 x 27.1 x 2.5 nm by PCA analysis, consistent with a 24-helix flat sheet on honeycomb lattice.
 
-This design is straightforward — any experienced DNA nanotechnology graduate student can produce it manually in cadnano. The value is not in the design itself, but in the pipeline: the entire process from specification to oxDNA-verified 3D structure runs without human intervention.
+This design is straightforward; any experienced DNA nanotechnology graduate student can produce it manually in cadnano. The value is not in the design itself, but in the pipeline: the entire process from specification to oxDNA-verified 3D structure runs without human intervention.
 
 ## 3. Parametric Design: Configurable Structures with Cavities
 
@@ -126,7 +126,7 @@ This kind of systematic exploration is impractical by hand but routine with the 
 
 The embedded agent operates through a fixed API: 85 methods with defined parameters. The model must compose these methods into correct sequences without seeing the implementation. When a method doesn't work as expected (e.g., `createXover` splitting strands), the model has no way to diagnose the issue or find alternatives.
 
-The coding agent operates at the source code level. It reads how methods work, discovers internal APIs, debugs import issues, and writes custom integration code. The domain knowledge it needs — crossover tables, parity rules, scaffold routing constraints — is in the code, not in the model's training data. This is a fundamental architectural advantage: the agent doesn't need to memorize DNA origami rules; it reads them from the implementation.
+The coding agent operates at the source code level. It reads how methods work, discovers internal APIs, debugs import issues, and writes custom integration code. The domain knowledge it needs (crossover tables, parity rules, scaffold routing constraints) is in the code, not in the model's training data. This is a fundamental architectural advantage: the agent doesn't need to memorize DNA origami rules; it reads them from the implementation.
 
 ### 5.2 Limitations
 
