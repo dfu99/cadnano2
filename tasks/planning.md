@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Intelligence exploration** — PI directive: explore the extent of the agent's design intelligence. Awaiting specific tasks.
+1. **Shape stress test (in progress)** — 6/10 shapes built successfully (6HB, L-shape, 2x8, 4x4, 3x6, 2x10). 4 failed (triangle, hex ring, plus, 24HB) due to cross-row neighbor topology. Next: fix failures using Hamiltonian path solver.
 2. **DNA 32 Track B paper** — Draft revised, figures under PI review. Autobreak sweep + scaffold routing demos complete.
 
 **BLOCKED:** PACE resources exhausted for the month. All new designs stop at cadnano2 JSON + screenshot stage.
