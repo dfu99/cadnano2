@@ -2,19 +2,27 @@
 
 ## Current Priorities
 
-1. **DNA 32 Track B paper — pipeline narrative** — All 3 cavity production oxDNA results available. Academic writing revision completed. Autobreak sweep data available.
-2. **PI review of paper figures** — PI reviewing figure selection; pending feedback on solid rectangle screenshot and final figure list.
+1. **Intelligence exploration** — PI directive: explore the extent of the agent's design intelligence. Awaiting specific tasks.
+2. **DNA 32 Track B paper** — Draft revised, figures under PI review. Autobreak sweep + scaffold routing demos complete.
 
-**BLOCKED:** PACE resources exhausted for the month. No oxDNA/tacoxDNA submissions. All new designs stop at cadnano2 JSON + screenshot stage.
-**CLOSED:** RLVR local model training (qwen3:1.7b). PI directive: not the strongest use case.
+**BLOCKED:** PACE resources exhausted for the month. All new designs stop at cadnano2 JSON + screenshot stage.
+**CLOSED:** RLVR local model training. The pipeline + verifier approach is the DNA 32 story.
 
-**CLOSED:** RLVR local model training (qwen3:1.7b). PI directive: not the strongest use case. The pipeline + verifier approach is the compelling story for DNA 32 Track B.
+## Checkpoint State (2026-03-29)
+
+All work committed and pushed. Archive: `tasks/archive/planning_2026-03-29.md`
+
+Capabilities demonstrated to date:
+1. Template scaling with centered cavity (variable gap width)
+2. One-shot targeted edits (shrink, move crossovers, center, staple)
+3. From-scratch scaffold routing (simple alternating pattern)
+4. Full pipeline: cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA
+5. Autonomous design to specification (nm dimensions → verified JSON)
 
 ## Next Steps (require user input)
 
-- PI review of integrin cavity oxDNA results (PACE jobs 5357952/5357953)
+- PI direction on intelligence exploration tasks
 - DNA 32 Track B submission format/deadline
-- Which failure analysis figures to include in the paper
 
 ## Distributable Artifacts
 
