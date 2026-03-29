@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Shape stress test (in progress)** — 6/10 shapes built successfully (6HB, L-shape, 2x8, 4x4, 3x6, 2x10). 4 failed (triangle, hex ring, plus, 24HB) due to cross-row neighbor topology. Next: fix failures using Hamiltonian path solver.
+1. **Shape stress test (complete)** — 9 shapes built from scratch, all 1 scaffold oligo: 6HB, L-shape (3-row), hex ring (8h), 2x8, 4x4, 3x6, 2x10, cross/plus (20h), 24HB (3x8). Summary figure at `results/stress_test/shapes_summary.png`.
 2. **DNA 32 Track B paper** — Draft revised, figures under PI review. Autobreak sweep + scaffold routing demos complete.
 
 **BLOCKED:** PACE resources exhausted for the month. All new designs stop at cadnano2 JSON + screenshot stage.
