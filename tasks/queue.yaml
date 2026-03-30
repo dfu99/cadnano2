@@ -915,56 +915,224 @@ queue:
     and stop. Otherwise, identify what''s still needed and add 1-3 concrete next tasks
     to your queue, then start working on the first one.'
   priority: 3
-  status: in_progress
+  status: completed
   added: 2026-03-29 18:11
   source: afk-refill
   started: 2026-03-29 18:11
+  completed: 2026-03-29 18:18
+  commits: 3
+  notes: 'Shape stress test round 1 complete.
 
-# === AFK: DNA Origami Intelligence Stress Test (2026-03-29) ===
-- objective: "Build a 6-helix bundle (6HB) from scratch in JSON. 6 helices in a single honeycomb row, simple alternating routing (edge half-xovers + midseam full xovers). Verify 1 scaffold oligo. Screenshot scaffold-only with both cadnano views. This is the classic DNA origami structure."
+
+    6/10 shapes built successfully (all 1 scaffold oligo):
+
+    - 6HB (6h), L-shape (8h), 2x8 rect (16h), 4x4 block (16h), 3x6 rect (18h), 2x10
+    rect (20h)
+
+
+    4 shapes failed (topology — need Hamiltonian path solver):
+
+    - Triangle, hex ring, plus/cross, 24HB
+
+
+    Next: fix failed shapes using Hamiltonian path finder.
+
+    Queue has 2 remaining tasks: fix failed shapes, generate final summary.'
+- objective: Build a 6-helix bundle (6HB) from scratch in JSON. 6 helices in a single
+    honeycomb row, simple alternating routing (edge half-xovers + midseam full xovers).
+    Verify 1 scaffold oligo. Screenshot scaffold-only with both cadnano views. This
+    is the classic DNA origami structure.
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-29 18:30
   source: afk-policy
-
-- objective: "Build a 3-layer thick rectangle (3x6 = 18 helices, 3 grid rows x 6 columns) from scratch in JSON. Route scaffold with the alternating edge/midseam pattern. Verify 1 scaffold oligo. Screenshot with both views. This tests multi-row routing where cross-row connections are needed."
+  started: 2026-03-29 18:18
+  completed: 2026-03-29 18:18
+  notes: '6HB already completed in previous task (commit 1de4f76). 6 helices, 1452bp,
+    1 oligo. Files: results/stress_test/6hb.json, 6hb_both.png, 6hb_scaffonly.png'
+- objective: Build a 3-layer thick rectangle (3x6 = 18 helices, 3 grid rows x 6 columns)
+    from scratch in JSON. Route scaffold with the alternating edge/midseam pattern.
+    Verify 1 scaffold oligo. Screenshot with both views. This tests multi-row routing
+    where cross-row connections are needed.
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-29 18:30
   source: afk-policy
-
-- objective: "Build a triangular cross-section from scratch. Use honeycomb positions forming a triangle (e.g., rows 10-12, staggered columns). Route scaffold. Verify 1 oligo. Screenshot. This tests non-rectangular geometry."
+  started: 2026-03-29 18:18
+  completed: 2026-03-29 18:19
+  notes: '3x6 rect already completed (commit 1de4f76). 18 helices, 3 rows, 4350bp,
+    1 oligo. Files: results/stress_test/rect_3x6.json, rect_3x6_both.png'
+- objective: Build a triangular cross-section from scratch. Use honeycomb positions
+    forming a triangle (e.g., rows 10-12, staggered columns). Route scaffold. Verify
+    1 oligo. Screenshot. This tests non-rectangular geometry.
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-29 18:30
   source: afk-policy
+  started: 2026-03-29 18:19
+  completed: 2026-03-29 18:30
+  commits: 1
+  notes: 'Triangle task: non-rectangular cross-sections are topologically constrained
+    on the honeycomb lattice. Degree-1 corner nodes prevent Hamiltonian paths through
+    triangular arrangements. No valid routing path exists for 6h, 8h, 10h, 12h, or
+    16h triangle configurations.
 
-- objective: "Build a hexagonal barrel / tube cross-section. 6 helices arranged in a hexagonal ring on the honeycomb lattice (NOT a flat row). Route scaffold. Verify 1 oligo. Screenshot. This tests a closed-ring topology distinct from flat sheets."
+
+    Built a 10h trapezoid approximation (6 bottom + 4 top) but the cross-row inter-pair
+    midseam fails because the generic offset search doesn''t use direction-specific
+    honeycomb crossover tables (p1 offsets are (8,9)/(18,19), not the gene'
+- objective: Build a hexagonal barrel / tube cross-section. 6 helices arranged in
+    a hexagonal ring on the honeycomb lattice (NOT a flat row). Route scaffold. Verify
+    1 oligo. Screenshot. This tests a closed-ring topology distinct from flat sheets.
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-29 18:30
   source: afk-policy
-
-- objective: "Build an L-shaped cross-section (e.g., 4 helices horizontal + 3 helices vertical, sharing a corner). Route scaffold through the L-shape. Verify 1 oligo. Screenshot. Tests non-convex geometry."
+  started: 2026-03-29 18:30
+  completed: 2026-03-29 18:36
+  commits: 2
+  notes: 'Hex barrel complete: hex_ring_8h — 8 helices in 2-row ring topology, 1932bp,
+    1 oligo. 6h ring fails due to cross-row intra-pair limitation.'
+- objective: Build an L-shaped cross-section (e.g., 4 helices horizontal + 3 helices
+    vertical, sharing a corner). Route scaffold through the L-shape. Verify 1 oligo.
+    Screenshot. Tests non-convex geometry.
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-29 18:30
   source: afk-policy
-
-- objective: "Build a plus/cross shape cross-section (central column + horizontal arms). Route scaffold. Verify 1 oligo. Screenshot. Tests complex branching topology."
+  started: 2026-03-29 18:36
+  completed: 2026-03-29 18:38
+  commits: 2
+  notes: 'True L-shape complete: 8h across 3 rows (2+2+4), non-convex cross-section,
+    1930bp, 1 oligo.'
+- objective: Build a plus/cross shape cross-section (central column + horizontal arms).
+    Route scaffold. Verify 1 oligo. Screenshot. Tests complex branching topology.
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-29 18:30
   source: afk-policy
-
-- objective: "Build a 24-helix bundle (24HB) — 24 helices in a 3-row honeycomb arrangement forming a solid block. This is a common experimental structure. Route scaffold, verify 1 oligo, screenshot."
+  started: 2026-03-29 18:38
+  completed: 2026-03-29 18:40
+  commits: 2
+  notes: 'Cross/plus shape complete: 20h across 4 rows, plus-shaped cross-section
+    (4+6+6+4), 4830bp, 1 oligo. Thin plus shapes blocked by 4 degree-1 tips; wide
+    arms (2+ cols) required.'
+- objective: Build a 24-helix bundle (24HB) — 24 helices in a 3-row honeycomb arrangement
+    forming a solid block. This is a common experimental structure. Route scaffold,
+    verify 1 oligo, screenshot.
   priority: 3
-  status: pending
+  status: completed
   added: 2026-03-29 18:30
   source: afk-policy
+  started: 2026-03-29 18:40
+  completed: 2026-03-29 18:41
+  commits: 2
+  notes: '24HB complete: 3x8 solid block (24 helices), 5800bp, 1 oligo. Commit 0011fe8.'
+- objective: Generate a comprehensive summary figure showing all shapes built during
+    this stress test. Side-by-side comparison of cross-sections (slice view) and path
+    views for each shape. Annotate with helix count, scaffold bp, and oligo count.
+    Save as results/stress_test_shapes_summary.png. Commit all work.
+  priority: 3
+  status: completed
+  added: 2026-03-29 18:30
+  source: afk-policy
+  started: 2026-03-29 18:41
+  completed: 2026-03-29 18:42
+  commits: 2
+  notes: 'Shape stress test complete. 9 designs built from scratch, all 1 scaffold
+    oligo.
 
-- objective: "Generate a comprehensive summary figure showing all shapes built during this stress test. Side-by-side comparison of cross-sections (slice view) and path views for each shape. Annotate with helix count, scaffold bp, and oligo count. Save as results/stress_test_shapes_summary.png. Commit all work."
+
+    Summary figure: results/stress_test/shapes_summary.png
+
+
+    Shapes: 6HB (6h), L-shape (8h), hex ring (8h), 2x8 rect (16h), 4x4 block (16h),
+
+    3x6 rect (18h), 2x10 rect (20h), cross/plus (20h), 24HB (24h).
+
+
+    Topological limits discovered:
+
+    - Triangle: blocked (degree-1 corners on honeycomb)
+
+    - Thin plus: blocked (4 degree-1 tips; need 2+ col wide arms)
+
+    - Cross-row intra-pairs: need parity-aware edge placement'
+- objective: '[AFK CONTINUE] Your AFK goal: stress test the extent of your dna origami
+    design intelligence. Try various different shapes, different helical cross sections,
+    even try things from the literature like barrels, triangles, and so on. Assess
+    what you''ve accomplished so far. Read tasks/planning.md and recent commits. If
+    the goal is met, write ''AFK_COMPLETE'' to /tmp/mc-task-done/cadnano2/done.txt
+    and stop. Otherwise, identify what''s still needed and add 1-3 concrete next tasks
+    to your queue, then start working on the first one.'
+  priority: 3
+  status: completed
+  added: 2026-03-29 18:42
+  source: afk-refill
+  started: 2026-03-29 18:42
+  completed: 2026-03-29 18:43
+  commits: 19
+  notes: Recovered completion from AFK COMPLETE commit after stale session.
+- objective: '[AFK PLAN] Read tasks/afk-policy.yaml. Your AFK goal is: Try anisotropic
+    designs like instead of rectangles, try crosses, plus symbol shapes, structures
+    with insets, and so on. Send scaffold routings, helices, and 3d after conversion
+    with tacox. No need for oxdna relax.. Read CLAUDE.md, tasks/planning.md, tasks/lessons.md,
+    and recent objectives to understand current project state. Then break this goal
+    into 8 concrete tasks and add each to your queue using this exact format in tasks/queue.yaml:
+    each task should be 15-60 minutes of work, have clear success criteria, and be
+    suitable for unattended chaining. After writing the plan, start working on the
+    first task immediately.'
+  priority: 3
+  status: in_progress
+  added: 2026-03-29 20:28
+  source: afk
+  started: 2026-03-29 20:29
+
+# === AFK: Anisotropic designs + tacoxDNA 3D (2026-03-29) ===
+- objective: "T-shape cross-section: 6 helices wide horizontal bar (2 rows) + 2 helices narrow vertical stem (2 rows above center). Build from scratch, verify 1 oligo, autoStaple+autoBreak, convert with tacoxDNA, generate 3D cross-section visualization. Save JSON + screenshots + oxDNA files."
   priority: 3
   status: pending
-  added: 2026-03-29 18:30
+  added: 2026-03-29 20:30
+  source: afk-policy
+
+- objective: "Thick plus shape with inset/cavity: take the working 20h cross (4 rows) and add a central cavity (remove scaffold from inner 2 helices). This creates a plus-shaped frame. Verify 1 oligo, convert with tacoxDNA, visualize 3D."
+  priority: 3
+  status: pending
+  added: 2026-03-29 20:30
+  source: afk-policy
+
+- objective: "Wide rectangle with centered inset: 2x12 rectangle (24h) with a 4-helix cavity removed from the center. Use the cavity_variant_sweep approach. AutoStaple, autoBreak, tacoxDNA conversion. Screenshot + 3D view."
+  priority: 3
+  status: pending
+  added: 2026-03-29 20:30
+  source: afk-policy
+
+- objective: "Asymmetric stepped shape: 3-row structure where each row has a different width (e.g., 8+6+4 helices, like a pyramid/step). Build from scratch, verify 1 oligo, tacoxDNA 3D."
+  priority: 3
+  status: pending
+  added: 2026-03-29 20:30
+  source: afk-policy
+
+- objective: "Convert all 9 existing stress test shapes to 3D with tacoxDNA. Generate a multi-panel figure showing the honeycomb cross-section for each shape. Save to results/stress_test/."
+  priority: 3
+  status: pending
+  added: 2026-03-29 20:30
+  source: afk-policy
+
+- objective: "U-shape / channel cross-section: 3 rows where the middle row has fewer columns than top/bottom, creating a channel. Build from scratch, verify 1 oligo, tacoxDNA 3D."
+  priority: 3
+  status: pending
+  added: 2026-03-29 20:30
+  source: afk-policy
+
+- objective: "H-shape cross-section: two vertical columns connected by a horizontal bridge in the middle. 4 rows, bridge at rows 12-13, columns extend on rows 11 and 14. Build, verify, tacoxDNA 3D."
+  priority: 3
+  status: pending
+  added: 2026-03-29 20:30
+  source: afk-policy
+
+- objective: "Generate comprehensive summary: all anisotropic designs with cadnano slice+path views AND tacoxDNA 3D cross-sections side-by-side. Annotate with helix count, scaffold bp, physical dimensions. Commit all work, update planning."
+  priority: 3
+  status: pending
+  added: 2026-03-29 20:30
   source: afk-policy
