@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Anisotropic designs + tacoxDNA 3D (in progress)** — 7 shapes converted to 3D via tacoxDNA (6HB, L-shape, hex ring, cross/plus, 4x4, 3x6, 24HB). Summary at `results/stress_test/anisotropic_summary.png`. Remaining: inset/cavity variants, more non-rectangular shapes.
+1. **Anisotropic designs + tacoxDNA 3D (complete)** — 12 designs built, all with tacoxDNA 3D. Shapes: 6HB, L-shape, hex ring, 2x8, 4x4, 3x6, T-shape, cross/plus, 2x10, 24HB, 2x12+cavity, cross+cavity. Topology limits documented (triangle, H, U, stepped shapes blocked by degree-1 constraints). Summary: `results/stress_test/comprehensive_summary.png`.
 2. **DNA 32 Track B paper** — Draft revised, figures under PI review. Autobreak sweep + scaffold routing demos complete.
 
 **BLOCKED:** PACE resources exhausted for the month. All new designs stop at cadnano2 JSON + screenshot stage.
