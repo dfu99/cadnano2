@@ -70,47 +70,93 @@ def build_shape(name, positions, helix_len=252):
     inter_pairs = [(i * 2 + 1, i * 2 + 2) for i in range(n // 2 - 1)]
 
     # Place intra-pair edge half crossovers
+    # At lo (left edge): even helix's 5' connects, odd helix's 3' connects
+    # At hi (right edge): even helix's 3' connects, odd helix's 5' connects
     for ha, hb in intra_pairs:
         sa = vs_map[ha]['scaf']
         sb = vs_map[hb]['scaf']
-        r_a = positions[ha][0]
-        r_b = positions[hb][0]
+        r_a, c_a = positions[ha]
+        r_b, c_b = positions[hb]
         lo_a, hi_a = edges(r_a)
         lo_b, hi_b = edges(r_b)
+        pa = (r_a + c_a) % 2  # 0=even, 1=odd
+        pb = (r_b + c_b) % 2
 
-        # Use the min of lo values and min of hi values for the crossover position
         lo = max(lo_a, lo_b)
         hi = min(hi_a, hi_b)
 
-        # Left edge
-        sa[lo][0] = hb; sa[lo][1] = lo
-        sb[lo][2] = ha; sb[lo][3] = lo
-        # Right edge
-        sa[hi][2] = hb; sa[hi][3] = hi
-        sb[hi][0] = ha; sb[hi][1] = hi
+        # ha connections
+        if pa == 0:  # even: 5' at lo, 3' at hi
+            sa[lo][0] = hb; sa[lo][1] = lo
+            sa[hi][2] = hb; sa[hi][3] = hi
+        else:  # odd: 5' at hi, 3' at lo
+            sa[hi][0] = hb; sa[hi][1] = hi
+            sa[lo][2] = hb; sa[lo][3] = lo
+
+        # hb connections
+        if pb == 0:
+            sb[lo][0] = ha; sb[lo][1] = lo
+            sb[hi][2] = ha; sb[hi][3] = hi
+        else:
+            sb[hi][0] = ha; sb[hi][1] = hi
+            sb[lo][2] = ha; sb[lo][3] = lo
+
+        # Clear dangling scaffold beyond crossover for cross-row pairs
+        if r_a != r_b:
+            for s, r_s in [(sa, r_a), (sb, r_b)]:
+                lo_s, hi_s = edges(r_s)
+                for i in range(lo_s, lo):
+                    s[i] = list(EMPTY)
+                for i in range(hi + 1, hi_s + 1):
+                    s[i] = list(EMPTY)
 
     # Place inter-pair midseam full crossovers
-    # Find valid midseam position for each pair
+    # Valid honeycomb scaffold crossover offset pairs per direction:
+    #   p0: (1,2), (11,12)
+    #   p1: (8,9), (18,19)
+    #   p2: (4,5), (15,16)
+    _DIR_OFFSETS = {
+        0: [(1, 2), (11, 12)],
+        1: [(8, 9), (18, 19)],
+        2: [(4, 5), (15, 16)],
+    }
+    _ALL_OFFSETS = [(1, 2), (4, 5), (8, 9), (11, 12), (15, 16), (18, 19)]
+
+    def _get_dir(r1, c1, r2, c2):
+        if (r1 + c1) % 2 == 0:
+            if (r2, c2) == (r1, c1+1): return 0
+            if (r2, c2) == (r1-1, c1): return 1
+            if (r2, c2) == (r1, c1-1): return 2
+        else:
+            if (r2, c2) == (r1, c1-1): return 0
+            if (r2, c2) == (r1+1, c1): return 1
+            if (r2, c2) == (r1, c1+1): return 2
+        return None
+
     STEP = 21
     for ha, hb in inter_pairs:
         sa = vs_map[ha]['scaf']
         sb = vs_map[hb]['scaf']
-        r_a, r_b = positions[ha][0], positions[hb][0]
+        r_a, c_a = positions[ha]
+        r_b, c_b = positions[hb]
         lo_a, hi_a = edges(r_a)
         lo_b, hi_b = edges(r_b)
 
-        # Midseam at center of helix
         center = helix_len // 2
 
-        # Find valid position: try offsets that work for honeycomb
-        # Common valid offsets mod 21: {1,2}, {4,5}, {8,9}, {11,12}, {15,16}
+        # Use direction-specific offsets for the honeycomb neighbor direction
+        d = _get_dir(r_a, c_a, r_b, c_b)
+        if d is None:
+            d = _get_dir(r_b, c_b, r_a, c_a)
+        offsets = _DIR_OFFSETS.get(d, _ALL_OFFSETS)
+
         best_lo = None
         best_dist = 9999
-        for off_pair in [(1, 2), (4, 5), (8, 9), (11, 12), (15, 16)]:
+        for off_pair in offsets:
             for k in range(helix_len // STEP + 1):
                 lo = k * STEP + off_pair[0]
                 hi = k * STEP + off_pair[1]
-                if lo > lo_a and lo > lo_b and hi < hi_a and hi < hi_b:
+                if lo > max(lo_a, lo_b) and hi < min(hi_a, hi_b):
                     dist = abs(lo - center)
                     if dist < best_dist:
                         best_lo = lo
@@ -118,7 +164,7 @@ def build_shape(name, positions, helix_len=252):
                         best_dist = dist
 
         if best_lo is None:
-            print(f"  WARNING: No valid midseam for H{ha}-H{hb}")
+            print(f"  WARNING: No valid midseam for H{ha}-H{hb} (dir=p{d})")
             continue
 
         # At lo: ha 5' from hb, hb 3' to ha
