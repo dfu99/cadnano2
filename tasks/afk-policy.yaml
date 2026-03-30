@@ -1,9 +1,0 @@
-goal: stress test the extent of your dna origami design intelligence. Try various
-  different shapes, different helical cross sections, even try things from the literature
-  like barrels, triangles, and so on
-depth: 8
-priority: 3
-self_refill: true
-created: 2026-03-29 18:08
-max_refills: 10
-refill_count: 1
