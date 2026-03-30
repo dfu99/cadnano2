@@ -2,7 +2,7 @@
 
 ## Current Priorities
 
-1. **Shape stress test (complete)** — 9 shapes built from scratch, all 1 scaffold oligo: 6HB, L-shape (3-row), hex ring (8h), 2x8, 4x4, 3x6, 2x10, cross/plus (20h), 24HB (3x8). Summary figure at `results/stress_test/shapes_summary.png`.
+1. **Anisotropic designs + tacoxDNA 3D (in progress)** — 7 shapes converted to 3D via tacoxDNA (6HB, L-shape, hex ring, cross/plus, 4x4, 3x6, 24HB). Summary at `results/stress_test/anisotropic_summary.png`. Remaining: inset/cavity variants, more non-rectangular shapes.
 2. **DNA 32 Track B paper** — Draft revised, figures under PI review. Autobreak sweep + scaffold routing demos complete.
 
 **BLOCKED:** PACE resources exhausted for the month. All new designs stop at cadnano2 JSON + screenshot stage.
