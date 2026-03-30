@@ -1,0 +1,160 @@
+douglas2009:
+  type: article
+  title: "Rapid prototyping of 3D DNA-origami shapes with caDNAno"
+  author:
+    - Douglas, Shawn M.
+    - Marblestone, Adam H.
+    - Teerapittayanon, Surat
+    - Vazquez, Alejandro
+    - Church, George M.
+    - Shih, William M.
+  date: 2009
+  doi: 10.1093/nar/gkp436
+  parent:
+    type: periodical
+    title: Nucleic Acids Research
+    volume: 37
+    issue: 15
+  page-range: 5001-5006
+
+aksel2018:
+  type: article
+  title: "Design principles for accurate folding of DNA origami"
+  author:
+    - Aksel, Tural
+    - Navarro, Erik J.
+    - Fong, Nicholas
+    - Douglas, Shawn M.
+  date: 2024
+  doi: 10.1073/pnas.2406769121
+  parent:
+    type: periodical
+    title: Proceedings of the National Academy of Sciences
+    volume: 121
+    issue: 48
+
+fu2024:
+  type: article
+  title: "Automated design of 3D DNA origami with non-rasterized 2D curvature"
+  author:
+    - Fu, Daniel
+    - Narayanan, Raghu Pradeep
+    - Prasad, Abhay
+    - Zhang, Fei
+    - Williams, Dewight
+    - Schreck, John S.
+    - Yan, Hao
+    - Reif, John
+  date: 2022
+  doi: 10.1126/sciadv.ade4455
+  parent:
+    type: periodical
+    title: Science Advances
+    volume: 8
+    issue: 51
+
+veneziano2016:
+  type: article
+  title: "Designer nanoscale DNA assemblies programmed from the top down"
+  author:
+    - Veneziano, Rémi
+    - Ratanalert, Sakul
+    - Zhang, Kaiming
+    - Zhang, Fei
+    - Yan, Hao
+    - Chiu, Wah
+    - Bathe, Mark
+  date: 2016
+  doi: 10.1126/science.aaf4388
+  parent:
+    type: periodical
+    title: Science
+    volume: 352
+    issue: 6293
+  page-range: 1534-1534
+
+benson2015:
+  type: article
+  title: "DNA rendering of polyhedral meshes at the nanoscale"
+  author:
+    - Benson, Erik
+    - Mohammed, Abdulmelik
+    - Gardell, Johan
+    - Masich, Sergej
+    - Czeizler, Eugen
+    - Orponen, Pekka
+    - Högberg, Björn
+  date: 2015
+  doi: 10.1038/nature14586
+  parent:
+    type: periodical
+    title: Nature
+    volume: 523
+    issue: 7561
+  page-range: 441-444
+
+jun2019:
+  type: article
+  title: "Autonomously designed free-form 2D DNA origami"
+  author:
+    - Jun, Hyungmin
+    - Zhang, Fei
+    - Shepherd, Tyson
+    - Ratanalert, Sakul
+    - Qi, Xiaodong
+    - Yan, Hao
+    - Bathe, Mark
+  date: 2019
+  doi: 10.1126/sciadv.aav0655
+  parent:
+    type: periodical
+    title: Science Advances
+    volume: 5
+    issue: 1
+
+jun2021:
+  type: article
+  title: "Automated sequence design of 2D wireframe DNA origami with honeycomb edges"
+  author:
+    - Jun, Hyungmin
+    - Wang, Xiao
+    - Bricker, William P.
+    - Bathe, Mark
+  date: 2019
+  doi: 10.1038/s41467-019-13457-y
+  parent:
+    type: periodical
+    title: Nature Communications
+    volume: 10
+    issue: 1
+
+wang2024:
+  type: article
+  title: "Executable Code Actions Elicit Better LLM Agents"
+  author:
+    - Wang, Xingyao
+    - Chen, Yangyi
+    - Yuan, Lifan
+    - Zhang, Yizhe
+    - Li, Yunzhu
+    - Peng, Hao
+    - Ji, Heng
+  date: 2024
+  doi: 10.48550/arXiv.2402.01030
+  parent:
+    type: proceedings
+    title: "Proceedings of the 41st International Conference on Machine Learning (ICML)"
+
+levy2021:
+  type: article
+  title: "ENSnano: a 3D modeling software for DNA nanostructures"
+  author:
+    - Levy, Nicolas
+    - Schabanel, Nicolas
+  date: 2021
+  doi: 10.4230/LIPIcs.DNA.27.5
+  parent:
+    type: periodical
+    title: "DNA 27, Leibniz International Proceedings in Informatics"
+    volume: 205
+  page-range: "5:1-5:23"
