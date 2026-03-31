@@ -20,7 +20,7 @@ import json
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATE_PATH = os.path.join(PROJECT_ROOT, '2x12_rectangle_cavity.json')
+TEMPLATE_PATH = os.path.join(PROJECT_ROOT, 'examples/2x12_rectangle_cavity.json')
 VARIANT_DIR = os.path.join(PROJECT_ROOT, 'results', 'cavity_variants')
 MAX_DIM = 1800
 
