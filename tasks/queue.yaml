@@ -1230,8 +1230,40 @@ queue:
     5 after reload).'
 - objective: Do not lock the verifier into the tapered design.
   priority: 3
-  status: in_progress
+  status: completed
   added: 2026-03-31 14:45
   source: slack
   channel_id: C0AKX3J0EQL
   started: 2026-03-31 14:46
+  completed: 2026-03-31 14:58
+  commits: 9
+  notes: Recovered completion from done marker after stale session.
+- objective: convert the tapered design with tacox, then send me a 150 degree yaw
+    video to show the 3d model of the design
+  priority: 3
+  status: completed
+  added: 2026-03-31 15:39
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-31 15:41
+  completed: 2026-03-31 15:45
+  commits: 1
+  notes: Tapered 2x12 converted with tacoxDNA + 150° yaw video generated (GIF + MP4).
+    Commit 0c83a80.
+- objective: add this concept into the draft - "while a coding agent like Claude Opus
+    does not have geometric awareness of the designed dna nanostructure, it can use
+    processes enabled by integration with tools, like oxdna, that expose the 3d conformation
+    of dna in a structured file format, such as by finding that a structure forms
+    a flat rectangle (and then add the example of how you figured it out, and reference
+    the figure that corresponds to when we solved this problem)"
+  priority: 3
+  status: completed
+  added: 2026-03-31 16:52
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-31 16:54
+  completed: 2026-03-31 17:09
+  commits: 2
+  notes: 'Draft updated: expanded Section 3 geometric verification with concrete tacoxDNA
+    cross-section example. Also fixed tapered design taper direction. Commits: 850b8dc
+    (taper fix), 2278b43 (draft update).'
