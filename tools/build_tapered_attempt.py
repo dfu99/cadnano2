@@ -56,14 +56,20 @@ def main():
                 if strand.idxs()[0] > new_hi:
                     vh.scaffoldStrandSet().removeStrand(strand, useUndoStack=False)
 
-        r13_hi = min(new_hi, 242)
+        # R13 pairs: REVERSE taper order so both rows taper in same direction
+        # R13 routing goes cols 9→20. Pair 0 = cols 9,10 (leftmost).
+        # For same-direction taper: pair 0 (left) should be LONGEST,
+        # pair 5 (right) SHORTEST — same as R12's physical direction.
+        # So R13 pair i gets taper[5-i] (reversed).
+        r13_taper_idx = 5 - pair_idx
+        r13_new_hi = min(TAPER[r13_taper_idx], 242)
         for vh in [r13[2 * pair_idx], r13[2 * pair_idx + 1]]:
             for strand in list(vh.scaffoldStrandSet()):
                 lo, hi = strand.idxs()
-                if hi > r13_hi:
-                    strand.resize((lo, r13_hi), useUndoStack=False)
+                if hi > r13_new_hi:
+                    strand.resize((lo, r13_new_hi), useUndoStack=False)
             for strand in list(vh.scaffoldStrandSet()):
-                if strand.idxs()[0] > r13_hi:
+                if strand.idxs()[0] > r13_new_hi:
                     vh.scaffoldStrandSet().removeStrand(strand, useUndoStack=False)
 
     scaf = [o for o in part.oligos() if not o.isStaple()]
