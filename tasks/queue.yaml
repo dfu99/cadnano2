@@ -1212,3 +1212,26 @@ queue:
   completed: 2026-03-29 20:57
   commits: 2
   notes: AFK_COMPLETE
+- objective: and btw, I don't mean to suppress reporting. Still report, but just build
+    an automatic pipeline that will ensure you put more effort into it before reporting.
+    If it still doesn't work, of course I still want to know, so I can help you fix
+    it.
+  priority: 3
+  status: completed
+  added: 2026-03-31 14:38
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-31 14:38
+  completed: 2026-03-31 14:42
+  commits: 1
+  notes: 'Built automated verify-and-retry pipeline (10 attempts max). Taper-only
+    design PASSES verification: 24h, 4576bp, 1 oligo, 0 broken, 0 deformed. Midseam
+    centering blocked by moveCrossover encoder corruption (shows 1 oligo in-process,
+    5 after reload).'
+- objective: Do not lock the verifier into the tapered design.
+  priority: 3
+  status: in_progress
+  added: 2026-03-31 14:45
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-03-31 14:46
