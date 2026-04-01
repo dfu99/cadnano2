@@ -1,3 +1,91 @@
+rothemund2006:
+  type: article
+  title: "Folding DNA to create nanoscale shapes and patterns"
+  author:
+    - Rothemund, Paul W. K.
+  date: 2006
+  doi: 10.1038/nature04586
+  parent:
+    type: periodical
+    title: Nature
+    volume: 440
+    issue: 7082
+  page-range: 297-302
+
+douglas2009_3d:
+  type: article
+  title: "Self-assembly of DNA into nanoscale three-dimensional shapes"
+  author:
+    - Douglas, Shawn M.
+    - Dietz, Hendrik
+    - Liedl, Tim
+    - Högberg, Björn
+    - Graf, Franziska
+    - Shih, William M.
+  date: 2009
+  doi: 10.1038/nature08016
+  parent:
+    type: periodical
+    title: Nature
+    volume: 459
+    issue: 7245
+  page-range: 414-418
+
+ke2009:
+  type: article
+  title: "Multilayer DNA origami packed on a square lattice"
+  author:
+    - Ke, Yonggang
+    - Douglas, Shawn M.
+    - Liu, Minghui
+    - Sharma, Jaswinder
+    - Cheng, Anchi
+    - Leung, Albert
+    - Liu, Yan
+    - Shih, William M.
+    - Yan, Hao
+  date: 2009
+  doi: 10.1021/ja906381y
+  parent:
+    type: periodical
+    title: Journal of the American Chemical Society
+    volume: 131
+    issue: 43
+  page-range: 15903-15908
+
+dietz2009:
+  type: article
+  title: "Folding DNA into twisted and curved nanoscale shapes"
+  author:
+    - Dietz, Hendrik
+    - Douglas, Shawn M.
+    - Shih, William M.
+  date: 2009
+  doi: 10.1126/science.1174251
+  parent:
+    type: periodical
+    title: Science
+    volume: 325
+    issue: 5941
+  page-range: 725-730
+
+ke2012:
+  type: article
+  title: "Multilayer DNA origami packed on hexagonal and hybrid lattices"
+  author:
+    - Ke, Yonggang
+    - Voigt, Niels V.
+    - Gothelf, Kurt V.
+    - Shih, William M.
+  date: 2012
+  doi: 10.1021/ja209719k
+  parent:
+    type: periodical
+    title: Journal of the American Chemical Society
+    volume: 134
+    issue: 3
+  page-range: 1770-1774
+
 douglas2009:
   type: article
   title: "Rapid prototyping of 3D DNA-origami shapes with caDNAno"
@@ -144,6 +232,150 @@ wang2024:
   parent:
     type: proceedings
     title: "Proceedings of the 41st International Conference on Machine Learning (ICML)"
+
+majikes2021:
+  type: article
+  title: "DNA origami design: a how-to tutorial"
+  author:
+    - Majikes, Jacob M.
+    - Liddle, J. Alexander
+  date: 2021
+  doi: 10.6028/jres.126.001
+  parent:
+    type: periodical
+    title: Journal of Research of the National Institute of Standards and Technology
+    volume: 126
+  page-range: "126001"
+
+he2025:
+  type: article
+  title: "LLM-based multi-agent systems for software engineering: literature review, vision, and the road ahead"
+  author:
+    - He, Junda
+    - Treude, Christoph
+    - Lo, David
+  date: 2025
+  doi: 10.1145/3712003
+  parent:
+    type: periodical
+    title: ACM Transactions on Software Engineering and Methodology
+    volume: 34
+    issue: 5
+  page-range: 1-30
+
+dong2025:
+  type: article
+  title: "A survey on code generation with LLM-based agents"
+  author:
+    - Dong, Yihong
+    - Jiang, Xue
+    - Qian, Jiazheng
+    - Wang, Tao
+    - Zhang, Kexun
+    - Jin, Zhi
+    - Li, Ge
+  date: 2025
+  doi: 10.48550/arXiv.2508.00083
+  parent:
+    type: periodical
+    title: "arXiv preprint arXiv:2508.00083"
+
+ouldridge2011:
+  type: article
+  title: "Structural, mechanical, and thermodynamic properties of a coarse-grained DNA model"
+  author:
+    - Ouldridge, Thomas E.
+    - Louis, Ard A.
+    - Doye, Jonathan P. K.
+  date: 2011
+  doi: 10.1063/1.3552946
+  parent:
+    type: periodical
+    title: The Journal of Chemical Physics
+    volume: 134
+    issue: 8
+  page-range: "085101"
+
+sulc2012:
+  type: article
+  title: "Sequence-dependent thermodynamics of a coarse-grained DNA model"
+  author:
+    - Šulc, Petr
+    - Romano, Flavio
+    - Ouldridge, Thomas E.
+    - Rovigatti, Lorenzo
+    - Doye, Jonathan P. K.
+    - Louis, Ard A.
+  date: 2012
+  doi: 10.1063/1.4754132
+  parent:
+    type: periodical
+    title: The Journal of Chemical Physics
+    volume: 137
+    issue: 13
+  page-range: "135101"
+
+snodin2015:
+  type: article
+  title: "Introducing improved structural properties and salt dependence into a coarse-grained model of DNA"
+  author:
+    - Snodin, Benedict E. K.
+    - Randisi, Ferdinando
+    - Mosayebi, Majid
+    - Šulc, Petr
+    - Schreck, John S.
+    - Romano, Flavio
+    - Ouldridge, Thomas E.
+    - Tsukanov, Roman
+    - Nir, Eyal
+    - Louis, Ard A.
+    - Doye, Jonathan P. K.
+  date: 2015
+  doi: 10.1063/1.4921957
+  parent:
+    type: periodical
+    title: The Journal of Chemical Physics
+    volume: 142
+    issue: 23
+  page-range: "234901"
+
+rovigatti2015:
+  type: article
+  title: "A comparison between parallelization approaches in molecular dynamics simulations on GPUs"
+  author:
+    - Rovigatti, Lorenzo
+    - Šulc, Petr
+    - Reguly, István Z.
+    - Romano, Flavio
+  date: 2015
+  doi: 10.1002/jcc.23763
+  parent:
+    type: periodical
+    title: Journal of Computational Chemistry
+    volume: 36
+    issue: 1
+
+suma2019:
+  type: article
+  title: "TacoxDNA: a user-friendly web server for simulations of complex DNA structures, from single strands to origami"
+  author:
+    - Suma, Antonio
+    - Poppleton, Erik
+    - Matthies, Michael
+    - Šulc, Petr
+    - Romano, Flavio
+    - Louis, Ard A.
+    - Doye, Jonathan P. K.
+    - Micheletti, Cristian
+    - Rovigatti, Lorenzo
+  date: 2019
+  doi: 10.1002/jcc.26029
+  parent:
+    type: periodical
+    title: Journal of Computational Chemistry
+    volume: 40
+    issue: 29
+  page-range: 2586-2595
 
 levy2021:
   type: article
