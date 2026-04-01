@@ -1267,3 +1267,63 @@ queue:
   notes: 'Draft updated: expanded Section 3 geometric verification with concrete tacoxDNA
     cross-section example. Also fixed tapered design taper direction. Commits: 850b8dc
     (taper fix), 2278b43 (draft update).'
+- objective: keep trying new structures. For example, using the media of moving the
+    edge crossovers around, now try to make a cross design.
+  priority: 3
+  status: skipped
+  added: 2026-04-01 11:54
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-04-01 11:57
+  completed: 2026-04-01 12:58
+  notes: Recovered stale in_progress item after newer queued work arrived.
+- objective: keep trying new structures. For example, using the media of moving the
+    edge crossovers around, now try to make a cross design.
+  priority: 3
+  status: completed
+  added: 2026-04-01 12:07
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-04-01 12:58
+  completed: 2026-04-01 13:16
+  commits: 2
+  notes: 'Cross design variants complete. 3 new shapes (16h/24h/28h), all with 1 scaffold
+    oligo + full tacoxDNA pipeline. Key finding: symmetric crosses not routable on
+    honeycomb. Committed and staged for Slack.'
+- objective: keep trying new structures. For example, using the media of moving the
+    edge crossovers around, now try to make a cross design.
+  priority: 3
+  status: completed
+  added: 2026-04-01 12:37
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-04-01 13:16
+  completed: 2026-04-01 13:39
+  commits: 2
+  notes: Auto-completed via slack_staged.
+- objective: keep trying new structures. For example, using the media of moving the
+    edge crossovers around, now try to make a cross design.
+  priority: 3
+  status: in_progress
+  added: 2026-04-01 12:53
+  source: slack
+  channel_id: C0AKX3J0EQL
+  started: 2026-04-01 13:39
+- objective: keep trying new structures. For example, using the media of moving the
+    edge crossovers around, now try to make a cross design.
+  priority: 3
+  status: pending
+  added: 2026-04-01 12:56
+  source: slack
+  channel_id: C0AKX3J0EQL
+- objective: When you ran the bounded box experiment using the tacoxdna convert to
+    check whether a honeycomb helix design was actually "flat" or not, you sent me
+    a figure of a successfully minimized bounding box. Send me a figure that shows
+    an example of an accepted and rejected helix placement. I need white background.
+    Generate most ostentatious wrong-shape examples. Also, repeat this exercise for
+    1-layer, 2-layer, 3-layer, and 4-layer lattice helix placements.
+  priority: 3
+  status: pending
+  added: 2026-04-01 13:42
+  source: slack
+  channel_id: C0AKX3J0EQL
