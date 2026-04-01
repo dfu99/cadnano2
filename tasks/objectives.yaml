@@ -1166,3 +1166,34 @@ objectives:
     completed; GPU relaxation pending in PACE queue.
   connects_to: null
   completed_date: '2026-03-24'
+
+- id: cross_strand_design
+  statement: Cross shape via strand trimming on flat 2-layer rectangle
+  methodology: >-
+    Built cross_strand_2arm_90bp by loading 2×12 simple routing rectangle
+    and using strand.resize() to trim outer helix pairs from both left and
+    right edges. Center 2 pairs per row stay full length (241bp), outer
+    2 pairs per row trimmed to centered 90bp sections. Same technique as
+    taper but applied to both sides. Full pipeline: autoStaple + autoBreak
+    + tacoxDNA conversion.
+  metrics:
+    helices: 24
+    scaffold_bp: 3388
+    scaffold_oligos: 1
+    staples: 95
+    nucleotides: 6776
+    strands: 96
+    arm_length_bp: 90
+    bar_length_bp: 241
+    dimensions_nm: "81.0 x 21.7 x 5.6"
+  figures:
+  - results/stress_test/cross_strand_2arm_90bp_both.png
+  - results/stress_test/cross_strand_2arm_90bp_stapled_3d.png
+  conclusions: >-
+    Cross shape successfully created by moving edge crossovers on a flat
+    2-layer rectangle. The shape is in the strands (strand lengths), not
+    the lattice helix placement. PI correction: "design the pattern in the
+    strands" not "design the pattern in the lattice." tacoxDNA top view
+    confirms cross silhouette. Script parameterized for arm count and length.
+  connects_to: null
+  completed_date: '2026-04-01'

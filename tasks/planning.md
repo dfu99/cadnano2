@@ -2,13 +2,13 @@
 
 ## Current Priorities
 
-1. **Anisotropic designs + tacoxDNA 3D (ongoing)** — 15 designs built (added 3 new cross variants). Shapes: 6HB, L-shape, hex ring, 2x8, 4x4, 3x6, T-shape, cross/plus, 2x10, 24HB, 2x12+cavity, cross+cavity, cross_thin_16h, cross_wide_24h, cross_xl_28h. Topology limits documented (triangle, H, U, stepped shapes blocked by degree-1 constraints; symmetric crosses blocked by dead-end constraints). Summary: `results/stress_test/cross_sections_comparison.png`.
+1. **Strand-based shape design (ongoing)** — Cross shape via strand trimming complete (`cross_strand_2arm_90bp`). PI correction: shapes come from moving edge crossovers on flat 2-layer rect, NOT from lattice helix placement. Script `build_cross_strand.py` parameterized for arm count/length. Next: try more shapes (arrow, diamond, etc.) using same technique.
 2. **DNA 32 Track B paper** — Draft revised, figures under PI review. Autobreak sweep + scaffold routing demos complete.
 
 **BLOCKED:** PACE resources exhausted for the month. All new designs stop at cadnano2 JSON + screenshot stage.
 **CLOSED:** RLVR local model training. The pipeline + verifier approach is the DNA 32 story.
 
-## Checkpoint State (2026-03-29)
+## Checkpoint State (2026-04-01)
 
 All work committed and pushed. Archive: `tasks/archive/planning_2026-03-29.md`
 
@@ -33,7 +33,7 @@ Capabilities demonstrated to date:
 
 ## Recently Completed
 
-- **Cross design variants** (2026-04-01): 3 new cross shapes via build_shape.py: thin 16h (2-col arms, 6-col bar), wide 24h (4-col arms, 8-col bar), XL 28h (4-col arms, 10-col bar). All 1 scaffold oligo, full pipeline (autoStaple+autoBreak+tacoxDNA). Key finding: symmetric crosses not routable with alternating scaffold on honeycomb (dead-end constraints). Cross-sections at `results/stress_test/cross_sections_comparison.png`.
+- **Cross via strand trimming** (2026-04-01): Built cross shape by moving edge crossovers on flat 2×12 rectangle. `build_cross_strand.py` trims outer pairs from both sides (90bp centered), keeps center pairs full length (241bp). 1 scaffold oligo, 3388bp, 96 strands. PI correction: shape = strand lengths, NOT lattice placement. Earlier lattice-based crosses were wrong approach.
 - **Autobreak parameter sweep** (2026-03-27): 6 configs (minLeg 3/5 x target 28/32/42) on 30nm cavity design. minLeg=3: 0 unsolvable, good target adherence. minLeg=5: 6-13 unsolvable, many >50bp staples. Summary figure + 6 screenshots + 6 JSONs at `results/autobreak_sweep/`.
 - **Academic writing revision** (2026-03-27): Fixed 45 violations across 3 paper drafts. Narrative→declarative, emdashes→commas, AI-slop headings removed, PI→User, figure captions fixed.
 - **Major paper revision: Blocker/Unblocker table, new figures, PI→User** (2026-03-27): Removed Figs 2-4,6-8. Added Fig 2 (ugly mess), Fig 3 (user template), Fig 4 (cross-section), Fig 6 (cavity routing), Fig 7 (stapled product). Added Table 2 with 10 blockers/unblockers. All PI→User.
