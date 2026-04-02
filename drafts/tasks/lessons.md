@@ -23,6 +23,9 @@
 - When replacing figures, always update both the image path AND the caption.
 - Check for dangling @fig references in body text after removing figures.
 
+## Colon Usage
+- Do not overuse colons. Excessive colons read as AI-generated. Use periods, conjunctions, or restructure the sentence instead. Only use colons where absolutely necessary (e.g., introducing a formal list title, or where no other punctuation works). When in doubt, use a period and start a new sentence.
+
 ## Figure Citations
 - Every figure and subfigure must be explicitly cited in the body text. No figure should appear without a corresponding textual reference. This is standard academic paper writing practice.
 - Subfigure labels use uppercase: (A), (B), (C) — not lowercase. Match the case used in the actual figure images.
