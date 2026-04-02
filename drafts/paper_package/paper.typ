@@ -84,87 +84,42 @@ However, source code access alone was not sufficient. Building a correct DNA ori
 
 The agent's earliest outputs were structurally incoherent (@fig2, A). Helices were placed at arbitrary grid positions, crossovers were sparse or absent, there were many short and disconnected strands, primarily due to not understanding polarity within the design space, and the resulting designs bore little resemblance to valid DNA origami. These failures established the baseline: the agent could read caDNAno's source code and execute its API, but had no understanding of the geometric conventions that govern helix placement on the honeycomb lattice.
 
-=== 4.1 Autonomous Geometric Verification via tacoxDNA
+=== 4.1 The "Layer" Ambiguity
 
-One capability the agent developed independently was geometric verification through the end-to-end pipeline. caDNAno's 2D path view provides no spatial information about the 3D conformation of a design. However, with tacoxDNA integrated, the agent could convert candidate designs to 3D coordinates and analyze the resulting geometry. The agent used this to determine whether a helix arrangement was physically "flat": it generated candidate grid layouts, converted each to oxDNA format, computed cross-sectional slices by PCA decomposition of the 3D nucleotide coordinates, and evaluated whether the resulting profile matched a flat rectangle (@fig2, B). By measuring cross-sectional circularity (flat sheet: aspect ratio #sym.approx 0.05; incorrect 2-by-3 grid: #sym.approx 0.84), the agent could reject wrong helix arrangements without human feedback. This process, integration of a 3D simulation tool to compensate for geometric information absent from the design tool, was not anticipated in the original system design.
+The first obstacle was the relationship between grid rows and physical layers on the honeycomb lattice. On the honeycomb lattice, helices are arranged in a hexagonal packing where adjacent rows are offset vertically. A single row of hexagonally packed helices occupies two distinct y-coordinates, because the vertices of a hexagon do not lie on a single horizontal line. The agent interpreted these two y-coordinates as two physical layers, and therefore constructed a 4-by-7 grid (4 rows, 7 columns) when instructed to build a "2-layer" rectangle. In fact, a 2-layer structure corresponds to 2 grid rows on the honeycomb lattice (yielding a 2-by-12 grid), because one physical layer comprises helices at both y-coordinates of a single hexagonal row.
 
-=== 4.2 The "Layer" Ambiguity
+This ambiguity could not be resolved from the source code. The agent independently generated a multiple-choice diagram of 1-layer, 2-layer, 3-layer, and 4-layer cross-sections and asked the user to identify which arrangement corresponded to "2-layer" (@fig2, B). The user labeled the correct option, and the agent did not repeat this error in any subsequent session. The correction was formalized as a constraint in the pipeline: N-layer = N grid rows on the honeycomb lattice.
 
-Despite this geometric capability, the agent could not resolve the relationship between grid rows and physical layers on the honeycomb lattice. On the honeycomb lattice, helices are arranged in a hexagonal packing where adjacent rows are offset vertically. A single row of hexagonally packed helices occupies two distinct y-coordinates, because the vertices of a hexagon do not lie on a single horizontal line. The agent interpreted these two y-coordinates as two physical layers, and therefore constructed a 4-by-7 grid (4 rows, 7 columns) when instructed to build a "2-layer" rectangle. In fact, a 2-layer structure corresponds to 2 grid rows on the honeycomb lattice (yielding a 2-by-12 grid), because one physical layer comprises helices at both y-coordinates of a single hexagonal row.
+=== 4.2 Autonomous Geometric Verification via tacoxDNA
 
-This ambiguity could not be resolved from the source code. The agent independently generated a multiple-choice diagram of 1-layer, 2-layer, 3-layer, and 4-layer cross-sections and asked the user to identify which arrangement corresponded to "2-layer" (@fig2, C). The user labeled the correct option, and the agent did not repeat this error in any subsequent session. The correction was formalized as a constraint in the pipeline: N-layer = N grid rows on the honeycomb lattice.
+With the layer definition resolved, the agent independently developed geometric verification through the end-to-end pipeline (@fig2, C). caDNAno's 2D path view provides no spatial information about the 3D conformation of a design. However, with tacoxDNA integrated, the agent could convert candidate designs to 3D coordinates and analyze the resulting geometry. The agent used this to determine whether a helix arrangement was physically "flat": it generated candidate grid layouts, converted each to oxDNA format, computed cross-sectional slices by PCA decomposition of the 3D nucleotide coordinates, and evaluated whether the resulting profile matched a flat rectangle. By measuring cross-sectional circularity (flat sheet: aspect ratio #sym.approx 0.05; incorrect 2-by-3 grid: #sym.approx 0.84), the agent could reject wrong helix arrangements without human feedback. This process, integration of a 3D simulation tool to compensate for geometric information absent from the design tool, was not anticipated in the original system design.
 
 #figure(
-  grid(
-    columns: 1,
-    gutter: 1em,
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[A],
-      v(0.3em),
-      grid(
-        columns: 2,
-        gutter: 0.5em,
-        image("figures/fig_early_4x7_grid.png", width: 100%),
-        image("figures/fig_rect_serpentine_both.png", width: 100%),
-      ),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[B],
-      v(0.3em),
-      image("figures/fig2b_cross_section_flat.png", width: 100%),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[C],
-      v(0.3em),
-      image("figures/honeycomb_layer_comparison.png", width: 100%),
-    ),
-  ),
-  caption: [Formalizing helix placement on the honeycomb lattice. (A) Early agent outputs: a 4-by-7 grid (left, the agent's incorrect interpretation of "2-layer") and a flat rectangle with serpentine routing (right, structurally valid but with incorrect scaffold routing). (B) Autonomous geometric verification via tacoxDNA: PCA cross-section analysis distinguishes correct flat sheets (reward 0.948) from incorrect grid arrangements (reward 0.421). The agent developed this verification independently by converting caDNAno designs to oxDNA 3D coordinates and measuring cross-sectional circularity. (C) Multiple-choice diagram the agent generated to resolve the "layer" ambiguity. The user identified the correct grid-to-layer correspondence, which the agent retained for all subsequent designs.],
+  image("figures/fig2_lattice.png", width: 100%),
+  caption: [Formalizing helix placement on the honeycomb lattice. (A) Early agent output: a 4-by-7 grid, the agent's incorrect interpretation of "2-layer," producing 28 helices with fragmented scaffold routing. (B) Multiple-choice diagram the agent generated to resolve the "layer" ambiguity. When instructed to build a "2-layer" structure, the agent could not determine the mapping between grid rows and physical layers from the source code, and prompted the user to identify the correct correspondence. The user labeled the 2-grid-row option, and the agent retained this for all subsequent designs. (C) With the layer definition resolved, the agent independently developed geometric verification by converting candidate designs to 3D coordinates via tacoxDNA and computing PCA cross-sections. This allowed the agent to distinguish correct flat sheets (aspect ratio #sym.approx 0.05) from incorrect grid arrangements (#sym.approx 0.84) without human feedback.],
 ) <fig2>
 
 == 5. Formalizing Scaffold Routing Rules
 
 With lattice geometry resolved, the next class of errors concerned scaffold routing: how crossovers connect the scaffold strand into a single continuous loop across all helices.
 
-=== 5.1 Serpentine vs Dense Routing
+=== 5.1 Early Attempts
 
-The agent's initial approach was serpentine routing: one crossover per helix pair, producing 65 disconnected scaffold oligos instead of a single continuous strand (@fig3, A). Correct DNA origami routing requires dense crossover placement: the scaffold weaves between adjacent helices through multiple double crossovers per pair, with half-crossovers at the left and right edges of the structure serving as turn points (@fig3, B). The agent had no basis for distinguishing which half-crossovers belong on which edge, or how full crossovers and half-crossovers must alternate to produce a single continuous scaffold path.
+The agent's first task was to understand the width of the path design space: how many helices, how long, and where strands begin and end (@fig3, A, top). After the user introduced the concepts of full crossovers (double crossovers connecting adjacent helices in the interior) and half crossovers (single crossovers at the edges serving as scaffold turns), the agent attempted to place them (@fig3, A, bottom). However, without knowledge of where these crossovers should go, the agent produced disconnected scaffold fragments rather than a single continuous strand.
 
 === 5.2 User Correction
 
-The user provided a hand-designed 2-by-12 template with correct dense crossover routing (@fig3, C), along with an explanation of half-crossover versus full-crossover placement rules. The key distinction: at each helix pair boundary, the scaffold turns via a single half-crossover (left edge or right edge, determined by helix parity), while the interior is connected by double crossovers at every valid honeycomb position. This "single midseam" pattern generalizes to all simple rectangular structures.
+The user provided a hand-designed 2-by-6 rectangle with correct dense crossover routing (@fig3, B), along with an explanation of the placement rules. The key distinction: at each helix pair boundary, the scaffold turns via a single half-crossover (left edge or right edge, determined by helix parity), while the interior is connected by double crossovers at every valid honeycomb position. This creates a "single midseam" pattern that produces one continuous scaffold oligo.
 
 Additional errors in this phase included scaffold/staple strand assignment (the agent placed scaffold strands on the staple strand set and vice versa), which the user identified by inspecting the design in caDNAno.
 
-After these corrections, the agent produced a valid 2-by-14 2-layer honeycomb DNA origami rectangle, which served as the first end-to-end validation of the pipeline from design through molecular dynamics simulation.
+=== 5.3 Generalization
+
+After learning the pattern of where full crossovers create the midseam and how half crossovers alternate with full crossovers to maintain a single continuous scaffold routing, the agent generalized to different lattice dimensions without further instruction (@fig3, C). The 2-by-6 template from the user (B) was sufficient for the agent to produce a correct 2-by-8 routing (C), and subsequently 2-by-14, 2-by-18, and other dimensions, each with 1 scaffold oligo. The 2-by-14 rectangle served as the first end-to-end validation of the pipeline from design through molecular dynamics simulation.
 
 #figure(
-  grid(
-    columns: 1,
-    gutter: 1em,
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[A],
-      v(0.3em),
-      image("figures/fig3a_serpentine_both.png", width: 95%),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[B],
-      v(0.3em),
-      image("figures/fig_disconnected_both.png", width: 95%),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[C],
-      v(0.3em),
-      image("figures/fig_user_template_both.png", width: 95%),
-    ),
-  ),
-  caption: [Formalizing scaffold routing. (A) Agent's from-scratch attempt produced 65 scaffold oligos using serpentine routing (1 crossover per helix pair). (B) Disconnected helices with no crossovers (6 scaffold oligos). (C) User-provided template with correct dense crossover routing, 1 scaffold oligo (5,036 bp). The half-crossover vs full-crossover distinction and the "single midseam" routing pattern were explained alongside this template.],
+  image("figures/fig3_scaffold_routing.png", width: 100%),
+  caption: [Formalizing scaffold routing. (A) Early agent attempts. Top: the agent explores the path design space, placing strands at various lengths across helices. Bottom: after being told about full and half crossovers, the agent attempts to place them but has no knowledge of where they should go to produce a single continuous scaffold. (B) User-provided 2-by-6 rectangle template with correct dense crossover routing, 1 scaffold oligo. The half-crossover vs full-crossover distinction and the "single midseam" routing pattern were explained alongside this template. (C) After learning the midseam and half-crossover placement rules from (B), the agent generalizes to a 2-by-8 rectangle with correct routing, 1 scaffold oligo, without further instruction.],
 ) <fig3>
 
 == 6. Formalizing Cavity Design
@@ -193,32 +148,12 @@ The resulting design was a 2-by-12 rectangular origami with an aligned cavity, 1
   grid(
     columns: 2,
     gutter: 1em,
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[A],
-      v(0.3em),
-      image("figures/fig3a_serpentine_both.png", width: 100%),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[B],
-      v(0.3em),
-      image("figures/fig_user_template_both.png", width: 100%),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[C],
-      v(0.3em),
-      image("figures/fig_cavity_correct_both.png", width: 100%),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[D],
-      v(0.3em),
-      image("figures/fig_stapled_both.png", width: 100%),
-    ),
+    stack(dir: ttb, text(weight: "bold", size: 10pt)[A], v(0.3em), image("figures/fig3a_serpentine_slice.png", width: 40%), v(0.3em), image("figures/fig3a_serpentine_path.png", width: 100%)),
+    stack(dir: ttb, text(weight: "bold", size: 10pt)[B], v(0.3em), image("figures/fig4b_cavity_template_scaffonly_slice.png", width: 100%), v(0.3em), image("figures/fig4b_cavity_template_scaffonly_path.png", width: 100%)),
+    stack(dir: ttb, text(weight: "bold", size: 10pt)[C], v(0.3em), image("figures/fig4c_cavity_correct_slice.png", width: 100%), v(0.3em), image("figures/fig4c_cavity_correct_path.png", width: 100%)),
+    stack(dir: ttb, text(weight: "bold", size: 10pt)[D], v(0.3em), image("figures/fig4d_stapled_slice.png", width: 100%), v(0.3em), image("figures/fig4d_stapled_path.png", width: 100%)),
   ),
-  caption: [Formalizing cavity design. (A) Agent's initial attempt at scaffold routing: 65 disconnected oligos. (B) User-provided template with correct dense routing and cavity gap, 1 scaffold oligo (5,036 bp). (C) Correctly routed 30 nm cavity design with 1 scaffold oligo, produced by the agent after incorporating the user's corrections. The "half-and-half" routing pattern is visible: half-crossovers at cavity boundaries for scaffold turns, full crossovers in the interior. (D) Final stapled product after autoStaple + autoBreak (220+ staples, minLegLen=3), ready for tacoxDNA conversion and oxDNA molecular dynamics simulation.],
+  caption: [Formalizing cavity design. Slice view (top) and path view (bottom) for each panel. (A) Agent's initial attempt at scaffold routing: disconnected oligos. (B) User-provided template showing scaffold routing with cavity gap (staples hidden for clarity), 1 scaffold oligo (5,036 bp). The routing changes at the cavity boundaries: half-crossovers serve as scaffold turns, while full crossovers connect the interior. (C) Correctly routed 30 nm cavity design with 1 scaffold oligo, produced by the agent after incorporating the user's corrections. (D) Final stapled product after autoStaple + autoBreak (220+ staples, minLegLen=3), ready for tacoxDNA conversion and oxDNA molecular dynamics simulation.],
 ) <fig4>
 
 == 7. Cumulative Capability and Targeted Edits
@@ -249,27 +184,13 @@ Each edit required the agent to apply multiple pieces of domain knowledge transf
 
 #figure(
   grid(
-    columns: 1,
-    gutter: 1em,
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[A],
-      v(0.3em),
-      grid(
-        columns: 2,
-        gutter: 0.5em,
-        image("figures/fig5a_targeted_before.png", width: 100%),
-        image("figures/fig5b_targeted_after.png", width: 100%),
-      ),
-    ),
-    stack(
-      dir: ttb,
-      text(weight: "bold", size: 10pt)[B],
-      v(0.3em),
-      image("figures/fig_targeted_edits_sequence.png", width: 100%),
-    ),
+    columns: 3,
+    gutter: 0.8em,
+    stack(dir: ttb, text(weight: "bold", size: 10pt)[A], v(0.3em), image("figures/fig5_before_slice.png", width: 100%), v(0.3em), image("figures/fig5_before_scaffonly_path.png", width: 100%)),
+    stack(dir: ttb, text(weight: "bold", size: 10pt)[B], v(0.3em), image("figures/fig5_centered_slice.png", width: 100%), v(0.3em), image("figures/fig5_centered_scaffonly_path.png", width: 100%)),
+    stack(dir: ttb, text(weight: "bold", size: 10pt)[C], v(0.3em), image("figures/fig5_stapled_slice.png", width: 100%), v(0.3em), image("figures/fig5_stapled_path.png", width: 100%)),
   ),
-  caption: [Targeted edits and end-to-end demonstrations. (A) Crossover repositioning: before (left, scaffold-only) and after (right). Inter-pair crossovers moved away from cavity boundaries, cavity centered. (B) Three-panel caDNAno2 path view sequence showing the 2-by-22 design after: shrink (left), crossover repositioning + cavity centering (center), autoStaple + autoBreak (right). Each edit executed correctly on the first attempt.],
+  caption: [One-shot targeted edits on the 2-by-22 integrin cavity design. Slice view (top) and path view (bottom) for each panel. (A) Starting state: scaffold-only, before edits. (B) After two edits: structure shrink (edge crossovers moved inward, 252 #sym.arrow 225 bp) and crossover repositioning + cavity centering (5 inter-pair crossovers moved 26+ bp from cavity boundaries, cavity centered to within 1 bp). (C) After autoStaple + autoBreak (220+ staples, minLegLen=3): complete stapled design ready for tacoxDNA conversion. Each edit executed correctly on the first attempt.],
 ) <fig5>
 
 == 8. Agents as a Substrate for Shared Design Intelligence
