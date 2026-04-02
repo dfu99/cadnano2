@@ -5,3 +5,6 @@ __pycache__
 build
 dist
 .env*
+!local.env.example
+local.env
+.machine
