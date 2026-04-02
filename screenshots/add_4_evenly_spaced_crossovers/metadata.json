@@ -12,6 +12,6 @@
       130
     ]
   },
-  "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 4, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 130, 'high_idx': 131}]}",
+  "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 4, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 130, 'high_idx': 131, 'type': 'double'}]}",
   "natural_language": "Add 4 evenly spaced scaffold crossovers between helix 0 and helix 1"
 }

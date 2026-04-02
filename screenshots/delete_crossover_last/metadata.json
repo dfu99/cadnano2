@@ -3,9 +3,9 @@
   "description": "Delete the last crossover",
   "params": {
     "helix_num": 1,
-    "idx": 152,
+    "idx": 162,
     "strand_type": "scaffold"
   },
-  "result": "Removed crossover at helix 1[152] (was connected to helix 0)",
+  "result": "Removed crossover at helix 1[162] (was connected to helix 0)",
   "natural_language": "Delete the last crossover between helix 0 and helix 1"
 }

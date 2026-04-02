@@ -4,6 +4,6 @@
   "params": {
     "strand_type": "scaffold"
   },
-  "result": "{'strand_type': 'scaffold', 'removed': 23}",
+  "result": "{'strand_type': 'scaffold', 'removed': 25}",
   "natural_language": "Remove all scaffold crossovers in the design"
 }

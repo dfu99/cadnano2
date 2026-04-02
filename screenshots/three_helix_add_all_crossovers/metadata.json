@@ -4,6 +4,6 @@
   "params": {
     "strand_type": "scaffold"
   },
-  "result": "{'strand_type': 'scaffold', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}]}",
+  "result": "{'strand_type': 'scaffold', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}], 'routing_pairs': 2}",
   "natural_language": "Add scaffold crossovers between all neighboring helices in a 3-helix design"
 }

@@ -5,6 +5,6 @@
     "strand_type": "scaffold",
     "delta": 21
   },
-  "result": "{'strand_type': 'scaffold', 'resized': 10, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [5, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [26, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [47, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [68, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [89, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 25]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 46]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 67]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 88]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 109]}]}",
+  "result": "{'strand_type': 'scaffold', 'resized': 11, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [5, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [26, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [47, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [68, 109]}, {'helix': 1, 'old_range': [110, 120], 'new_range': [89, 120]}, {'helix': 1, 'old_range': [121, 125], 'new_range': [100, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 25]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 46]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 67]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 88]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 109]}]}",
   "natural_language": "Extend all scaffold strands by 21 bases"
 }

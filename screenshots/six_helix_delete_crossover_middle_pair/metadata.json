@@ -3,10 +3,10 @@
   "description": "Delete middle pair crossover in 6-helix design",
   "params": {
     "helix_num": 2,
-    "idx": 64,
+    "idx": 44,
     "strand_type": "scaffold",
     "n_helices": 6
   },
-  "result": "Removed crossover at helix 2[64] (was connected to helix 5)",
+  "result": "Removed crossover at helix 2[44] (was connected to helix 5)",
   "natural_language": "Delete the middle pair crossover in a 6-helix design"
 }

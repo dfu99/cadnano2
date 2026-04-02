@@ -4,11 +4,11 @@
   "params": {
     "helix1": 2,
     "helix2": 5,
-    "idx": 64,
+    "idx": 44,
     "strand_type": "scaffold",
     "delta": 3,
     "n_helices": 6
   },
   "result": "Error: Moving by 3 would make strand length negative",
-  "natural_language": "Move the crossover at helix 2 index 64 right by 3 bases in a 6-helix design"
+  "natural_language": "Move the crossover at helix 2 index 44 right by 3 bases in a 6-helix design"
 }

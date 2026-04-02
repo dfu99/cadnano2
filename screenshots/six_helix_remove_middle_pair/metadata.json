@@ -7,6 +7,6 @@
     "strand_type": "scaffold",
     "n_helices": 6
   },
-  "result": "{'helix1': 2, 'helix2': 3, 'strand_type': 'scaffold', 'removed': 12}",
+  "result": "{'helix1': 2, 'helix2': 3, 'strand_type': 'scaffold', 'removed': 11}",
   "natural_language": "Remove all scaffold crossovers between helix 2 and helix 3 in a 6-helix design"
 }

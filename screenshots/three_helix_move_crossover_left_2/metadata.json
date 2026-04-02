@@ -9,6 +9,6 @@
     "delta": -2,
     "n_helices": 3
   },
-  "result": "Moved scaffold double crossover between helix 1 and helix 2 by -2bp to indices [6, 7]",
+  "result": "Error: Moving by -2 would overlap neighboring strand on helix 1 (bound: 8)",
   "natural_language": "Move the crossover at helix 1 index 8 left by 2 bases in a 3-helix design"
 }

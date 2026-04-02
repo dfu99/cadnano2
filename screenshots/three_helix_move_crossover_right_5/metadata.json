@@ -9,6 +9,6 @@
     "delta": 5,
     "n_helices": 3
   },
-  "result": "Moved scaffold double crossover between helix 1 and helix 2 by 5bp to indices [13, 14]",
+  "result": "Moved scaffold half-crossover between helix 1 and helix 2 by 5bp to index 13",
   "natural_language": "Move the crossover at helix 1 index 8 right by 5 bases in a 3-helix design"
 }

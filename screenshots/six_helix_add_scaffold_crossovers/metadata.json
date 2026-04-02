@@ -5,6 +5,6 @@
     "strand_type": "scaffold",
     "n_helices": 6
   },
-  "result": "{'strand_type': 'scaffold', 'total_created': 30, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 2, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 6}]}",
+  "result": "{'strand_type': 'scaffold', 'total_created': 32, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 3, 'helix2': 2, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 7}, {'helix1': 5, 'helix2': 4, 'created': 6}], 'routing_pairs': 5}",
   "natural_language": "Add scaffold crossovers between all neighboring helices in a 6-helix flat sheet"
 }

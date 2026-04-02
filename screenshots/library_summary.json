@@ -132,10 +132,10 @@
       "description": "Delete the last crossover",
       "params": {
         "helix_num": 1,
-        "idx": 152,
+        "idx": 162,
         "strand_type": "scaffold"
       },
-      "result": "Removed crossover at helix 1[152] (was connected to helix 0)",
+      "result": "Removed crossover at helix 1[162] (was connected to helix 0)",
       "natural_language": "Delete the last crossover between helix 0 and helix 1"
     },
     {
@@ -189,7 +189,7 @@
           88
         ]
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 2, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 88, 'high_idx': 89}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 2, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}]}",
       "natural_language": "Add 2 evenly spaced scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -205,7 +205,7 @@
           109
         ]
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 3, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 57, 'high_idx': 58}, {'low_idx': 109, 'high_idx': 110}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 3, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 57, 'high_idx': 58, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}]}",
       "natural_language": "Add 3 evenly spaced scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -222,7 +222,7 @@
           130
         ]
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 4, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 130, 'high_idx': 131}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 4, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 130, 'high_idx': 131, 'type': 'double'}]}",
       "natural_language": "Add 4 evenly spaced scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -241,7 +241,7 @@
           109
         ]
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 6, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 25, 'high_idx': 26}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 109, 'high_idx': 110}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 6, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 25, 'high_idx': 26, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}]}",
       "natural_language": "Add 6 evenly spaced scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -252,7 +252,7 @@
         "helix2": 1,
         "strand_type": "scaffold"
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'removed': 23}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'removed': 25}",
       "natural_language": "Remove all scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -261,7 +261,7 @@
       "params": {
         "strand_type": "scaffold"
       },
-      "result": "{'strand_type': 'scaffold', 'removed': 23}",
+      "result": "{'strand_type': 'scaffold', 'removed': 25}",
       "natural_language": "Remove all scaffold crossovers in the design"
     },
     {
@@ -272,7 +272,7 @@
         "helix2": 1,
         "strand_type": "staple"
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'staple', 'created': 8, 'crossovers': [{'low_idx': 0, 'high_idx': 20}, {'low_idx': 21, 'high_idx': 41}, {'low_idx': 42, 'high_idx': 62}, {'low_idx': 63, 'high_idx': 83}, {'low_idx': 84, 'high_idx': 104}, {'low_idx': 105, 'high_idx': 125}, {'low_idx': 126, 'high_idx': 146}, {'low_idx': 147, 'high_idx': 167}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'staple', 'created': 8, 'crossovers': [{'low_idx': 0, 'high_idx': 20, 'type': 'double'}, {'low_idx': 21, 'high_idx': 41, 'type': 'double'}, {'low_idx': 42, 'high_idx': 62, 'type': 'double'}, {'low_idx': 63, 'high_idx': 83, 'type': 'double'}, {'low_idx': 84, 'high_idx': 104, 'type': 'double'}, {'low_idx': 105, 'high_idx': 125, 'type': 'double'}, {'low_idx': 126, 'high_idx': 146, 'type': 'double'}, {'low_idx': 147, 'high_idx': 167, 'type': 'double'}]}",
       "natural_language": "Add staple crossovers between helix 0 and helix 1"
     },
     {
@@ -282,7 +282,7 @@
         "strand_type": "scaffold",
         "delta": 21
       },
-      "result": "{'strand_type': 'scaffold', 'resized': 10, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [5, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [26, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [47, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [68, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [89, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 25]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 46]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 67]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 88]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 109]}]}",
+      "result": "{'strand_type': 'scaffold', 'resized': 11, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [5, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [26, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [47, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [68, 109]}, {'helix': 1, 'old_range': [110, 120], 'new_range': [89, 120]}, {'helix': 1, 'old_range': [121, 125], 'new_range': [100, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 25]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 46]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 67]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 88]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 109]}]}",
       "natural_language": "Extend all scaffold strands by 21 bases"
     },
     {
@@ -292,7 +292,7 @@
         "strand_type": "scaffold",
         "delta": 42
       },
-      "result": "{'strand_type': 'scaffold', 'resized': 8, 'strands': [{'helix': 1, 'old_range': [47, 67], 'new_range': [5, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [26, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [47, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [68, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 46]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 67]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 88]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 109]}]}",
+      "result": "{'strand_type': 'scaffold', 'resized': 9, 'strands': [{'helix': 1, 'old_range': [47, 67], 'new_range': [5, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [26, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [47, 109]}, {'helix': 1, 'old_range': [110, 120], 'new_range': [68, 120]}, {'helix': 1, 'old_range': [121, 125], 'new_range': [79, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 46]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 67]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 88]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 109]}]}",
       "natural_language": "Extend all scaffold strands by 42 bases"
     },
     {
@@ -381,7 +381,7 @@
       "params": {
         "strand_type": "scaffold"
       },
-      "result": "{'strand_type': 'scaffold', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}]}",
+      "result": "{'strand_type': 'scaffold', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}], 'routing_pairs': 2}",
       "natural_language": "Add scaffold crossovers between all neighboring helices in a 3-helix design"
     },
     {
@@ -392,7 +392,7 @@
         "helix2": 1,
         "strand_type": "scaffold"
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'removed': 12}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'removed': 11}",
       "natural_language": "Remove all scaffold crossovers between helix 0 and helix 1 (keep helix 1-2 crossovers)"
     },
     {
@@ -402,7 +402,7 @@
         "strand_type": "scaffold",
         "n_helices": 6
       },
-      "result": "{'strand_type': 'scaffold', 'total_created': 30, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 2, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 6}]}",
+      "result": "{'strand_type': 'scaffold', 'total_created': 32, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 3, 'helix2': 2, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 7}, {'helix1': 5, 'helix2': 4, 'created': 6}], 'routing_pairs': 5}",
       "natural_language": "Add scaffold crossovers between all neighboring helices in a 6-helix flat sheet"
     },
     {
@@ -412,7 +412,7 @@
         "strand_type": "both",
         "n_helices": 6
       },
-      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 30, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 2, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 6}]}, staple: {'strand_type': 'staple', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 2, 'created': 0}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 0}]}",
+      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 32, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 3, 'helix2': 2, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 7}, {'helix1': 5, 'helix2': 4, 'created': 6}], 'routing_pairs': 5}, staple: {'strand_type': 'staple', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 2, 'created': 0}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 0}], 'routing_pairs': None}",
       "natural_language": "Add both scaffold and staple crossovers to all neighboring helices in a 6-helix design"
     },
     {
@@ -424,7 +424,7 @@
         "strand_type": "scaffold",
         "n_helices": 6
       },
-      "result": "{'helix1': 2, 'helix2': 3, 'strand_type': 'scaffold', 'removed': 12}",
+      "result": "{'helix1': 2, 'helix2': 3, 'strand_type': 'scaffold', 'removed': 11}",
       "natural_language": "Remove all scaffold crossovers between helix 2 and helix 3 in a 6-helix design"
     },
     {
@@ -435,7 +435,7 @@
         "delta": 21,
         "n_helices": 6
       },
-      "result": "{'strand_type': 'scaffold', 'resized': 50, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [5, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [26, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [47, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [68, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [89, 125]}, {'helix': 0, 'old_range': [0, 1], 'new_range': [0, 22]}, {'helix': 0, 'old_range': [2, 4], 'new_range': [2, 25]}, {'helix': 0, 'old_range': [5, 22], 'new_range': [5, 43]}, {'helix': 0, 'old_range': [23, 25], 'new_range': [23, 46]}, {'helix': 0, 'old_range': [26, 43], 'new_range': [26, 64]}, {'helix': 0, 'old_range': [44, 46], 'new_range': [44, 67]}, {'helix': 0, 'old_range': [47, 64], 'new_range': [47, 85]}, {'helix': 0, 'old_range': [65, 67], 'new_range': [65, 88]}, {'helix': 0, 'old_range': [68, 85], 'new_range': [68, 106]}, {'helix': 0, 'old_range': [86, 88], 'new_range': [86, 109]}, {'helix': 3, 'old_range': [23, 25], 'new_range': [2, 25]}, {'helix': 3, 'old_range': [26, 43], 'new_range': [5, 43]}, {'helix': 3, 'old_range': [44, 46], 'new_range': [23, 46]}, {'helix': 3, 'old_range': [47, 64], 'new_range': [26, 64]}, {'helix': 3, 'old_range': [65, 67], 'new_range': [44, 67]}, {'helix': 3, 'old_range': [68, 85], 'new_range': [47, 85]}, {'helix': 3, 'old_range': [86, 88], 'new_range': [65, 88]}, {'helix': 3, 'old_range': [89, 106], 'new_range': [68, 106]}, {'helix': 3, 'old_range': [107, 109], 'new_range': [86, 109]}, {'helix': 3, 'old_range': [110, 125], 'new_range': [89, 125]}, {'helix': 2, 'old_range': [0, 1], 'new_range': [0, 22]}, {'helix': 2, 'old_range': [2, 4], 'new_range': [2, 25]}, {'helix': 2, 'old_range': [5, 22], 'new_range': [5, 43]}, {'helix': 2, 'old_range': [23, 25], 'new_range': [23, 46]}, {'helix': 2, 'old_range': [26, 43], 'new_range': [26, 64]}, {'helix': 2, 'old_range': [44, 46], 'new_range': [44, 67]}, {'helix': 2, 'old_range': [47, 64], 'new_range': [47, 85]}, {'helix': 2, 'old_range': [65, 67], 'new_range': [65, 88]}, {'helix': 2, 'old_range': [68, 85], 'new_range': [68, 106]}, {'helix': 2, 'old_range': [86, 88], 'new_range': [86, 109]}, {'helix': 5, 'old_range': [23, 25], 'new_range': [2, 25]}, {'helix': 5, 'old_range': [26, 43], 'new_range': [5, 43]}, {'helix': 5, 'old_range': [44, 46], 'new_range': [23, 46]}, {'helix': 5, 'old_range': [47, 64], 'new_range': [26, 64]}, {'helix': 5, 'old_range': [65, 67], 'new_range': [44, 67]}, {'helix': 5, 'old_range': [68, 85], 'new_range': [47, 85]}, {'helix': 5, 'old_range': [86, 88], 'new_range': [65, 88]}, {'helix': 5, 'old_range': [89, 106], 'new_range': [68, 106]}, {'helix': 5, 'old_range': [107, 109], 'new_range': [86, 109]}, {'helix': 5, 'old_range': [110, 125], 'new_range': [89, 125]}, {'helix': 4, 'old_range': [0, 4], 'new_range': [0, 25]}, {'helix': 4, 'old_range': [5, 25], 'new_range': [5, 46]}, {'helix': 4, 'old_range': [26, 46], 'new_range': [26, 67]}, {'helix': 4, 'old_range': [47, 67], 'new_range': [47, 88]}, {'helix': 4, 'old_range': [68, 88], 'new_range': [68, 109]}]}",
+      "result": "{'strand_type': 'scaffold', 'resized': 52, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [5, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [26, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [47, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [68, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [89, 125]}, {'helix': 0, 'old_range': [0, 1], 'new_range': [0, 22]}, {'helix': 0, 'old_range': [2, 3], 'new_range': [2, 24]}, {'helix': 0, 'old_range': [4, 22], 'new_range': [4, 43]}, {'helix': 0, 'old_range': [23, 25], 'new_range': [23, 46]}, {'helix': 0, 'old_range': [26, 43], 'new_range': [26, 64]}, {'helix': 0, 'old_range': [44, 46], 'new_range': [44, 67]}, {'helix': 0, 'old_range': [47, 64], 'new_range': [47, 85]}, {'helix': 0, 'old_range': [65, 67], 'new_range': [65, 88]}, {'helix': 0, 'old_range': [68, 85], 'new_range': [68, 106]}, {'helix': 0, 'old_range': [86, 88], 'new_range': [86, 109]}, {'helix': 3, 'old_range': [23, 25], 'new_range': [2, 25]}, {'helix': 3, 'old_range': [26, 43], 'new_range': [5, 43]}, {'helix': 3, 'old_range': [44, 46], 'new_range': [23, 46]}, {'helix': 3, 'old_range': [47, 64], 'new_range': [26, 64]}, {'helix': 3, 'old_range': [65, 67], 'new_range': [44, 67]}, {'helix': 3, 'old_range': [68, 85], 'new_range': [47, 85]}, {'helix': 3, 'old_range': [86, 88], 'new_range': [65, 88]}, {'helix': 3, 'old_range': [89, 106], 'new_range': [68, 106]}, {'helix': 3, 'old_range': [107, 109], 'new_range': [86, 109]}, {'helix': 3, 'old_range': [110, 116], 'new_range': [89, 116]}, {'helix': 3, 'old_range': [117, 125], 'new_range': [96, 125]}, {'helix': 2, 'old_range': [0, 1], 'new_range': [0, 22]}, {'helix': 2, 'old_range': [2, 3], 'new_range': [2, 24]}, {'helix': 2, 'old_range': [4, 22], 'new_range': [4, 43]}, {'helix': 2, 'old_range': [23, 25], 'new_range': [23, 46]}, {'helix': 2, 'old_range': [26, 43], 'new_range': [26, 64]}, {'helix': 2, 'old_range': [44, 46], 'new_range': [44, 67]}, {'helix': 2, 'old_range': [47, 64], 'new_range': [47, 85]}, {'helix': 2, 'old_range': [65, 67], 'new_range': [65, 88]}, {'helix': 2, 'old_range': [68, 85], 'new_range': [68, 106]}, {'helix': 2, 'old_range': [86, 88], 'new_range': [86, 109]}, {'helix': 5, 'old_range': [23, 25], 'new_range': [2, 25]}, {'helix': 5, 'old_range': [26, 43], 'new_range': [5, 43]}, {'helix': 5, 'old_range': [44, 46], 'new_range': [23, 46]}, {'helix': 5, 'old_range': [47, 64], 'new_range': [26, 64]}, {'helix': 5, 'old_range': [65, 67], 'new_range': [44, 67]}, {'helix': 5, 'old_range': [68, 85], 'new_range': [47, 85]}, {'helix': 5, 'old_range': [86, 88], 'new_range': [65, 88]}, {'helix': 5, 'old_range': [89, 106], 'new_range': [68, 106]}, {'helix': 5, 'old_range': [107, 109], 'new_range': [86, 109]}, {'helix': 5, 'old_range': [110, 116], 'new_range': [89, 116]}, {'helix': 5, 'old_range': [117, 125], 'new_range': [96, 125]}, {'helix': 4, 'old_range': [0, 3], 'new_range': [0, 24]}, {'helix': 4, 'old_range': [4, 25], 'new_range': [4, 46]}, {'helix': 4, 'old_range': [26, 46], 'new_range': [26, 67]}, {'helix': 4, 'old_range': [47, 67], 'new_range': [47, 88]}, {'helix': 4, 'old_range': [68, 88], 'new_range': [68, 109]}]}",
       "natural_language": "Extend all scaffold strands by 21 bases in a 6-helix design"
     },
     {
@@ -466,7 +466,7 @@
         "n_helices": 6,
         "layout": "2x3_grid"
       },
-      "result": "{'strand_type': 'scaffold', 'total_created': 36, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 6}]}",
+      "result": "{'strand_type': 'scaffold', 'total_created': 38, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 7}, {'helix1': 5, 'helix2': 4, 'created': 6}], 'routing_pairs': 6}",
       "natural_language": "Add scaffold crossovers between all neighboring helices in a 2\u00d73 grid design"
     },
     {
@@ -477,7 +477,7 @@
         "n_helices": 6,
         "layout": "2x3_grid"
       },
-      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 36, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 6}]}, staple: {'strand_type': 'staple', 'total_created': 24, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 0}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 0}]}",
+      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 38, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 7}, {'helix1': 5, 'helix2': 4, 'created': 6}], 'routing_pairs': 6}, staple: {'strand_type': 'staple', 'total_created': 24, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 0}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 0}], 'routing_pairs': None}",
       "natural_language": "Add both scaffold and staple crossovers to all pairs in a 2\u00d73 grid design"
     },
     {
@@ -489,7 +489,7 @@
         "strand_type": "scaffold",
         "layout": "2x3_grid"
       },
-      "result": "{'helix1': 1, 'helix2': 2, 'strand_type': 'scaffold', 'removed': 12}",
+      "result": "{'helix1': 1, 'helix2': 2, 'strand_type': 'scaffold', 'removed': 11}",
       "natural_language": "Remove scaffold crossovers between helix 1 and helix 2 in a 2\u00d73 grid (cross-row pair)"
     },
     {
@@ -511,7 +511,7 @@
         "n_helices": 5,
         "layout": "l_shape"
       },
-      "result": "{'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}]}",
+      "result": "{'strand_type': 'scaffold', 'total_created': 19, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}], 'routing_pairs': None}",
       "natural_language": "Add scaffold crossovers between all neighboring helices in an L-shaped design"
     },
     {
@@ -522,7 +522,7 @@
         "n_helices": 5,
         "layout": "l_shape"
       },
-      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}]}, staple: {'strand_type': 'staple', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 0}, {'helix1': 0, 'helix2': 3, 'created': 6}]}",
+      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 19, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}], 'routing_pairs': None}, staple: {'strand_type': 'staple', 'total_created': 12, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 0}, {'helix1': 0, 'helix2': 3, 'created': 6}], 'routing_pairs': None}",
       "natural_language": "Add both scaffold and staple crossovers to all pairs in an L-shaped design"
     },
     {
@@ -545,7 +545,7 @@
         "n_helices": 5,
         "layout": "t_shape"
       },
-      "result": "{'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}]}",
+      "result": "{'strand_type': 'scaffold', 'total_created': 19, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 5, 'helix2': 2, 'created': 6}], 'routing_pairs': None}",
       "natural_language": "Add scaffold crossovers between all neighboring helices in a T-shaped design"
     },
     {
@@ -556,7 +556,7 @@
         "n_helices": 5,
         "layout": "t_shape"
       },
-      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}]}, staple: {'strand_type': 'staple', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}]}",
+      "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 19, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 5, 'helix2': 2, 'created': 6}], 'routing_pairs': None}, staple: {'strand_type': 'staple', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 5, 'helix2': 2, 'created': 6}], 'routing_pairs': None}",
       "natural_language": "Add both scaffold and staple crossovers to all pairs in a T-shaped design"
     },
     {
@@ -660,7 +660,7 @@
           4
         ]
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 1, 'crossovers': [{'low_idx': 4, 'high_idx': 5}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 1, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}]}",
       "natural_language": "Add 1 evenly spaced scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -678,7 +678,7 @@
           130
         ]
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 5, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 36, 'high_idx': 37}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 99, 'high_idx': 100}, {'low_idx': 130, 'high_idx': 131}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 5, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 36, 'high_idx': 37, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 99, 'high_idx': 100, 'type': 'double'}, {'low_idx': 130, 'high_idx': 131, 'type': 'double'}]}",
       "natural_language": "Add 5 evenly spaced scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -699,7 +699,7 @@
           151
         ]
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 8, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 25, 'high_idx': 26}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 109, 'high_idx': 110}, {'low_idx': 130, 'high_idx': 131}, {'low_idx': 151, 'high_idx': 152}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 8, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 25, 'high_idx': 26, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}, {'low_idx': 130, 'high_idx': 131, 'type': 'double'}, {'low_idx': 151, 'high_idx': 152, 'type': 'double'}]}",
       "natural_language": "Add 8 evenly spaced scaffold crossovers between helix 0 and helix 1"
     },
     {
@@ -718,10 +718,10 @@
       "description": "Delete the second to last crossover",
       "params": {
         "helix_num": 1,
-        "idx": 151,
+        "idx": 152,
         "strand_type": "scaffold"
       },
-      "result": "Removed crossover at helix 1[151] (was connected to helix 0)",
+      "result": "Removed crossover at helix 1[152] (was connected to helix 0)",
       "natural_language": "Delete the second to last crossover between helix 0 and helix 1"
     },
     {
@@ -783,7 +783,7 @@
         "strand_type": "scaffold",
         "delta": 7
       },
-      "result": "{'strand_type': 'scaffold', 'resized': 11, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [19, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [40, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [61, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [82, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [103, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 11]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 32]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 53]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 74]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 95]}, {'helix': 0, 'old_range': [89, 109], 'new_range': [89, 116]}]}",
+      "result": "{'strand_type': 'scaffold', 'resized': 12, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [19, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [40, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [61, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [82, 109]}, {'helix': 1, 'old_range': [110, 120], 'new_range': [103, 120]}, {'helix': 1, 'old_range': [121, 125], 'new_range': [114, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 11]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 32]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 53]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 74]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 95]}, {'helix': 0, 'old_range': [89, 109], 'new_range': [89, 116]}]}",
       "natural_language": "Extend all scaffold strands by 7 bases"
     },
     {
@@ -793,7 +793,7 @@
         "strand_type": "scaffold",
         "delta": 14
       },
-      "result": "{'strand_type': 'scaffold', 'resized': 11, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [12, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [33, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [54, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [75, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [96, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 18]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 39]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 60]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 81]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 102]}, {'helix': 0, 'old_range': [89, 109], 'new_range': [89, 123]}]}",
+      "result": "{'strand_type': 'scaffold', 'resized': 12, 'strands': [{'helix': 1, 'old_range': [26, 46], 'new_range': [12, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [33, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [54, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [75, 109]}, {'helix': 1, 'old_range': [110, 120], 'new_range': [96, 120]}, {'helix': 1, 'old_range': [121, 125], 'new_range': [107, 125]}, {'helix': 0, 'old_range': [0, 4], 'new_range': [0, 18]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 39]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 60]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 81]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 102]}, {'helix': 0, 'old_range': [89, 109], 'new_range': [89, 123]}]}",
       "natural_language": "Extend all scaffold strands by 14 bases"
     },
     {
@@ -803,7 +803,7 @@
         "strand_type": "scaffold",
         "delta": -7
       },
-      "result": "{'strand_type': 'scaffold', 'resized': 12, 'strands': [{'helix': 1, 'old_range': [5, 25], 'new_range': [12, 25]}, {'helix': 1, 'old_range': [26, 46], 'new_range': [33, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [54, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [75, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [96, 109]}, {'helix': 1, 'old_range': [110, 125], 'new_range': [117, 125]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 18]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 39]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 60]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 81]}, {'helix': 0, 'old_range': [89, 109], 'new_range': [89, 102]}, {'helix': 0, 'old_range': [110, 125], 'new_range': [110, 118]}]}",
+      "result": "{'strand_type': 'scaffold', 'resized': 12, 'strands': [{'helix': 1, 'old_range': [5, 25], 'new_range': [12, 25]}, {'helix': 1, 'old_range': [26, 46], 'new_range': [33, 46]}, {'helix': 1, 'old_range': [47, 67], 'new_range': [54, 67]}, {'helix': 1, 'old_range': [68, 88], 'new_range': [75, 88]}, {'helix': 1, 'old_range': [89, 109], 'new_range': [96, 109]}, {'helix': 1, 'old_range': [110, 120], 'new_range': [117, 120]}, {'helix': 0, 'old_range': [5, 25], 'new_range': [5, 18]}, {'helix': 0, 'old_range': [26, 46], 'new_range': [26, 39]}, {'helix': 0, 'old_range': [47, 67], 'new_range': [47, 60]}, {'helix': 0, 'old_range': [68, 88], 'new_range': [68, 81]}, {'helix': 0, 'old_range': [89, 109], 'new_range': [89, 102]}, {'helix': 0, 'old_range': [110, 120], 'new_range': [110, 113]}]}",
       "natural_language": "Shrink all scaffold strands by 7 bases"
     },
     {
@@ -876,7 +876,7 @@
         "delta": 2,
         "n_helices": 3
       },
-      "result": "Moved scaffold double crossover between helix 1 and helix 2 by 2bp to indices [10, 11]",
+      "result": "Moved scaffold half-crossover between helix 1 and helix 2 by 2bp to index 10",
       "natural_language": "Move the crossover at helix 1 index 8 right by 2 bases in a 3-helix design"
     },
     {
@@ -890,7 +890,7 @@
         "delta": -2,
         "n_helices": 3
       },
-      "result": "Moved scaffold double crossover between helix 1 and helix 2 by -2bp to indices [6, 7]",
+      "result": "Error: Moving by -2 would overlap neighboring strand on helix 1 (bound: 8)",
       "natural_language": "Move the crossover at helix 1 index 8 left by 2 bases in a 3-helix design"
     },
     {
@@ -904,7 +904,7 @@
         "delta": 5,
         "n_helices": 3
       },
-      "result": "Moved scaffold double crossover between helix 1 and helix 2 by 5bp to indices [13, 14]",
+      "result": "Moved scaffold half-crossover between helix 1 and helix 2 by 5bp to index 13",
       "natural_language": "Move the crossover at helix 1 index 8 right by 5 bases in a 3-helix design"
     },
     {
@@ -913,13 +913,13 @@
       "params": {
         "helix1": 2,
         "helix2": 5,
-        "idx": 64,
+        "idx": 44,
         "strand_type": "scaffold",
         "delta": 3,
         "n_helices": 6
       },
       "result": "Error: Moving by 3 would make strand length negative",
-      "natural_language": "Move the crossover at helix 2 index 64 right by 3 bases in a 6-helix design"
+      "natural_language": "Move the crossover at helix 2 index 44 right by 3 bases in a 6-helix design"
     },
     {
       "operation": "moveCrossover",
@@ -927,13 +927,13 @@
       "params": {
         "helix1": 2,
         "helix2": 5,
-        "idx": 64,
+        "idx": 44,
         "strand_type": "scaffold",
         "delta": -3,
         "n_helices": 6
       },
-      "result": "Moved scaffold double crossover between helix 2 and helix 5 by -3bp to indices [61, 62]",
-      "natural_language": "Move the crossover at helix 2 index 64 left by 3 bases in a 6-helix design"
+      "result": "Moved scaffold double crossover between helix 2 and helix 5 by -3bp to indices [40, 41]",
+      "natural_language": "Move the crossover at helix 2 index 44 left by 3 bases in a 6-helix design"
     },
     {
       "operation": "removeCrossover",
@@ -952,11 +952,11 @@
       "description": "Delete middle pair crossover in 6-helix design",
       "params": {
         "helix_num": 2,
-        "idx": 64,
+        "idx": 44,
         "strand_type": "scaffold",
         "n_helices": 6
       },
-      "result": "Removed crossover at helix 2[64] (was connected to helix 5)",
+      "result": "Removed crossover at helix 2[44] (was connected to helix 5)",
       "natural_language": "Delete the middle pair crossover in a 6-helix design"
     },
     {
@@ -968,7 +968,7 @@
         "strand_type": "scaffold",
         "n_helices": 6
       },
-      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 6, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 25, 'high_idx': 26}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 109, 'high_idx': 110}]}",
+      "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 7, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 25, 'high_idx': 26, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}, {'idx': 120, 'type': 'half', 'note': 'edge position (scaffold turn)'}]}",
       "natural_language": "Add scaffold crossovers between helix 0 and helix 1 in a 6-helix design"
     },
     {
@@ -980,7 +980,7 @@
         "strand_type": "scaffold",
         "n_helices": 6
       },
-      "result": "{'helix1': 2, 'helix2': 3, 'strand_type': 'scaffold', 'created': 6, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 25, 'high_idx': 26}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 109, 'high_idx': 110}]}",
+      "result": "{'helix1': 2, 'helix2': 3, 'strand_type': 'scaffold', 'created': 7, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 25, 'high_idx': 26, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}, {'idx': 120, 'type': 'half', 'note': 'edge position (scaffold turn)'}]}",
       "natural_language": "Add scaffold crossovers between helix 2 and helix 3 in a 6-helix design"
     },
     {
@@ -992,7 +992,7 @@
         "strand_type": "scaffold",
         "n_helices": 6
       },
-      "result": "{'helix1': 4, 'helix2': 5, 'strand_type': 'scaffold', 'created': 6, 'crossovers': [{'low_idx': 4, 'high_idx': 5}, {'low_idx': 25, 'high_idx': 26}, {'low_idx': 46, 'high_idx': 47}, {'low_idx': 67, 'high_idx': 68}, {'low_idx': 88, 'high_idx': 89}, {'low_idx': 109, 'high_idx': 110}]}",
+      "result": "{'helix1': 4, 'helix2': 5, 'strand_type': 'scaffold', 'created': 7, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 25, 'high_idx': 26, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}, {'idx': 120, 'type': 'half', 'note': 'edge position (scaffold turn)'}]}",
       "natural_language": "Add scaffold crossovers between helix 4 and helix 5 in a 6-helix design"
     },
     {
@@ -1029,5 +1029,5 @@
       "natural_language": "Split the staple strand on helix 0 at position 105"
     }
   ],
-  "generated_at": "2026-03-13 01:09:05"
+  "generated_at": "2026-04-02 04:51:44"
 }

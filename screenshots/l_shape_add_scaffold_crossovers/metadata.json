@@ -6,6 +6,6 @@
     "n_helices": 5,
     "layout": "l_shape"
   },
-  "result": "{'strand_type': 'scaffold', 'total_created': 18, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 6}]}",
+  "result": "{'strand_type': 'scaffold', 'total_created': 19, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}], 'routing_pairs': None}",
   "natural_language": "Add scaffold crossovers between all neighboring helices in an L-shaped design"
 }

@@ -4,11 +4,11 @@
   "params": {
     "helix1": 2,
     "helix2": 5,
-    "idx": 64,
+    "idx": 44,
     "strand_type": "scaffold",
     "delta": -3,
     "n_helices": 6
   },
-  "result": "Moved scaffold double crossover between helix 2 and helix 5 by -3bp to indices [61, 62]",
-  "natural_language": "Move the crossover at helix 2 index 64 left by 3 bases in a 6-helix design"
+  "result": "Moved scaffold double crossover between helix 2 and helix 5 by -3bp to indices [40, 41]",
+  "natural_language": "Move the crossover at helix 2 index 44 left by 3 bases in a 6-helix design"
 }
