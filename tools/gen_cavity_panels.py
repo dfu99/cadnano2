@@ -31,7 +31,7 @@ def plot_xz_front(coords, ax, title, color='steelblue'):
     ax.scatter(coords[:, 0], coords[:, 2], s=0.3, alpha=0.4, c=color, edgecolors='none')
     ax.set_xlabel('X (nm)', fontsize=8)
     ax.set_ylabel('Z (nm)', fontsize=8)
-    ax.set_title(title, fontsize=9, fontweight='bold')
+    # Title omitted for paper figure compositing
     ax.set_aspect('equal')
     ax.tick_params(labelsize=7)
     # Compute bounding box dimensions
@@ -55,7 +55,7 @@ def main():
 
         # Individual initial panel
         fig, ax = plt.subplots(figsize=(4, 6))
-        dims = plot_xz_front(initial, ax, f'{name} Initial (tacoxDNA)', color='steelblue')
+        dims = plot_xz_front(initial, ax, '', color='steelblue')
         plt.tight_layout()
         p1 = f'results/paper_figure_assets/cavity_{name}_initial.png'
         fig.savefig(p1, dpi=200, bbox_inches='tight', facecolor='white')
@@ -64,7 +64,7 @@ def main():
 
         # Individual relaxed panel
         fig, ax = plt.subplots(figsize=(4, 6))
-        dims = plot_xz_front(relaxed, ax, f'{name} Relaxed (oxDNA 20M steps)', color='green')
+        dims = plot_xz_front(relaxed, ax, '', color='green')
         plt.tight_layout()
         p2 = f'results/paper_figure_assets/cavity_{name}_relaxed.png'
         fig.savefig(p2, dpi=200, bbox_inches='tight', facecolor='white')
