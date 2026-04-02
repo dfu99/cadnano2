@@ -9,11 +9,11 @@ import numpy as np
 import os
 
 shots = [
-    ('results/integrin_cavity/screenshot_2x22_26x40nm.png',
+    ('results/paper_figure_assets/fig5a_targeted_before_both.png',
      'Step 1: Shrink structure (moved edge crossovers inward, 7412bp, 1 oligo)'),
-    ('results/integrin_cavity/screenshot_2x22_centered_v2.png',
+    ('results/paper_figure_assets/fig5a_targeted_after_both.png',
      'Step 2: Move H5-H6, H13-H14, H15-H16 xovers away from cavity + center cavity (7432bp, 1 oligo)'),
-    ('results/integrin_cavity/screenshot_2x22_stapled_x3.png',
+    ('results/paper_figure_assets/fig5_stapled_both.png',
      'Step 3: AutoStaple + AutoBreak x3 (220+ staples, minLegLen=3)'),
 ]
 
