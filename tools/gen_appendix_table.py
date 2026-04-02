@@ -89,22 +89,19 @@ def make_page(examples, page_num, total_pages):
         rows_data.append((prompt, before, after))
 
     # Figure: each row has prompt text + before + after
-    row_height = 1.0
-    fig_width = 10.0
-    fig_height = n * row_height + 0.6  # extra for title
+    row_height = 1.8
+    fig_width = 16.0
+    fig_height = n * row_height + 0.4
 
     fig, axes = plt.subplots(n, 2, figsize=(fig_width, fig_height))
     if n == 1:
         axes = axes.reshape(1, 2)
 
-    fig.suptitle(f'Appendix: Agent Operations Library ({page_num}/{total_pages})',
-                 fontsize=11, fontweight='bold', y=1.0)
-
-    # Column headers
-    header_y = 1.0 - 0.25 / fig_height
-    fig.text(0.30, header_y, 'Before', ha='center', fontsize=9,
+    # Column headers (no title)
+    header_y = 1.0 - 0.15 / fig_height
+    fig.text(0.42, header_y, 'Before', ha='center', fontsize=14,
              fontweight='bold', color='#444444')
-    fig.text(0.74, header_y, 'After', ha='center', fontsize=9,
+    fig.text(0.79, header_y, 'After', ha='center', fontsize=14,
              fontweight='bold', color='#444444')
 
     for i, (prompt, before, after) in enumerate(rows_data):
@@ -128,21 +125,16 @@ def make_page(examples, page_num, total_pages):
             spine.set_linewidth(0.5)
 
         # Prompt as row label on the left
-        # Wrap long prompts
-        wrapped = prompt
-        if len(prompt) > 55:
-            # Break at a space near the middle
-            mid = len(prompt) // 2
-            space_pos = prompt.rfind(' ', 0, mid + 10)
-            if space_pos > 10:
-                wrapped = prompt[:space_pos] + '\n' + prompt[space_pos + 1:]
+        # Wrap long prompts at ~35 chars per line
+        import textwrap
+        wrapped = '\n'.join(textwrap.wrap(prompt, width=35))
 
-        ax_b.set_ylabel(wrapped, fontsize=5.5, rotation=0, labelpad=5,
+        ax_b.set_ylabel(wrapped, fontsize=24, rotation=0, labelpad=10,
                         ha='right', va='center', color='#222222',
                         fontstyle='italic')
 
-    fig.subplots_adjust(left=0.22, right=0.98, top=1.0 - 0.5 / fig_height,
-                        bottom=0.02, hspace=0.3, wspace=0.04)
+    fig.subplots_adjust(left=0.30, right=0.98, top=1.0 - 0.3 / fig_height,
+                        bottom=0.02, hspace=0.35, wspace=0.04)
 
     return fig
 
@@ -153,7 +145,7 @@ def main():
     print(f"Found {len(valid)}/{len(EXAMPLES)} examples")
 
     # Split into pages of 12
-    per_page = 12
+    per_page = 8
     pages = [valid[i:i + per_page] for i in range(0, len(valid), per_page)]
     total = len(pages)
 
