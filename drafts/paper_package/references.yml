@@ -377,6 +377,28 @@ suma2019:
     issue: 29
   page-range: 2586-2595
 
+deepseek2025:
+  type: article
+  title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+  author:
+    - Guo, Daya
+    - Yang, Dejian
+    - Zhang, Haowei
+    - Song, Junxiao
+    - Wang, Peiyi
+    - Zhu, Qihao
+    - Xu, Runxin
+    - Zhang, Ruoyu
+    - Ma, Shirong
+  date: 2025
+  doi: 10.1038/s41586-025-09422-z
+  parent:
+    type: periodical
+    title: Nature
+    volume: 645
+    issue: 8081
+  page-range: 633-638
+
 levy2021:
   type: article
   title: "ENSnano: a 3D modeling software for DNA nanostructures"

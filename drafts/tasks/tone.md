@@ -14,7 +14,7 @@
 - No emdashes. Use commas, semicolons, colons, or separate sentences.
 - No italic "lesson" subheadings (e.g., "What we learned:").
 - Captions are factual. No editorializing.
-- 2x12, 2x14, etc. are "cross-sectional dimensions", not "widths".
+- 2x12, 2x14, etc. are "lattice dimensions", not "widths".
 
 ## Citations
 - Cite where our observations agree with existing literature.

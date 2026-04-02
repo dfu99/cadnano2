@@ -23,6 +23,10 @@
 - When replacing figures, always update both the image path AND the caption.
 - Check for dangling @fig references in body text after removing figures.
 
+## Figure Citations
+- Every figure and subfigure must be explicitly cited in the body text. No figure should appear without a corresponding textual reference. This is standard academic paper writing practice.
+- Subfigure labels use uppercase: (A), (B), (C) — not lowercase. Match the case used in the actual figure images.
+
 ## Task Execution
 - Do not remove things the user wants to keep. When instructions are ambiguous, clarify before acting.
 - The failure table figure was removed when user said "remove Figure 7" — user meant the failure table (which was the last figure), not fig7_final_stapled_product. Listen to content descriptions, not just numbers.
