@@ -9,6 +9,8 @@ import matplotlib.patches as mpatches
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 import numpy as np
 
+plt.rcParams['font.family'] = 'Arial'
+
 
 def draw_rounded_box(ax, xy, width, height, text, facecolor, edgecolor='#333333',
                      fontsize=7, fontweight='normal', textcolor='black',
@@ -86,7 +88,7 @@ def fig1():
     ax = ax_a
 
     # Title
-    ax.text(0.50, 0.97, '(a) Embedded Agent Approach',
+    ax.text(0.50, 0.97, 'Embedded Agent Approach',
             ha='center', va='top', fontsize=8.5, fontweight='bold',
             color=red_border)
 
@@ -179,7 +181,8 @@ def fig1():
 
     # Big X
     ax.text(0.50, 0.04, '\u2717', ha='center', va='center',
-            fontsize=20, color=red_dark, fontweight='bold')
+            fontsize=20, color=red_dark, fontweight='bold',
+            fontfamily='DejaVu Sans')
 
     # =========================================================================
     # (b) Coding Agent Approach — RIGHT
@@ -187,7 +190,7 @@ def fig1():
     ax = ax_b
 
     # Title
-    ax.text(0.50, 0.97, '(b) Coding Agent Approach',
+    ax.text(0.50, 0.97, 'Coding Agent Approach',
             ha='center', va='top', fontsize=8.5, fontweight='bold',
             color=good_border)
 
@@ -309,7 +312,8 @@ def fig1():
 
     # Checkmark
     ax.text(0.50, 0.04, '\u2713', ha='center', va='center',
-            fontsize=20, color='#2E7D32', fontweight='bold')
+            fontsize=20, color='#2E7D32', fontweight='bold',
+            fontfamily='DejaVu Sans')
 
     # =========================================================================
     # Final layout
