@@ -30,6 +30,7 @@
 #show heading.where(level: 3): set text(size: 11pt)
 #show link: underline
 #show figure.caption: set align(left)
+#set figure(placement: auto)
 
 #align(center)[
   #text(size: 16pt, weight: "bold")[Coding Agents as a Mechanism for Formalizing and Transferring Domain Knowledge in DNA Origami Design]
@@ -214,15 +215,3 @@ Initial agent outputs (a flat sheet, a simple rectangle) demonstrated pipeline f
 == References
 
 #bibliography("references.yml", title: none, style: "american-chemical-society")
-
-#pagebreak()
-
-== Appendix A: Agent Operations Library
-
-Examples of natural language prompt instructions and the corresponding agent output for targeted modifications on a 6-helix design. Each row shows the before state (left) and after state (right) for a single operation. Operations include crossover creation, crossover movement, crossover deletion, strand extension and shrinking, insertion and deletion placement, strand splitting, automatic staple breaking, and bulk crossover operations.
-
-#image("figures/appendix_operations_p1.png", width: 100%)
-
-#image("figures/appendix_operations_p2.png", width: 100%)
-
-#image("figures/appendix_operations_p3.png", width: 100%)
