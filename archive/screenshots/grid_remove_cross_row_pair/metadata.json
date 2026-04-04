@@ -1,0 +1,12 @@
+{
+  "operation": "removeCrossoversForPair",
+  "description": "Remove cross-row scaffold crossovers in 2\u00d73 grid",
+  "params": {
+    "helix1": 1,
+    "helix2": 2,
+    "strand_type": "scaffold",
+    "layout": "2x3_grid"
+  },
+  "result": "{'helix1': 1, 'helix2': 2, 'strand_type': 'scaffold', 'removed': 11}",
+  "natural_language": "Remove scaffold crossovers between helix 1 and helix 2 in a 2\u00d73 grid (cross-row pair)"
+}

@@ -1,0 +1,154 @@
+{
+  "params": {
+    "scaffold_type": "p8064",
+    "scaffold_length": 8064,
+    "n_helices": 26,
+    "helix_length_bp": 294,
+    "cavity_width_bp": 0,
+    "cavity_height_helices": 0,
+    "polyt_length": 0
+  },
+  "design": {
+    "scaffold_oligos": 1,
+    "scaffold_bases": 8064,
+    "staple_count": 181,
+    "staple_avg_len": 44.552486187845304,
+    "staple_min_len": 12,
+    "staple_max_len": 479,
+    "insertions_added": 668,
+    "polyt_extensions": 0,
+    "cavity_staples_removed": 0,
+    "route_info": {
+      "type": "perimeter_cycle",
+      "xovers_placed": 26,
+      "total_scaffold_bp": 7396,
+      "strand_ranges": [
+        [
+          4,
+          291
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          4,
+          284
+        ],
+        [
+          8,
+          284
+        ],
+        [
+          8,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          288
+        ],
+        [
+          1,
+          291
+        ]
+      ]
+    },
+    "n_nucleotides": 16128,
+    "n_strands": 182
+  },
+  "structure": {
+    "initial": {
+      "pca_nm": [
+        54.2770864468877,
+        14.090423350369651,
+        3.4307838300019595
+      ],
+      "bbox_nm": [
+        23.594877824855736,
+        5.365275418190059,
+        96.28000000000037
+      ],
+      "n_nucleotides": 16128
+    }
+  },
+  "simulation_completed": false,
+  "figures": [
+    "/home/dan/Documents/code/cadnano2/results/origami_p8064_26h/figures/structure_initial.png"
+  ]
+}

@@ -1,5 +1,9 @@
 # Lessons
 
+## Academic Tone
+- When expressing limitations or uncertainties, frame them as open questions rather than personal constraints. "The volume required remains an open question" not "it was impractical for me to produce." Avoid first-person framing of limitations.
+- When speculating on observations that were not rigorously proven (e.g., no controlled ablation, no formal comparison), qualify the statement. "The limitation appeared to be architectural" not "The limitation was architectural." Do not make confident causal claims without supporting experimental evidence.
+
 ## Writing Style
 - NEVER use emdashes (---). Use commas, semicolons, colons, or restructure the sentence.
 - No quirky or clever section titles. Titles should be direct and descriptive.
@@ -29,6 +33,7 @@
 ## Figure Citations
 - Every figure and subfigure must be explicitly cited in the body text. No figure should appear without a corresponding textual reference. This is standard academic paper writing practice.
 - Subfigure labels use uppercase: (A), (B), (C) — not lowercase. Match the case used in the actual figure images.
+- In body text, always use full form references: "(@fig3, B)" never "(B)" alone. The reader should not have to infer which figure is being referenced.
 
 ## Task Execution
 - Do not remove things the user wants to keep. When instructions are ambiguous, clarify before acting.

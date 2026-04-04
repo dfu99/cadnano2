@@ -1,0 +1,26 @@
+{
+  "design": {
+    "n_helices": 6,
+    "length_bp": 126,
+    "lattice": "honeycomb"
+  },
+  "oxdna": {
+    "n_nucleotides": 1512,
+    "n_strands": 51
+  },
+  "pca_dims_nm": [
+    41.50000000000006,
+    10.470334901596003,
+    2.391647149586239
+  ],
+  "flatness_ratio": 0.057630051797258684,
+  "aspect_ratio": 3.963579044035561,
+  "rms_planarity_nm": 0.6299415585198145,
+  "figures": [
+    "/home/dan/Documents/code/cadnano2/results/oxdna_investigation/fig1_oxdna_format_anatomy.png",
+    "/home/dan/Documents/code/cadnano2/results/oxdna_investigation/fig2_conversion_pipeline.png",
+    "/home/dan/Documents/code/cadnano2/results/oxdna_investigation/fig3_planarity_and_structure.png",
+    "/home/dan/Documents/code/cadnano2/results/oxdna_investigation/fig4_training_integration.png"
+  ],
+  "report": "/home/dan/Documents/code/cadnano2/results/oxdna_investigation/report.md"
+}

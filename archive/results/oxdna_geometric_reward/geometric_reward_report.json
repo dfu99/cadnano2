@@ -1,0 +1,180 @@
+{
+  "summary": {
+    "n_designs": 7,
+    "n_figures": 3,
+    "pipeline": "cadnano JSON \u2192 tacoxDNA \u2192 oxDNA .dat/.top \u2192 PCA \u2192 geometric reward"
+  },
+  "results": [
+    {
+      "name": "correct_6h_126bp",
+      "description": "Correct 6-helix flat sheet with all crossovers",
+      "target_shape": "flat_sheet",
+      "reward": 0.9479448265417996,
+      "breakdown": {
+        "flatness_score": 1.0,
+        "planarity_score": 1.0,
+        "circularity_score": 0.7917793061671982,
+        "total_reward": 0.9479448265417996,
+        "raw_flatness": 0.057630051797258684,
+        "raw_planarity": 0.6299415585198145,
+        "raw_circularity": 0.48328827753312076
+      },
+      "pca_dims_nm": [
+        41.50000000000006,
+        10.470334901596003,
+        2.391647149586239
+      ],
+      "flatness_ratio": 0.057630051797258684,
+      "rms_planarity_nm": 0.6299415585198145,
+      "cross_section_circularity": 0.48328827753312076,
+      "n_nucleotides": 1512
+    },
+    {
+      "name": "correct_6h_252bp",
+      "description": "Correct 6-helix long flat sheet (252bp)",
+      "target_shape": "flat_sheet",
+      "reward": 0.9479230835244126,
+      "breakdown": {
+        "flatness_score": 1.0,
+        "planarity_score": 0.999987294550904,
+        "circularity_score": 0.7917101217263844,
+        "total_reward": 0.9479230835244126,
+        "raw_flatness": 0.0286996778427155,
+        "raw_planarity": 0.6300190581736441,
+        "raw_circularity": 0.48331595130944627
+      },
+      "pca_dims_nm": [
+        83.33200000000048,
+        10.47032980963541,
+        2.3916015539891817
+      ],
+      "flatness_ratio": 0.0286996778427155,
+      "rms_planarity_nm": 0.6300190581736441,
+      "cross_section_circularity": 0.48331595130944627,
+      "n_nucleotides": 3024
+    },
+    {
+      "name": "scaffold_only_6h_126bp",
+      "description": "Missing staple crossovers",
+      "target_shape": "flat_sheet",
+      "reward": 0.9477697671458364,
+      "breakdown": {
+        "flatness_score": 1.0,
+        "planarity_score": 0.9995019295998494,
+        "circularity_score": 0.7917763671435565,
+        "total_reward": 0.9477697671458364,
+        "raw_flatness": 0.057669019651649736,
+        "raw_planarity": 0.630747105600226,
+        "raw_circularity": 0.48328945314257743
+      },
+      "pca_dims_nm": [
+        41.50000000000006,
+        10.470384959703367,
+        2.393264315543467
+      ],
+      "flatness_ratio": 0.057669019651649736,
+      "rms_planarity_nm": 0.630747105600226,
+      "cross_section_circularity": 0.48328945314257743,
+      "n_nucleotides": 1512
+    },
+    {
+      "name": "partial_xovers_6h_126bp",
+      "description": "Only half the crossover pairs wired",
+      "target_shape": "flat_sheet",
+      "reward": 0.9473138915933101,
+      "breakdown": {
+        "flatness_score": 1.0,
+        "planarity_score": 0.998687546152795,
+        "circularity_score": 0.7910930017593278,
+        "total_reward": 0.9473138915933101,
+        "raw_flatness": 0.057669729120665994,
+        "raw_planarity": 0.6319686807708075,
+        "raw_circularity": 0.4835627992962689
+      },
+      "pca_dims_nm": [
+        41.50000000000006,
+        10.470589412365342,
+        2.393293758507642
+      ],
+      "flatness_ratio": 0.057669729120665994,
+      "rms_planarity_nm": 0.6319686807708075,
+      "cross_section_circularity": 0.4835627992962689,
+      "n_nucleotides": 1512
+    },
+    {
+      "name": "no_xovers_6h_126bp",
+      "description": "No crossovers at all (disconnected helices)",
+      "target_shape": "flat_sheet",
+      "reward": 0.9473138915933101,
+      "breakdown": {
+        "flatness_score": 1.0,
+        "planarity_score": 0.998687546152795,
+        "circularity_score": 0.7910930017593278,
+        "total_reward": 0.9473138915933101,
+        "raw_flatness": 0.057669729120665994,
+        "raw_planarity": 0.6319686807708075,
+        "raw_circularity": 0.4835627992962689
+      },
+      "pca_dims_nm": [
+        41.50000000000006,
+        10.470589412365342,
+        2.393293758507642
+      ],
+      "flatness_ratio": 0.057669729120665994,
+      "rms_planarity_nm": 0.6319686807708075,
+      "cross_section_circularity": 0.4835627992962689,
+      "n_nucleotides": 1512
+    },
+    {
+      "name": "wrong_shape_grid_2x3",
+      "description": "Wrong shape: 2\u00d73 grid scored as flat sheet target",
+      "target_shape": "flat_sheet",
+      "reward": 0.4207246303146043,
+      "breakdown": {
+        "flatness_score": 0.7293236279875208,
+        "planarity_score": 0.3685576546274171,
+        "circularity_score": 0.0,
+        "total_reward": 0.4207246303146043,
+        "raw_flatness": 0.12496232928299501,
+        "raw_planarity": 1.5771635180588743,
+        "raw_circularity": 0.8380152410413022
+      },
+      "pca_dims_nm": [
+        41.50000000000006,
+        5.246326973699675,
+        5.1859366652443
+      ],
+      "flatness_ratio": 0.12496232928299501,
+      "rms_planarity_nm": 1.5771635180588743,
+      "cross_section_circularity": 0.8380152410413022,
+      "n_nucleotides": 1512
+    },
+    {
+      "name": "correct_tube_6h",
+      "description": "Correct tube scored against tube target",
+      "target_shape": "tube",
+      "reward": 0.6189090717566601,
+      "breakdown": {
+        "circularity_score": 0.6192249008821119,
+        "flatness_score": 0.6184353280684826,
+        "total_reward": 0.6189090717566601,
+        "raw_circularity": 0.5476899603528448,
+        "raw_flatness": 0.07329047296479378
+      },
+      "pca_dims_nm": [
+        41.50000000000006,
+        8.67086037932571,
+        3.041554628038946
+      ],
+      "flatness_ratio": 0.07329047296479378,
+      "rms_planarity_nm": 1.005200043586042,
+      "cross_section_circularity": 0.5476899603528448,
+      "n_nucleotides": 1512
+    }
+  ],
+  "figure_paths": [
+    "/home/dan/Documents/code/cadnano2/results/oxdna_geometric_reward/fig1_reward_discrimination.png",
+    "/home/dan/Documents/code/cadnano2/results/oxdna_geometric_reward/fig2_cross_section_comparison.png",
+    "/home/dan/Documents/code/cadnano2/results/oxdna_geometric_reward/fig3_reward_landscape.png"
+  ]
+}

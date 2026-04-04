@@ -1,0 +1,12 @@
+{
+  "operation": "removeCrossover",
+  "description": "Delete edge pair crossover in 6-helix design",
+  "params": {
+    "helix_num": 0,
+    "idx": 1,
+    "strand_type": "scaffold",
+    "n_helices": 6
+  },
+  "result": "Removed crossover at helix 0[1] (was connected to helix 3)",
+  "natural_language": "Delete the edge pair crossover in a 6-helix design"
+}

@@ -1,0 +1,14 @@
+{
+  "operation": "moveCrossover",
+  "description": "Move crossover left 2 in 3-helix design",
+  "params": {
+    "helix1": 1,
+    "helix2": 2,
+    "idx": 8,
+    "strand_type": "scaffold",
+    "delta": -2,
+    "n_helices": 3
+  },
+  "result": "Error: Moving by -2 would overlap neighboring strand on helix 1 (bound: 8)",
+  "natural_language": "Move the crossover at helix 1 index 8 left by 2 bases in a 3-helix design"
+}

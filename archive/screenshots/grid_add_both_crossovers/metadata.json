@@ -1,0 +1,11 @@
+{
+  "operation": "addAllNeighborCrossovers",
+  "description": "Add scaffold and staple crossovers to 2\u00d73 grid",
+  "params": {
+    "strand_type": "both",
+    "n_helices": 6,
+    "layout": "2x3_grid"
+  },
+  "result": "scaffold: {'strand_type': 'scaffold', 'total_created': 38, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 6}, {'helix1': 0, 'helix2': 3, 'created': 7}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 7}, {'helix1': 5, 'helix2': 4, 'created': 6}], 'routing_pairs': 6}, staple: {'strand_type': 'staple', 'total_created': 24, 'pairs': [{'helix1': 1, 'helix2': 2, 'created': 6}, {'helix1': 1, 'helix2': 0, 'created': 0}, {'helix1': 0, 'helix2': 3, 'created': 6}, {'helix1': 3, 'helix2': 4, 'created': 6}, {'helix1': 2, 'helix2': 5, 'created': 6}, {'helix1': 5, 'helix2': 4, 'created': 0}], 'routing_pairs': None}",
+  "natural_language": "Add both scaffold and staple crossovers to all pairs in a 2\u00d73 grid design"
+}

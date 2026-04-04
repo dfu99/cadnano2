@@ -1,0 +1,110 @@
+{
+  "flat_sheet (6\u00d7126)": {
+    "n_nucleotides": 1512,
+    "pca_dims_nm": [
+      41.50000000000006,
+      10.470334901596003,
+      2.391647149586239
+    ],
+    "flatness_ratio": 0.057630051797258684,
+    "aspect_ratio": 3.963579044035561,
+    "rms_planarity_nm": 0.6299415585198145,
+    "cross_section_circularity": 0.48328827753312076,
+    "cross_section_mean_radius_nm": 2.9299535825473018,
+    "eigenvalues": [
+      201.10400082691928,
+      14.453262216678363,
+      0.5472837793507532
+    ]
+  },
+  "tube (hex 6\u00d7126)": {
+    "n_nucleotides": 1512,
+    "pca_dims_nm": [
+      41.50000000000006,
+      8.67086037932571,
+      3.041554628038946
+    ],
+    "flatness_ratio": 0.07329047296479378,
+    "aspect_ratio": 4.78614557085364,
+    "rms_planarity_nm": 1.005200043586042,
+    "cross_section_circularity": 0.5476899603528448,
+    "cross_section_mean_radius_nm": 2.659141889041532,
+    "eigenvalues": [
+      201.10400082691936,
+      10.353611932349354,
+      1.3935323429649906
+    ]
+  },
+  "grid_2\u00d73 (6\u00d7126)": {
+    "n_nucleotides": 1512,
+    "pca_dims_nm": [
+      41.50000000000006,
+      5.246326973699675,
+      5.1859366652443
+    ],
+    "flatness_ratio": 0.12496232928299501,
+    "aspect_ratio": 7.910296138239842,
+    "rms_planarity_nm": 1.5771635180588743,
+    "cross_section_circularity": 0.8380152410413022,
+    "cross_section_mean_radius_nm": 2.2026959018762473,
+    "eigenvalues": [
+      201.10400082691928,
+      3.4364778926726647,
+      3.4305638015695576
+    ]
+  },
+  "long_sheet (6\u00d7252)": {
+    "n_nucleotides": 3024,
+    "pca_dims_nm": [
+      83.33200000000048,
+      10.47032980963541,
+      2.3916015539891817
+    ],
+    "flatness_ratio": 0.0286996778427155,
+    "aspect_ratio": 7.958870591002157,
+    "rms_planarity_nm": 0.6300190581736441,
+    "cross_section_circularity": 0.48331595130944627,
+    "cross_section_mean_radius_nm": 2.9299866499185825,
+    "eigenvalues": [
+      804.1878960630985,
+      14.448346492889014,
+      0.5472373642065903
+    ]
+  },
+  "L-shape (5\u00d7126)": {
+    "n_nucleotides": 1260,
+    "pca_dims_nm": [
+      41.50000000000006,
+      8.81064797229752,
+      4.558385850623008
+    ],
+    "flatness_ratio": 0.10984062290657835,
+    "aspect_ratio": 4.710209751937037,
+    "rms_planarity_nm": 1.2753372028674086,
+    "cross_section_circularity": 0.5279877273328486,
+    "cross_section_mean_radius_nm": 2.8433515170829446,
+    "eigenvalues": [
+      201.13062301394962,
+      11.392455598632258,
+      2.2434665618125598
+    ]
+  },
+  "wide_sheet (10\u00d7126)": {
+    "n_nucleotides": 2520,
+    "pca_dims_nm": [
+      41.50000000000006,
+      17.9681993193782,
+      2.3391109250821014
+    ],
+    "flatness_ratio": 0.056364118676677066,
+    "aspect_ratio": 2.309635999821277,
+    "rms_planarity_nm": 0.6429528494040856,
+    "cross_section_circularity": 0.4499925447323532,
+    "cross_section_mean_radius_nm": 4.779061738982959,
+    "eigenvalues": [
+      201.0507775899663,
+      40.446927145062574,
+      0.5699744031708474
+    ]
+  }
+}

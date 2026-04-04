@@ -1,0 +1,12 @@
+{
+  "operation": "addCrossoversForPair",
+  "description": "Add scaffold crossovers to first pair in 6-helix",
+  "params": {
+    "helix1": 0,
+    "helix2": 1,
+    "strand_type": "scaffold",
+    "n_helices": 6
+  },
+  "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 7, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 25, 'high_idx': 26, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}, {'idx': 120, 'type': 'half', 'note': 'edge position (scaffold turn)'}]}",
+  "natural_language": "Add scaffold crossovers between helix 0 and helix 1 in a 6-helix design"
+}

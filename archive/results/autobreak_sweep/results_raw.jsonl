@@ -1,0 +1,6 @@
+{"name": "leg3_tgt28", "minStapleLegLen": 3, "tgtStapleLen": 28, "staples_before": 69, "staples_after": 317, "min_len": 12, "max_len": 42, "avg_len": 27.2, "short_under_18": 4, "long_over_50": 0, "unsolvable": 0}
+{"name": "leg3_tgt32", "minStapleLegLen": 3, "tgtStapleLen": 32, "staples_before": 69, "staples_after": 214, "min_len": 12, "max_len": 134, "avg_len": 40.3, "short_under_18": 4, "long_over_50": 35, "unsolvable": 0}
+{"name": "leg3_tgt42", "minStapleLegLen": 3, "tgtStapleLen": 42, "staples_before": 69, "staples_after": 223, "min_len": 12, "max_len": 54, "avg_len": 38.6, "short_under_18": 4, "long_over_50": 1, "unsolvable": 0}
+{"name": "leg5_tgt28", "minStapleLegLen": 5, "tgtStapleLen": 28, "staples_before": 69, "staples_after": 106, "min_len": 12, "max_len": 504, "avg_len": 81.3, "short_under_18": 4, "long_over_50": 40, "unsolvable": 13}
+{"name": "leg5_tgt32", "minStapleLegLen": 5, "tgtStapleLen": 32, "staples_before": 69, "staples_after": 137, "min_len": 7, "max_len": 400, "avg_len": 62.9, "short_under_18": 5, "long_over_50": 43, "unsolvable": 6}
+{"name": "leg5_tgt42", "minStapleLegLen": 5, "tgtStapleLen": 42, "staples_before": 69, "staples_after": 127, "min_len": 12, "max_len": 504, "avg_len": 67.8, "short_under_18": 4, "long_over_50": 26, "unsolvable": 8}

@@ -1,0 +1,1199 @@
+objectives:
+- id: obj-001
+  status: completed
+  statement: Scale training dataset from 42 to 252 validated designs
+  methodology: >-
+    Added 1×N linear chain generator (even N: 4,6,8) and expanded 2×N grid
+    generator to N=2..7 (up to 14 helices). Added two new scaffold lengths
+    (147bp, 168bp) for 7 total. Refactored core scaffold routing into reusable
+    _route_and_build() function shared by all generators. Hamiltonian path
+    through honeycomb neighbor graph with greedy constrained crossover placement.
+    All 252 designs pass structural validation (loop closure, bidirectionality,
+    full coverage).
+  metrics:
+    total_designs: 252
+    design_types: 3
+    type_2hb: 42
+    type_1xn: 84
+    type_2xn: 126
+    helix_range: 2-14
+    length_range: 42-168bp
+    lengths: 7
+    starting_positions: 6+4+3
+    validation_pass_rate: 100%
+    growth_factor: 6x
+  figures:
+  - results/obj-001-training-design-distribution.png
+  conclusions: >-
+    6× dataset expansion from 42 (2HB only) to 252 designs across 3 generator
+    types and 7 helix counts (2-14). The refactored _route_and_build() engine
+    enables adding new layout types with minimal code. Uniform length coverage
+    (36 designs per length) prevents length bias during training. Helix count
+    distribution is heavier at 4-8 (49 each) than 10-14 (21 each), reflecting
+    the constraint that 1×N requires even N and caps at 8.
+  connects_to: obj-002
+  completed_date: '2026-03-10'
+- id: obj-002
+  status: completed
+  statement: 2×N grid bundle generator for multi-row training designs
+  methodology: >-
+    Added generate_2xN() to tools/generate_training_designs.py. Builds 2-row
+    honeycomb grids (N=2..7, up to 14 helices) by computing a Hamiltonian path
+    through the honeycomb neighbor graph, then placing greedy constrained
+    crossovers along the path. Supports 7 scaffold lengths (42-168bp) and
+    multiple starting positions per grid size.
+  metrics:
+    generator_type: 2xN_grid
+    grid_sizes: N=2..7
+    max_helices: 14
+    designs_generated: 126
+    scaffold_lengths: 7
+    validation_pass_rate: 100%
+  figures:
+  - results/obj-002-2-n-grid-bundle-generator----2026-03-0.png
+  conclusions: >-
+    The 2×N grid generator extends training data from single-row designs to
+    multi-row layouts. Hamiltonian path routing ensures valid scaffold connectivity
+    across rows. Combined with 1×N chains and 2HB, provides 252 total designs
+    covering diverse helix arrangements (2-14 helices).
+  connects_to: obj-003
+  completed_date: '2026-03-10'
+- id: obj-003
+  status: completed
+  statement: Add 6 pattern automation batch methods for repetitive design tasks
+  methodology: >-
+    Added removeCrossoversForPair, removeAllCrossovers, addInsertionPattern,
+    removeInsertionPattern, addInsertionPatternAll, listInsertions to agentmethods.py.
+    Added Claude API tool schemas in agenttools.py. Updated README with agentic
+    fork overview. All methods wrap in single undo macros.
+  metrics:
+    new_methods: 6
+    new_tool_schemas: 6
+    total_agent_methods: 34
+    lines_added: 688
+    files_changed: 5
+  figures:
+  - results/obj-003-pattern-automation-methods-2026-03-10.png
+  conclusions: >-
+    Pattern automation reduces repetitive GUI interactions (10-60 clicks) to single
+    method calls. Shifts agent focus from complex multi-step reasoning to practical
+    automation of tedious daily tasks.
+  connects_to: obj-004
+  completed_date: '2026-03-10'
+- id: obj-004
+  status: completed
+  statement: Headless test suite validates all 7 pattern automation methods
+  methodology: >-
+    Built test_pattern_automation.py with QT_QPA_PLATFORM=offscreen and
+    initAppWithGui(). Tests cover resizeAllStrands, removeCrossoversForPair,
+    removeAllCrossovers, addInsertionPattern, removeInsertionPattern,
+    addInsertionPatternAll, listInsertions. Also tests deletion mode,
+    crossover-skip logic, and error handling for invalid inputs.
+  metrics:
+    tests_run: 8
+    tests_passed: 8
+    tests_failed: 0
+    methods_covered: 7
+    pass_rate: 100%
+  figures:
+  - results/obj-004-test-pattern-automation-2026-03-10.png
+  conclusions: >-
+    All pattern automation methods work correctly in headless mode. Resize
+    respects parity, insertions skip crossover positions, undo macros wrap
+    atomically, and error handling returns clear messages for invalid inputs.
+  connects_to: obj-005
+  completed_date: '2026-03-10'
+- id: obj-005
+  status: completed
+  statement: Add staple break automation methods with 3 breaking strategies
+  methodology: >-
+    Added 4 new agent methods: autoBreakStaples (Dijkstra-optimized via
+    autobreak plugin), splitStrandAt (single split), breakStaplePattern
+    (interval-based), listStaples (query). Added tool schemas. Autobreak
+    import uses importlib to bypass legacy __init__.py. All 12 tests pass.
+  metrics:
+    new_methods: 4
+    new_tool_schemas: 4
+    total_agent_methods: 38
+    tests_run: 12
+    tests_passed: 12
+    pass_rate: 100%
+  figures:
+  - results/obj-005-staple-break-automation-2026-03-10.png
+  conclusions: >-
+    Three staple break strategies cover different use cases: autoBreakStaples
+    for production-quality Dijkstra-optimized breaks, breakStaplePattern for
+    simple interval splits, splitStrandAt for surgical single-position splits.
+    Agent can now handle the full staple workflow: create, break, list.
+  connects_to: obj-006
+  completed_date: '2026-03-10'
+- id: obj-006
+  status: completed
+  statement: Screenshot library generator with 21 before/after crossover operation pairs
+  methodology: >-
+    Built tools/generate_screenshot_library.py with headless path view rendering
+    (QGraphicsScene.render to QImage). Fixed moveCrossover co-moving strand overlap
+    bug. Generates before/after PNGs with metadata.json for 7 operation categories.
+  metrics:
+    before_after_pairs: 21
+    operation_categories: 7
+    bug_fixes: 1
+    operations: move_right(4), move_left(4), delete(3), create(3), add_batch(4), remove_batch(2), staple_add(1)
+  figures:
+  - screenshots/move_crossover_right_3/before.png
+  - screenshots/move_crossover_right_3/after.png
+  - screenshots/add_4_evenly_spaced_crossovers/after.png
+  conclusions: >-
+    Headless screenshot capture enables automated generation of visual training
+    data. The moveCrossover overlap bug (co-moving strands blocking each other)
+    was a real blocker for any crossover movement operations.
+  connects_to: obj-007
+  completed_date: '2026-03-11'
+- id: obj-007
+  status: completed
+  statement: cadnano-to-oxDNA pipeline validates flat sheet as rectilinear prism
+  methodology: >-
+    Built tools/oxdna_flat_sheet.py: creates 6-helix x 126bp flat sheet in cadnano,
+    converts to oxDNA via tacoxDNA, parses 3D nucleotide coordinates, fits PCA-aligned
+    bounding box. Measures flatness ratio, planarity RMS, and prism dimensions.
+  metrics:
+    nucleotides: 1512
+    strands: 51
+    pca_dims_nm: [41.5, 10.5, 2.4]
+    flatness_ratio: 0.0576
+    rms_planarity_nm: 0.63
+    aspect_ratio: 3.96
+  figures:
+  - results/oxdna_flat_sheet_3d.png
+  - results/oxdna_flat_sheet_planarity.png
+  - results/oxdna_flat_sheet_prism_dims.png
+  conclusions: >-
+    The cadnano-to-oxDNA pipeline works end-to-end. The 6-helix flat sheet
+    maps to a 41.5 x 10.5 x 2.4 nm rectilinear prism with flatness ratio
+    0.058 and planarity RMS 0.63 nm (~1 DNA diameter). This geometric
+    validation enables automated shape verification of cadnano designs.
+  connects_to: obj-008
+  completed_date: '2026-03-11'
+- id: obj-008
+  status: completed
+  statement: Expand screenshot library to 33 before/after pairs across 11 categories
+  methodology: >-
+    Added 4 new generator categories to tools/generate_screenshot_library.py:
+    resize strands (extend/shrink by 21/42bp), insertion patterns (insert 1/3,
+    delete 1, pattern all), strand breaks (split, interval break, auto break),
+    three-helix operations (add all neighbor crossovers, remove one pair).
+  metrics:
+    before_after_pairs: 33
+    operation_categories: 11
+    new_categories: 4
+    new_pairs: 12
+    growth_percent: 57
+    categories_added: resize_strands, insertion_patterns, strand_breaks, multi_helix
+  figures:
+  - results/obj-008-expanded-screenshot-library.png
+  conclusions: >-
+    Library now covers all major cadnano operations beyond crossovers: strand
+    resizing, insertions/deletions, staple breaking, and multi-helix designs.
+    57% growth from 21 to 33 pairs provides broader coverage for vision-language
+    model training data.
+  connects_to: obj-009
+  completed_date: '2026-03-11'
+- id: obj-009
+  status: completed
+  statement: Export screenshot library as HuggingFace dataset for VLM training
+  methodology: >-
+    Built tools/export_screenshot_dataset.py that collects all screenshot
+    directories (before.png, after.png, metadata.json), creates a HuggingFace
+    Dataset with Image features, and exports as Arrow + Parquet formats with
+    a dataset card. Includes category labels for 5 operation types.
+  metrics:
+    examples: 33
+    features: 7
+    categories: 5
+    arrow_size_mb: 3.5
+    parquet_size_mb: 2.8
+    export_formats: arrow, parquet, dataset_card
+  figures:
+  - results/obj-009-hf-screenshot-dataset.png
+  conclusions: >-
+    Screenshot library is now a standard HuggingFace dataset loadable with
+    load_from_disk(). Each example pairs before/after PIL images with natural
+    language instructions, ready for vision-language model SFT training.
+  connects_to: obj-010
+  completed_date: '2026-03-11'
+- id: obj-010
+  status: completed
+  statement: oxDNA geometric verification for 4 diverse cadnano shape classes
+  methodology: >-
+    Built tools/oxdna_shape_verify.py that creates tube (3×2 hex block),
+    2×3 grid, and long sheet (6×252bp) designs, converts each to oxDNA via
+    tacoxDNA, and compares PCA dimensions, flatness, cross-section circularity,
+    and planarity against the reference flat sheet.
+  metrics:
+    shapes_tested: 4
+    flat_sheet_dims_nm: [41.5, 10.5, 2.4]
+    tube_dims_nm: [41.5, 8.7, 3.0]
+    grid_2x3_dims_nm: [41.5, 5.2, 5.2]
+    long_sheet_dims_nm: [83.3, 10.5, 2.4]
+    grid_circularity: 0.838
+    tube_circularity: 0.548
+    flat_circularity: 0.483
+    long_length_ratio: 2.01
+  figures:
+  - results/obj-010-oxdna-shape-verification.png
+  conclusions: >-
+    All four shapes produce expected geometries: flat sheet is flat (0.058),
+    tube is thicker with higher circularity (0.55), 2×3 grid has near-square
+    cross-section (circularity 0.84), long sheet doubles length while preserving
+    width/thickness. Pipeline reliably verifies diverse cadnano designs.
+  connects_to: obj-011
+  completed_date: '2026-03-11'
+- id: obj-011
+  status: completed
+  statement: Add 6-helix design screenshots, expand dataset to 39 pairs
+  methodology: >-
+    Added setup_six_helix_design() and gen_six_helix_operations() to
+    generate_screenshot_library.py. 6 new operations: add scaffold crossovers,
+    add both crossover types, remove middle pair, resize extend, insertion
+    pattern all, auto-break staples. Re-exported HuggingFace dataset.
+  metrics:
+    before_after_pairs: 39
+    new_pairs: 6
+    operation_categories: 13
+    helix_counts_covered: [2, 3, 6]
+    dataset_size_mb: 4.1
+  figures:
+  - results/obj-011-six-helix-screenshots.png
+  conclusions: >-
+    Dataset now covers 2-helix, 3-helix, and 6-helix designs with 39 pairs
+    across 13 operations. 6-helix operations demonstrate complex multi-helix
+    workflows: full crossover wiring, selective pair removal, bulk resize,
+    and auto staple breaking.
+  connects_to: obj-012
+  completed_date: '2026-03-11'
+- id: obj-012
+  status: completed
+  statement: Template-based instruction augmentation scales dataset 3.9x to 192 examples
+  methodology: >-
+    Built tools/augment_instructions.py with operation-specific paraphrase
+    generators (move, create, remove, batch, resize, insertion, break). Each
+    of 39 original instructions gets 3-5 paraphrases varying formality,
+    specificity, and phrasing style. Exported as HuggingFace dataset.
+  metrics:
+    original_examples: 39
+    augmented_examples: 192
+    augmentation_factor: 3.9
+    unique_images: 39
+    categories: 5
+    paraphrase_templates: 8
+  figures:
+  - results/obj-012-instruction-augmentation.png
+  conclusions: >-
+    Template-based augmentation is a lightweight way to scale instruction
+    diversity without new images. 192 training examples across 5 categories
+    with varied phrasing should improve VLM robustness to instruction style.
+  connects_to: obj-013
+  completed_date: '2026-03-11'
+- id: obj-013
+  status: completed
+  statement: Extend oxDNA verification to L-shape and wide sheet (6 total shapes)
+  methodology: >-
+    Added create_l_shape (5 helices in L-pattern) and create_wide_sheet
+    (10 helices single-row) to oxdna_shape_verify.py. L-shape uses 3 horizontal
+    + 2 vertical helices. All 6 shapes converted to oxDNA and compared via PCA.
+  metrics:
+    shapes_tested: 6
+    l_shape_dims_nm: [41.5, 8.8, 4.6]
+    l_shape_flatness: 0.110
+    l_shape_planarity_nm: 1.28
+    wide_sheet_dims_nm: [41.5, 18.0, 2.3]
+    wide_sheet_flatness: 0.056
+    wide_sheet_width_nm: 18.0
+  figures:
+  - results/obj-010-oxdna-shape-verification.png
+  conclusions: >-
+    L-shape shows expected asymmetric thickening (4.6 nm vs 2.4 nm flat sheet)
+    and higher planarity RMS (1.28 nm) due to the bend. Wide 10-helix sheet
+    scales width to 18.0 nm (vs 10.5 nm for 6-helix) while maintaining flatness.
+    Pipeline distinguishes 6 distinct geometric classes reliably.
+  connects_to: obj-014
+  completed_date: '2026-03-11'
+- id: obj-014
+  status: completed
+  statement: Add 2×3 grid screenshots, expand to 43 pairs and 212 augmented examples
+  methodology: >-
+    Added setup_grid_2x3_design() and gen_grid_operations() for multi-row
+    designs. 4 new operations: add scaffold crossovers, add both types,
+    remove cross-row pair, insertion pattern. Re-exported base and augmented
+    HuggingFace datasets.
+  metrics:
+    image_pairs: 43
+    augmented_examples: 212
+    new_pairs: 4
+    design_types: 4
+    layouts_covered: 2-helix, 3-helix, 6-helix_flat, 2x3_grid
+  figures:
+  - results/obj-014-grid-screenshots.png
+  conclusions: >-
+    Dataset now covers 4 design layouts including the first multi-row design
+    (2×3 grid). 10× growth from initial 21 pairs to 212 augmented examples.
+    Multi-row operations (cross-row crossover removal) add important training
+    signal for understanding 2D helix arrangements.
+  connects_to: obj-015
+  completed_date: '2026-03-11'
+- id: obj-015
+  status: completed
+  statement: Add L-shape screenshots, expand to 46 pairs and 228 augmented examples
+  methodology: >-
+    Added setup_l_shape_design() (3 horizontal + 2 vertical helices) and
+    gen_l_shape_operations() with 3 operations: add scaffold crossovers,
+    add both types, remove bend pair. Re-exported base and augmented datasets.
+  metrics:
+    image_pairs: 46
+    augmented_examples: 228
+    new_pairs: 3
+    design_layouts: 5
+    growth_from_initial: 10.9x
+    layouts: 2-helix, 3-helix, 6-helix, 2x3_grid, l_shape
+  figures:
+  - results/obj-015-l-shape-screenshots.png
+  conclusions: >-
+    Dataset now covers 5 design layouts spanning 1D (single-row) and 2D
+    (multi-row, asymmetric) arrangements. L-shape adds the first non-rectangular
+    layout, important for training on designs with bends and junctions.
+    10.9× total growth from initial 21 pairs to 228 augmented examples.
+  connects_to: obj-016
+  completed_date: '2026-03-11'
+- id: obj-016
+  status: completed
+  statement: Add T-shape screenshots, final dataset at 49 pairs and 244 augmented examples
+  methodology: >-
+    Added setup_t_shape_design() (3 horizontal bar + 2 vertical stem helices)
+    and gen_t_shape_operations() with 3 operations: add scaffold crossovers,
+    add both types, remove T-junction pair. Re-exported base and augmented
+    HuggingFace datasets.
+  metrics:
+    image_pairs: 49
+    augmented_examples: 244
+    new_pairs: 3
+    design_layouts: 6
+    growth_from_initial: 11.6x
+    layouts: 2-helix, 3-helix, 6-helix, 2x3_grid, l_shape, t_shape
+  figures:
+  - results/obj-016-t-shape-final-dataset.png
+  conclusions: >-
+    Dataset now covers 6 design layouts spanning simple 1D rows to complex
+    2D asymmetric shapes. T-shape adds symmetric branching geometry, complementing
+    L-shape's asymmetric bend. 11.6× growth from 21 to 244 examples provides
+    a solid foundation for VLM SFT training on DNA nanostructure operations.
+  connects_to: obj-017
+  completed_date: '2026-03-11'
+- id: obj-017
+  status: completed
+  statement: Expand screenshot library from 49 to 85 operations with 36 new variations
+  methodology: >-
+    Added 36 new operation variations to generate_screenshot_library.py covering
+    gap-filling ranges (move 4-6 bases), staple crossover moves, additional delete/create
+    positions (second, second-to-last, quarter, three-quarter), evenly spaced counts
+    (1, 5, 8), insertion spacings (7, 14, 42), split points (21, 63, 105), resize
+    increments (7, 14), and multi-helix operations (six-helix per-pair crossovers,
+    delete edge/middle, move crossover; three-helix move crossover).
+  metrics:
+    total_operations: 85
+    new_operations: 36
+    operation_types: 13
+    design_layouts: 6
+    two_helix_pairs: 57
+    six_helix_pairs: 13
+    three_helix_pairs: 5
+    grid_pairs: 4
+    l_shape_pairs: 3
+    t_shape_pairs: 3
+    growth_from_49: 1.73x
+  figures:
+  - results/screenshot_library_85ops.png
+  conclusions: >-
+    Library now has dense coverage of single-action variations across all move
+    distances (1-7), all crossover positions, multiple strand types (scaffold
+    and staple), and multiple design complexities (2 to 6 helices). The 85
+    operations provide a much more comprehensive training signal for VLM
+    fine-tuning, especially for parameter sensitivity (how far to move, where
+    to create/delete).
+  connects_to: obj-018
+  completed_date: '2026-03-13'
+- id: obj-018
+  status: completed
+  statement: Build geometric reward scorer using tacoxDNA for automated 3D shape verification
+  methodology: >-
+    Built tools/oxdna_geometric_reward.py — end-to-end pipeline: cadnano JSON
+    → tacoxDNA → oxDNA coordinates → PCA shape analysis → continuous reward [0,1].
+    Tested on 7 designs: correct flat sheets, defective variants (no crossovers,
+    partial crossovers, scaffold-only), wrong shape class (2×3 grid), and tube.
+    Reward function uses weighted flatness (40%), planarity (35%), circularity (25%).
+  metrics:
+    correct_flat_sheet_reward: 0.948
+    wrong_shape_grid_reward: 0.421
+    correct_tube_reward: 0.619
+    designs_tested: 7
+    figures_generated: 3
+    discrimination_gap: 0.527
+  figures:
+  - results/oxdna_geometric_reward/fig1_reward_discrimination.png
+  - results/oxdna_geometric_reward/fig2_cross_section_comparison.png
+  - results/oxdna_geometric_reward/fig3_reward_landscape.png
+  conclusions: >-
+    The geometric reward reliably discriminates helix arrangement (flat sheet
+    0.95 vs grid 0.42) but not crossover connectivity, because tacoxDNA places
+    nucleotides by lattice position, not by strand connectivity. This makes the
+    geometric reward orthogonal to the structural verifier — together they cover
+    both shape correctness and connectivity correctness. Recommended: combine
+    as 0.7×structural + 0.3×geometric for total RLVR reward.
+  connects_to: obj-019
+  completed_date: '2026-03-13'
+- id: obj-019
+  status: completed
+  statement: Rectilinear prism fit metric for oxDNA flat sheet verification
+  methodology: >-
+    Built tools/oxdna_prism_fit.py — PCA-aligns oxDNA 3D nucleotide coordinates,
+    fits an oriented bounding box (rectilinear prism), and computes composite
+    prism_fit_score from three components: grid uniformity (how evenly nucleotides
+    fill the prism volume), rectangularity (convex hull area / bounding rect area
+    of cross-section), and slice consistency (CV of cross-section dimensions along
+    the sheet length). Analyzed existing 6-helix flat sheet (1512 nucleotides).
+    Generated 3 purposeful diagnostic figures.
+  metrics:
+    prism_dimensions_nm: "41.5 × 10.5 × 2.4"
+    prism_fit_score: 0.793
+    uniformity: 0.667
+    rectangularity: 0.754
+    slice_width_cv: 0.0008
+    slice_thickness_cv: 0.0032
+    flatness_ratio: 0.0576
+    aspect_ratio: 3.96
+    n_nucleotides: 1512
+    n_strands: 51
+    variance_explained_pc1: "93.1%"
+  figures:
+  - results/oxdna_flat_sheet/fig1_prism_wireframe.png
+  - results/oxdna_flat_sheet/fig2_cross_sections.png
+  - results/oxdna_flat_sheet/fig3_density_heatmap.png
+  conclusions: >-
+    The 6-helix flat sheet scores 0.793 on the prism fit metric, with excellent
+    cross-section uniformity (width CV = 0.0008) but moderate volume fill (uniformity
+    0.667) due to the inherent spacing between DNA helices. The 0.754 rectangularity
+    reflects the cylindrical helix cross-sections within the rectangular prism.
+    Key insight: the score ceiling for DNA origami is ~0.8, not 1.0, because
+    individual helices are cylindrical, not rectangular. This metric is best used
+    as a relative comparator between designs rather than an absolute threshold.
+    Pipeline: cadnano → tacoxDNA → oxDNA → prism_fit_score → RLVR reward.
+  connects_to: obj-020
+  completed_date: '2026-03-13'
+- id: obj-020
+  status: completed
+  statement: oxDNA investigation report with purposeful figures for training pipeline
+  methodology: >-
+    Created comprehensive investigation report examining tacoxDNA conversion of
+    cadnano designs to oxDNA format. Generated 4 purposeful figures: (1) oxDNA file
+    format anatomy explaining .dat and .top structure, (2) conversion pipeline from
+    abstract cadnano JSON through tacoxDNA to PCA-fitted prism, (3) planarity
+    analysis with helix clustering and thickness measurement, (4) training
+    integration showing flatness-to-reward mapping and multi-metric decomposition.
+    Verified pipeline end-to-end on 6-helix flat sheet (126bp honeycomb).
+  metrics:
+    pca_dims_nm: [41.5, 10.5, 2.4]
+    flatness_ratio: 0.0576
+    aspect_ratio: 3.96
+    rms_planarity_nm: 0.63
+    fill_fraction: 0.75
+    nucleotides: 1512
+    strands: 51
+    combined_reward: 0.760
+    figures_generated: 4
+  figures:
+  - results/oxdna_investigation/fig1_oxdna_format_anatomy.png
+  - results/oxdna_investigation/fig2_conversion_pipeline.png
+  - results/oxdna_investigation/fig3_planarity_and_structure.png
+  - results/oxdna_investigation/fig4_training_integration.png
+  conclusions: >-
+    tacoxDNA reliably converts cadnano designs to 3D coordinates. PCA-based
+    geometric metrics (flatness, aspect ratio, planarity, fill fraction) provide
+    continuous reward signals suitable for RLVR training. The 6-helix flat sheet
+    achieves flatness 0.058 (near-zero = genuinely flat), RMS planarity 0.63 nm
+    (less than one helix diameter), and combined geometric reward 0.76.
+    Pipeline runs in <2s per design, feasible for online RL. Recommended next
+    step: integrate geometric reward into agentverifier.py alongside existing
+    connectivity-based verification.
+  connects_to: obj-021
+  completed_date: '2026-03-13'
+- id: obj-021
+  status: completed
+  statement: Add edge vs interior crossover decision logic for half/double crossovers
+  methodology: >-
+    Added is_edge annotation to suggestCrossovers (first/last valid positions
+    between a helix pair). Added crossover_type parameter ("auto"/"double"/"half")
+    to addCrossoversForPair and addAllNeighborCrossovers. In "auto" mode (default),
+    scaffold edge positions create half-crossovers (single strand crossing at
+    the turn), interior positions create double crossovers. Staple crossovers
+    always use double. Updated system prompts and tool schemas to explain the
+    edge vs interior rule. Added 5 new headless tests.
+  metrics:
+    new_tests: 5
+    original_tests_passing: 12
+    files_changed: 6
+    lines_added: 394
+    lines_removed: 80
+    crossover_types: 3
+    edge_positions_per_pair: 2
+  figures:
+  - results/obj-021-edge-crossover-logic.png
+  conclusions: >-
+    The model now has encoded domain knowledge about when to use half vs double
+    crossovers. Edge positions (first/last valid crossover between a helix pair)
+    use half-crossovers for scaffold routing, matching DNA origami conventions.
+    The "auto" default means existing workflows that don't specify crossover_type
+    will automatically get correct behavior. The "double" mode preserves legacy
+    behavior for backward compatibility.
+  connects_to: obj-022
+  completed_date: '2026-03-14'
+
+- id: obj-022
+  status: completed
+  statement: Upgrade crossover logic from naive edge heuristic to routing-aware turns
+  methodology: >-
+    Replaced first/last edge heuristic with parity-aware routing turn detection.
+    Added inferScaffoldRoute() — computes Hamiltonian cycle through helix neighbor
+    graph via DFS, determines turn position per pair based on helix parity (even
+    exits right, odd exits left). suggestCrossovers now annotates is_routing_turn
+    (1 per pair) and always includes the turn in recommendations. addCrossoversForPair
+    auto mode creates exactly 1 half-crossover at the routing turn. addAllNeighborCrossovers
+    auto scaffold infers routing path — non-routing pairs get only double crossovers.
+    Updated tool schemas, system prompts, and query method whitelist.
+  metrics:
+    new_tests: 8
+    original_tests_passing: 12
+    files_changed: 7
+    lines_added: 445
+    lines_removed: 74
+    half_crossovers_per_pair: 1
+    routing_turn_detection: parity-based
+    hamiltonian_cycle_solver: DFS
+  figures:
+  - results/obj-022-routing-aware-crossovers.png
+  conclusions: >-
+    The model now gets exactly one half-crossover per routing pair (at the
+    parity-determined turn) instead of two (at both edges). inferScaffoldRoute
+    gives the model a full routing plan before placing crossovers manually.
+    addAllNeighborCrossovers is now routing-aware — non-routing pairs get only
+    structural double crossovers. This matches actual DNA origami conventions.
+  connects_to: obj-023
+  completed_date: '2026-03-14'
+
+- id: obj-023
+  status: completed
+  statement: Design and screenshot a flat 4-helix sheet with correct crossover placement
+  methodology: >-
+    Created 4-helix linear chain (126bp) using createHelicesWithStrands(num_helices=4).
+    Placed crossovers per PI spec: H0-H1 gets 2 half crossovers at left (idx 1) and
+    right (idx 116) edges; H1-H2 gets 1 double crossover at midpoint (idx 60/61);
+    H2-H3 gets 2 half crossovers at left (idx 4) and right (idx 120) edges — different
+    positions from H0-H1 due to different neighbor direction. Cleaned up orphan fragments
+    (4 deleted). Rendered headless screenshot via pathview scene.
+  metrics:
+    helices: 4
+    strand_length: 126bp
+    half_crossovers: 4
+    double_crossovers: 1
+    orphan_fragments_deleted: 4
+    crossover_positions: "H0-H1:[1,116], H1-H2:[60,61], H2-H3:[4,120]"
+  figures:
+  - results/obj-023-4helix-flat-sheet.png
+  conclusions: >-
+    The 4-helix flat sheet demonstrates the PI's crossover placement rules:
+    half crossovers at the leftmost/rightmost valid positions (edges where no
+    further crossover exists), double crossovers at interior midpoints.
+    Different neighbor directions (p0, p1, p2) yield different valid position
+    offsets, so H0-H1 edges (idx 1, 116) differ from H2-H3 edges (idx 4, 120).
+  connects_to: obj-024
+  completed_date: '2026-03-15'
+
+- id: obj-024
+  status: completed
+  statement: Correct left half crossover positions to use High index in 4-helix sheet
+  methodology: >-
+    PI identified that left half crossovers were using the Low index of the
+    crossover pair when they should use the High index (one position to the right).
+    Right half crossovers and the double crossover were correct. Fixed by changing
+    left half crossover creation to use high_idx instead of low_idx from the
+    suggestCrossovers position data. H0-H1 left: idx 1→2, H2-H3 left: idx 4→5.
+    Built tools/gen_4helix_sheet.py for reproducible generation.
+  metrics:
+    helices: 4
+    strand_length: 126bp
+    half_crossovers: 4
+    double_crossovers: 1
+    corrected_positions: "H0-H1 left: 1→2, H2-H3 left: 4→5"
+    orphan_fragments_deleted: 4
+  figures:
+  - results/obj-024-4helix-flat-sheet-corrected.png
+  conclusions: >-
+    Each valid crossover position is a Low/High pair at adjacent indices. For
+    left-side half crossovers (where the scaffold turns at the low end of the
+    structure), the High index is correct — the crossover connects at the rightmost
+    of the two adjacent positions in the pair. This distinction matters for correct
+    scaffold routing topology.
+  connects_to: obj-025
+  completed_date: '2026-03-15'
+
+- id: obj-025
+  status: completed
+  statement: Audit agent stack transferability for peer distribution
+  methodology: >-
+    Audited all imports in the 8 agent subsystem files (agentbackend, agentdialog,
+    agentmethods, agenttools, agentverifier, trajectorylogger, rlvr_runner,
+    rlvr_local_backend). Found that the entire agent stack — GUI, 85 methods,
+    3 LLM backends (Ollama, OpenAI, Claude), verifier, trajectory logger — uses
+    only PyQt6 + Python stdlib. All LLM backends use raw urllib.request, no pip
+    packages. ML dependencies (torch, transformers, peft) are conditional imports
+    in rlvr_local_backend.py only, loaded inside worker threads.
+  metrics:
+    agent_files_audited: 8
+    external_pip_deps_for_agent: 0
+    external_pip_deps_for_rlvr: 3
+    llm_backends: 3
+    agent_methods: 85
+    install_commands_for_peer: 4
+    conditional_ml_imports: true
+  figures:
+  - results/obj-025-transferability-analysis.png
+  conclusions: >-
+    The agent stack is fully transferrable with pip install -e . plus Ollama
+    install. Zero additional pip dependencies needed for the core AI-assisted
+    workflow. RLVR training is the only layer requiring heavy ML deps, and those
+    imports are conditional so the app runs fine without them. The methods layer
+    (85 deterministic operations) is the most valuable transferrable asset —
+    it works identically regardless of which LLM backend drives it.
+  connects_to: obj-026
+  completed_date: '2026-03-16'
+
+- id: obj-026
+  status: completed
+  statement: Fix half crossover handedness — left vs right determined by 5'/3' ordering
+  methodology: >-
+    PI identified that left side of 4-helix sheet had left half crossovers where
+    right half crossovers were needed. Root cause: createHalfCrossover always passed
+    strand1 as 5p regardless of position, producing left handedness. Fix: added
+    _isHighCrossoverPosition helper to detect Low vs High from honeycomb crossover
+    tables, then set 5'/3' strand ordering to match createCrossover's parity rules
+    (Low: even is 5p → left half; High: odd is 5p → right half). Updated
+    gen_4helix_sheet.py with correct comments. 8/8 edge crossover tests pass.
+  metrics:
+    tests_passing: 8
+    files_changed: 3
+    methods_updated: createHalfCrossover
+    helpers_added: _isHighCrossoverPosition
+    left_side_handedness: right half crossover (correct)
+    right_side_handedness: left half crossover (correct)
+  figures:
+  - results/obj-026-4helix-sheet-handedness.png
+  conclusions: >-
+    Crossover handedness depends on BOTH position (Low vs High index from the
+    crossover tables) AND 5'/3' strand ordering. Using the correct index alone
+    is insufficient — the strand ordering passed to createXover determines
+    whether the visual result is a left or right half crossover. The fix makes
+    createHalfCrossover parity-aware, matching the same logic used by
+    createCrossover for double crossovers.
+  connects_to: obj-027
+  completed_date: '2026-03-16'
+
+- id: obj-027
+  status: completed
+  statement: Analyze distribution strategy for sharing AI-assisted cadnano with peers
+  methodology: >-
+    Analyzed the full agent stack to determine what transfers with 1:1 reproducibility
+    vs what is machine-local. Key finding: domain knowledge lives in code (85 methods,
+    tool schemas, system prompts, verifier), not in model weights or Claude Code memory.
+    The architecture separates intent parsing (any LLM) from domain rules (deterministic
+    Python), making the model interchangeable. Peer needs only git clone + pip install +
+    Ollama (or API key). No trained weights, memory files, or skills export needed.
+  metrics:
+    shipped_components: 7
+    not_shipped_components: 5
+    methods_count: 85
+    tool_schema_lines: 950
+    system_prompt_count: 3
+    peer_setup_commands: 3-4
+    pip_ml_deps_required: 0
+  figures:
+  - results/obj-027-distribution-strategy.png
+  conclusions: >-
+    The Level 2 methods layer is the transferrable intelligence. It encodes parity rules,
+    crossover position tables, routing algorithms, and staple breaking — things a model
+    would need thousands of training examples to learn. By putting this in code rather
+    than model weights, any LLM (local or cloud) that can call functions becomes a viable
+    agent. Training a local model (Phase 4-5) is for pushing the frontier on hard tasks,
+    not for basic distribution. Memory files and conversation history are working notes
+    for the development agent (Claude Code), not part of the user-facing product.
+  connects_to: obj-028
+  completed_date: '2026-03-16'
+
+- id: obj-028
+  status: completed
+  statement: Redo 4-helix sheet with double-then-remove approach and JSON export
+  methodology: >-
+    Changed half crossover creation strategy from direct createHalfCrossover to
+    creating a full double crossover and removing one half. This exactly replicates
+    GUI behavior. Added comprehensive strand connectivity diagnostics showing all
+    5'/3' endpoints and crossover partners after each operation. Exported design as
+    cadnano JSON for PI verification in the GUI. Verified single closed scaffold
+    loop through all 4 helices by tracing strand connections.
+  metrics:
+    scaffold_path: "H0[2→116]→H1[116→72]→H2[72→120]→H3[120→5]→H2[5→71]→H1[71→2]→H0"
+    topology: single closed loop
+    right_half_xovers: "idx 2 (H0-H1), idx 5 (H2-H3)"
+    left_half_xovers: "idx 116 (H0-H1), idx 120 (H2-H3)"
+    tests_passing: 8
+    json_exported: true
+  figures:
+  - results/obj-028-4helix-sheet-v3.png
+  conclusions: >-
+    The double-then-remove approach produces identical topology to the parity-aware
+    createHalfCrossover fix. The scaffold forms one continuous closed loop visiting
+    all 4 helices. The rectangular visual in the path view is correct — it represents
+    the continuous scaffold path wrapping around each helix pair. Previous screenshots
+    (obj-023/024) showed small V-shapes because wrong handedness prevented proper
+    scaffold routing. Exported JSON file allows PI to verify in the GUI directly.
+  connects_to: null
+  completed_date: '2026-03-16'
+- id: obj-029
+  status: completed
+  statement: Fix 4-helix sheet with direct createHalfCrossover at correct table positions
+  methodology: >-
+    PI correction: double-then-remove approach still produced left half crossovers
+    on the left side of the structure. Replaced with direct createHalfCrossover
+    calls at pre-computed crossover table positions. Left side uses High index
+    positions (idx 2 for H0-H1, idx 5 for H2-H3) for right half crossovers.
+    Right side uses Low index positions (idx 116, idx 120) for left half crossovers.
+    The _isHighCrossoverPosition method detects High vs Low from honeycombScafHigh/Low
+    tables and sets correct 5'/3' strand ordering automatically.
+  metrics:
+    scaffold_path: "H0[2→116]→H1[116→72]→H2[72→120]→H3[120→5]→H2[5→71]→H1[71→2]→H0"
+    topology: single closed loop
+    left_side_xovers: "right half at High positions (idx 2, 5)"
+    right_side_xovers: "left half at Low positions (idx 116, 120)"
+    approach: "direct createHalfCrossover (not double-then-remove)"
+    json_exported: true
+  figures:
+  - results/obj-029-4helix-sheet-v4.png
+  conclusions: >-
+    Using createHalfCrossover directly at the correct crossover table position
+    (High for right half, Low for left half) is the proper approach. The
+    double-then-remove method from obj-028 did not produce visually correct
+    right half crossovers. The honeycombScafHigh table provides pre-computed
+    valid positions for right half crossovers at each neighbor direction.
+  connects_to: obj-030
+  completed_date: '2026-03-16'
+
+- id: obj-030
+  status: completed
+  statement: Build rectangular DNA origami pipeline with m13mp18 scaffold and oxDNA verification
+  methodology: >-
+    Built end-to-end pipeline (tools/rectangular_origami_pipeline.py) for rectangular
+    DNA origami design. 24 helices x 294 bp on honeycomb lattice with serpentine
+    scaffold routing using direct strand connection (setConnection3p/5p) instead of
+    createXover to avoid orphan fragments. autoStaple places staple crossovers based
+    on scaffold topology. autoBreak (Dijkstra-optimized) splits long staples into
+    ~120 oligos. 487 single-base insertions consume full 7249 nt m13mp18 scaffold.
+    tacoxDNA converts to oxDNA format. Two-stage oxDNA simulation: energy minimization
+    (CPU, DNA2, 5000 steps) then MD relaxation (CPU, DNA2, 500k steps). Compiled
+    oxDNA from source (CPU-only, CMake 4.x compatibility fix). Researched pyOrigamiBreak
+    (douglaslab) thermodynamic scoring approach vs local length-based autoBreak.
+  metrics:
+    scaffold_oligos: 1
+    scaffold_length: 7249
+    staple_count: 120
+    staple_avg_length: 60.4
+    insertions: 487
+    oxdna_nucleotides: 14498
+    oxdna_strands: 121
+    pca_dimensions_nm: "56.2 x 27.1 x 2.5"
+    simulation_stages: "min (26 steps) + MD (5 steps)"
+  figures:
+  - results/rectangular_origami/figures/comprehensive_summary.png
+  - results/rectangular_origami/figures/initial_structure.png
+  - results/rectangular_origami/figures/relaxation_comparison.png
+  conclusions: >-
+    Successfully built a rectangular DNA origami that consumes all 7249 nt of m13mp18
+    scaffold. Key lessons: (1) Serpentine scaffold routing requires direct strand
+    endpoint connection, not createXover which splits strands and breaks existing
+    connections. (2) autoStaple works well with serpentine scaffold. (3) autoBreak
+    Dijkstra optimization produces reasonable staple lengths (avg 60 nt). (4) oxDNA
+    CPU simulation works for origami verification but needs longer runs for convergence.
+    (5) For rectangular origami, scaffold only occupies ~91 pct of helix length due
+    to crossover positions at edges — insertions compensate.
+  connects_to: obj-031
+  completed_date: '2026-03-16'
+
+- id: obj-031
+  status: completed
+  statement: Parametric origami pipeline with cavity and polyT brush support
+  methodology: >-
+    Built tools/parametric_origami_pipeline.py — configurable scaffold type,
+    cavity dimensions, polyT brush extensions, staple break parameters. Cavity
+    via staple removal. Three variants: solid p8064 rectangle, cavity 126bp×8h,
+    widened cavity 147bp×8h. Single parameter change triggers full redesign.
+  metrics:
+    solid_staples: 113
+    cavity_staples: 107
+    widened_staples: 122
+    redesign_time_seconds: 30
+  figures:
+  - results/paper_figures/fig4_parametric_sweep.png
+  conclusions: >-
+    Parametric pipeline enables instant redesign. Staple-removal cavity works
+    for creating windows but does not route scaffold around the hole.
+  connects_to: obj-032
+  completed_date: '2026-03-17'
+
+- id: obj-032
+  status: completed
+  statement: Hamiltonian cycle scaffold routing around cavity in multi-row grid
+  methodology: >-
+    Built tools/cavity_routing.py — DFS finds Hamiltonian cycle through
+    honeycomb grid with cavity removed. 2-row grids cannot route around cavities
+    (alternating cross-row connections create dead ends). 4 rows minimum. Parity
+    constraints: N_ROWS even, N_COLS odd, start_row != start_col parity.
+  metrics:
+    solid_2x13_helices: 26
+    cavity_4x13_helices: 42
+    cavity_removed: 10
+    scaffold_oligos: 1
+    cycle_time_ms: "<1"
+  figures:
+  - results/cavity_routed/cavity_routing_cycle.png
+  - results/cavity_routed/solid_2x13.png
+  conclusions: >-
+    Proper cavity routing requires multi-row grids on honeycomb lattice.
+    2-row works for solid rectangles but not cavities. Parity constraints
+    are fundamental to honeycomb geometry.
+  connects_to: obj-033
+  completed_date: '2026-03-17'
+
+- id: obj-033
+  status: completed
+  statement: Paper draft and 4 publication figures for parametric origami
+  methodology: >-
+    Paper with 4 parts: failed embedded agent vs coding agent, proof of concept,
+    cavity design, parametric redesign. 4 figures with subfigure labels at 300 DPI.
+  metrics:
+    paper_sections: 4
+    figures_generated: 4
+  figures:
+  - results/paper_figures/fig1_architecture.png
+  - results/paper_figures/fig2_proof_of_concept.png
+  - results/paper_figures/fig3_cavity_design.png
+  - results/paper_figures/fig4_parametric_sweep.png
+  conclusions: >-
+    Paper frames value as parametric redesign, not initial design.
+  connects_to: obj-034
+  completed_date: '2026-03-17'
+
+- id: obj-034
+  status: completed
+  statement: Scale PI's 2x12 cavity template to p8064 scaffold in 4 verified steps
+  methodology: >-
+    Scaled PI's 2x12_rectangle_cavity.json (252bp, 5036bp scaffold) to 420bp
+    for p8064 in 4 steps, each verified loading in cadnano: (1) remove staples,
+    (2) extend right side by 168bp, (3) move midseam crossovers to center,
+    (4) expand cavity with aligned edges between layers. Fixed 3 error classes:
+    cavity gaps filled incorrectly, crossover skew, stray staple references.
+  metrics:
+    original_scaffold_bp: 5036
+    final_scaffold_bp: 7688
+    helix_length_bp: 420
+    scaffold_oligos: 1
+    steps_verified: 4
+    cavity_edge_alignment_bp: 2
+  figures:
+  - results/scale_steps/step1_screenshot.png
+  - results/scale_steps/step2_screenshot.png
+  - results/scale_steps/step3_screenshot.png
+  - results/scale_steps/step4_screenshot.png
+  conclusions: >-
+    Step-by-step JSON manipulation with cadnano load verification after each
+    step is the reliable approach. Bulk scaling breaks references; surgical
+    crossover edits succeed. Cavity gaps must stay empty. Crossovers must
+    be aligned (same index on both helices).
+  connects_to: obj-035
+  completed_date: '2026-03-18'
+
+- id: obj-035
+  status: completed
+  statement: Rewrite paper as single-narrative DNA 32 conference submission
+  methodology: >-
+    Rewrote paper_draft_dna32.md with focused story arc for DNA nanotechnology
+    audience: embedded agent failed → coding agent hit 8 domain knowledge walls
+    → PI unblocked each → parametric pipeline emerged. Framed for ISNSCE DNA 32
+    Track B or Poster. Honest about failures; the 8 errors ARE the paper.
+  metrics:
+    sections: 6
+    error_classes_documented: 8
+    target_conference: "ISNSCE DNA 32"
+  figures:
+  - results/paper_figures/pi_template_routing.png
+  - results/scale_steps/step4_screenshot.png
+  conclusions: >-
+    The agent is not a designer but a parametric design tool. You design the
+    template; the agent scales, modifies, and verifies. Every non-trivial design
+    decision required human domain knowledge to unblock.
+  connects_to: null
+  completed_date: '2026-03-18'
+
+- id: obj-036
+  status: completed
+  statement: Parametric cavity width sweep with centered crossovers and 1 scaffold oligo
+  methodology: >-
+    Extended the 4-step template scaling pipeline to move both left and right
+    cavity boundary half-crossovers, centering the gap within the helix.
+    Fixed 5 bugs: step2 direction detection from shifted refs, step2 R13
+    extension fill creating dangling strands, step4 crossover placement on
+    EMPTY positions, step4 direction from shifted refs, step3 spurious midseam
+    on last pair H22-H23. All crossover positions snapped to valid honeycomb
+    lattice offsets (mod 21). Verified via cadnano decode segment validation
+    and in-app loading.
+  metrics:
+    variants_generated: 3
+    gap_sizes_nm: [20, 30, 40]
+    scaffold_oligos: 1
+    scaffold_bp_range: "8368-8616"
+    center_offset_max_bp: 0.5
+    bugs_fixed: 5
+    cadnano_loadable: true
+  figures:
+  - results/obj-036-parametric-cavity-sweep.png
+  - results/cavity_variants/screenshot_20nm.png
+  - results/cavity_variants/screenshot_30nm.png
+  - results/cavity_variants/screenshot_40nm.png
+  conclusions: >-
+    The 4-step template scaling process is now fully parametric: change gap_nm
+    and the cavity automatically resizes and re-centers while preserving 1
+    scaffold oligo. Key insight: scaffold direction must be determined from
+    helix parity, never from crossover references that may have been shifted.
+    Cavity boundary crossovers require creating scaffold entries at EMPTY
+    positions before placing the crossover.
+  connects_to: null
+  completed_date: '2026-03-19'
+
+- id: obj-037
+  status: completed
+  statement: Full pipeline on 30nm cavity variant through oxDNA PACE GPU relaxation
+  methodology: >-
+    Applied complete pipeline to the 30nm centered cavity design:
+    autoStaple (69 staples) → autoBreak with all3 rules minStapleLegLen=3
+    (207 staples, majority 30-39bp) → tacoxDNA conversion (17,232 nt,
+    208 strands, honeycomb lattice) → 3-stage oxDNA relaxation on PACE
+    RTX_6000 GPU (10K min CPU + 10M gentle relax GPU + 10M production
+    relax GPU). Fixed oxDNA binary path issue (shared install removed
+    during RHEL9 migration, used user-built binary at ~/scratch/oxDNA/).
+  metrics:
+    staples_after_autostaple: 69
+    staples_after_autobreak: 207
+    staple_length_range: "12-168bp"
+    staple_avg_length: 41.6
+    nucleotides: 17232
+    strands: 208
+    min_time: "28 min"
+    relax_time: "2h 25m"
+    relax2_time: "2h 30m"
+    energy_minimized: -1.84
+    energy_relaxed: -1.50
+    structure_initial_nm: "21.7 x 5.4 x 129.8"
+    structure_relaxed_nm: "29.3 x 21.0 x 132.0"
+    cavity_maintained: true
+  figures:
+  - results/cavity_variants/oxdna_30nm/relaxation_comparison.png
+  - results/cavity_variants/oxdna_30nm/energy_convergence.png
+  - results/cavity_variants/oxdna_30nm/structure_initial.png
+  - results/cavity_variants/screenshot_30nm_autostapled.png
+  - results/cavity_variants/screenshot_30nm_autobroken.png
+  conclusions: >-
+    The parametric cavity design survives oxDNA molecular dynamics relaxation
+    at 300K. The cavity hole is preserved after 20M MD steps. The 2-layer
+    structure is thin (5.4nm initial Y dimension) and expands thermally to
+    21nm, but maintains its longitudinal shape (130nm Z). Energy converged
+    smoothly with no blowups using the staged force-cap approach. The full
+    pipeline (cadnano → autoStaple → autoBreak → tacoxDNA → oxDNA) is now
+    end-to-end automated for any gap size.
+  connects_to: null
+  completed_date: '2026-03-20'
+
+- id: obj-038
+  status: in_progress
+  statement: Integrin cavity design — 8-column cavity in 2×12 template for αvβ3 protein
+  methodology: >-
+    Expanded the 4-step template scaling pipeline to support wider cavities
+    (8 columns instead of 4) within the existing 2×12 grid. Key insight:
+    use ORIGINAL cavity helices in steps 2-3, ALL cavity helices in step 4.
+    Found and fixed 3 bugs: right boundary search finding left boundary,
+    right boundary expansion destroying left boundary crossover, and
+    step2/3 treating new cavity pairs as cavity too early. Added explicit
+    post-step gap-clearing. From-scratch approach rejected (65 oligos).
+  metrics:
+    cavity_dimensions_nm: "20.8 x 15.0"
+    target_protein: "integrin avb3"
+    scaffold_oligos: 8
+    scaffold_bp: 8596
+    target_oligos: 1
+    bugs_fixed: 3
+    cadnano_loadable: true
+  figures:
+  - results/integrin_cavity/screenshot_integrin_2x12_8cav.png
+  conclusions: >-
+    Cavity shape is correct for integrin (20.8nm x 15.0nm). Template-based
+    approach preserves more scaffold connectivity than from-scratch (8 oligos
+    vs 65). Remaining breaks from midseam-to-cavity conversion need fixing.
+    The approach of expanding cavity within the existing grid avoids needing
+    to create new templates for wider designs.
+  connects_to: null
+  completed_date: null
+
+- id: obj-039
+  status: completed
+  statement: Failure analysis figures and distributable verifier for DNA 32 paper
+  methodology: >-
+    Generated 3 publication-quality figures documenting the 8 failure modes
+    discovered during AI-assisted parametric DNA origami design: (1) scaffold
+    oligo count journey bar chart (65→54→10→8→4→1), (2) failure mode table
+    with symptoms and fixes, (3) verifier before/after comparison. Created
+    cadnano_verifier.py as standalone distributable tool.
+  metrics:
+    figures_generated: 3
+    failure_modes_documented: 8
+    verifier_checks: 7
+    designs_verified: 2
+  figures:
+  - results/paper_figures/fig_oligo_journey.png
+  - results/paper_figures/fig_failure_table.png
+  - results/paper_figures/fig_verifier_comparison.png
+  conclusions: >-
+    The conference narrative shifts from "AI designed origami" to "AI failed
+    8 specific ways, each revealing a domain knowledge gap; the distributable
+    output is the verifier + failure catalog that makes future users faster."
+    This crosses the threshold from demo to knowledge transfer.
+  connects_to: null
+  completed_date: '2026-03-22'
+
+- id: obj-040
+  status: completed
+  statement: Production oxDNA relaxation for all 3 parametric cavity variants (20/30/40nm)
+  methodology: >-
+    Ran full autoStaple + autoBreak + tacoxDNA + 3-stage oxDNA production
+    pipeline on 20nm and 40nm cavity variants (30nm already done). Each
+    variant: 10K CPU min + 10M GPU gentle relax (f=0.1) + 10M GPU
+    production relax (f=1.0) on PACE RTX_6000. All maintain cavity
+    shape after 20M MD steps at 300K.
+  metrics:
+    variants: 3
+    scaffold_oligos: 1
+    cavity_gaps_nm: [20, 30, 40]
+    total_pace_time: "~5h per variant"
+    structures_stable: true
+  figures:
+  - results/paper_figures/fig_all_cavities_oxdna.png
+  conclusions: >-
+    All 3 parametric cavity variants survive production oxDNA relaxation.
+    The cavity is maintained in all cases. The parametric pipeline
+    successfully produces structurally valid designs across a range
+    of cavity sizes — a key result for the DNA 32 paper.
+  connects_to: null
+  completed_date: '2026-03-23'
+
+- id: obj-041
+  status: in_progress
+  statement: Template extension to 2x14+ grid with correct scaffold routing
+  methodology: >-
+    Attempted to extend the 2x12 template by adding column pairs on the
+    right edge. Fixed clone bugs (stale inter-pair refs, wrong partner
+    detection, parity mismatch). All structural checks pass but scaffold
+    connectivity remains at 4 oligos. Root cause: adding inter-pair
+    crossovers at H0[64/65/200/201] creates extra segment boundaries
+    that the scaffold path cannot visit.
+  metrics:
+    target_oligos: 1
+    current_oligos: 4
+    structural_checks_passing: 6
+    clone_bugs_fixed: 3
+  figures: []
+  conclusions: >-
+    Template extension requires understanding how the scaffold routing
+    pattern adapts when columns are added. The inter-pair crossover
+    positions must interleave correctly with existing crossovers to
+    maintain single-oligo connectivity. Blocked pending PI guidance.
+  connects_to: null
+  completed_date: null
+
+- id: obj-042
+  status: completed
+  statement: Build 2x20 centered cavity design (20nm x 40nm) with full pipeline
+  methodology: >-
+    Built 2x20 template extension (4 LEFT + 4 RIGHT column pairs from 2x12).
+    Applied 4-step cavity scaling: extend to 273bp, expand cavity to 8 cols
+    (ORIG in steps 2-3, ALL in step 4), set 117bp centered gap. Excluded
+    last pair (38,39) from step3. AutoStaple (77→238 staples), tacoxDNA
+    (17320 nt, 239 strands). Submitted to PACE for oxDNA relaxation.
+  metrics:
+    grid: "2x20"
+    helices: 40
+    helix_length_bp: 273
+    scaffold_bp: 8660
+    scaffold_oligos: 1
+    cavity_cols: 8
+    cavity_height_nm: 20.8
+    cavity_width_nm: 39.8
+    padding_helices: 6
+    staples: 238
+    nucleotides: 17320
+    strands: 239
+  figures:
+  - results/integrin_cavity/screenshot_2x20_scaled_pathview.png
+  - results/integrin_cavity/screenshot_2x20_scaled_sliceview.png
+  - results/integrin_cavity/design_2x20_pipeline/structure_initial.png
+  - results/integrin_cavity/design_2x20_pipeline/minimization_comparison.png
+  conclusions: >-
+    Successfully designed a 2x20 DNA origami with 20nm x 40nm centered cavity
+    and 6-helix padding on all sides. Template extension (add columns on both
+    sides) + cavity scaling pipeline produces valid designs with 1 scaffold
+    oligo. The 8660bp scaffold fits within p8064 capacity. oxDNA minimization
+    completed; GPU relaxation pending in PACE queue.
+  connects_to: null
+  completed_date: '2026-03-24'
+
+- id: cross_strand_design
+  statement: Cross shape via strand trimming on flat 2-layer rectangle
+  methodology: >-
+    Built cross_strand_2arm_90bp by loading 2×12 simple routing rectangle
+    and using strand.resize() to trim outer helix pairs from both left and
+    right edges. Center 2 pairs per row stay full length (241bp), outer
+    2 pairs per row trimmed to centered 90bp sections. Same technique as
+    taper but applied to both sides. Full pipeline: autoStaple + autoBreak
+    + tacoxDNA conversion.
+  metrics:
+    helices: 24
+    scaffold_bp: 3388
+    scaffold_oligos: 1
+    staples: 95
+    nucleotides: 6776
+    strands: 96
+    arm_length_bp: 90
+    bar_length_bp: 241
+    dimensions_nm: "81.0 x 21.7 x 5.6"
+  figures:
+  - results/stress_test/cross_strand_2arm_90bp_both.png
+  - results/stress_test/cross_strand_2arm_90bp_stapled_3d.png
+  conclusions: >-
+    Cross shape successfully created by moving edge crossovers on a flat
+    2-layer rectangle. The shape is in the strands (strand lengths), not
+    the lattice helix placement. PI correction: "design the pattern in the
+    strands" not "design the pattern in the lattice." tacoxDNA top view
+    confirms cross silhouette. Script parameterized for arm count and length.
+  connects_to: null
+  completed_date: '2026-04-01'

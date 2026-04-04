@@ -1,0 +1,29 @@
+# Stage 1: Energy Minimization (CPU)
+# Steepest descent to remove steric clashes from tacoxDNA placement
+
+backend = CPU
+sim_type = min
+interaction_type = DNA2
+
+max_backbone_force = 5.
+max_backbone_force_far = 10.
+
+steps = 10000
+dt = 0.005
+T = 300K
+verlet_skin = 0.15
+salt_concentration = 1.0
+
+time_scale = linear
+refresh_vel = 1
+
+topology = topology.top
+conf_file = start.conf
+lastconf_file = minimized.conf
+trajectory_file = traj_min.dat
+energy_file = energy_min.dat
+
+print_conf_interval = 10000
+print_energy_every = 20
+no_stdout_energy = false
+restart_step_counter = 1

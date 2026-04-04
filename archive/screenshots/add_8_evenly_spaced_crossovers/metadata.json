@@ -1,0 +1,21 @@
+{
+  "operation": "addCrossoversForPair",
+  "description": "Add 8 evenly spaced crossovers",
+  "params": {
+    "helix1": 0,
+    "helix2": 1,
+    "strand_type": "scaffold",
+    "positions": [
+      4,
+      25,
+      46,
+      67,
+      88,
+      109,
+      130,
+      151
+    ]
+  },
+  "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'created': 8, 'crossovers': [{'low_idx': 4, 'high_idx': 5, 'type': 'double'}, {'low_idx': 25, 'high_idx': 26, 'type': 'double'}, {'low_idx': 46, 'high_idx': 47, 'type': 'double'}, {'low_idx': 67, 'high_idx': 68, 'type': 'double'}, {'low_idx': 88, 'high_idx': 89, 'type': 'double'}, {'low_idx': 109, 'high_idx': 110, 'type': 'double'}, {'low_idx': 130, 'high_idx': 131, 'type': 'double'}, {'low_idx': 151, 'high_idx': 152, 'type': 'double'}]}",
+  "natural_language": "Add 8 evenly spaced scaffold crossovers between helix 0 and helix 1"
+}

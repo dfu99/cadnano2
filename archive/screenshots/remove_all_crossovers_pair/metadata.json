@@ -1,0 +1,11 @@
+{
+  "operation": "removeCrossoversForPair",
+  "description": "Remove all crossovers between helix 0 and 1",
+  "params": {
+    "helix1": 0,
+    "helix2": 1,
+    "strand_type": "scaffold"
+  },
+  "result": "{'helix1': 0, 'helix2': 1, 'strand_type': 'scaffold', 'removed': 25}",
+  "natural_language": "Remove all scaffold crossovers between helix 0 and helix 1"
+}

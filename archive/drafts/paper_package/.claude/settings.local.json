@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pandoc --version)",
+      "Bash(brew list:*)",
+      "Bash(mdfind \"kMDItemFSName == ''''pdflatex''''\")",
+      "Bash(chmod:*)",
+      "Bash(./build_pdf.sh 2>&1)",
+      "Bash(pdflatex -interaction=nonstopmode paper_draft_dna32.tex)",
+      "Bash(sudo tlmgr:*)",
+      "Bash(kpsewhich:*)",
+      "Bash(brew install:*)",
+      "Bash(typst compile:*)",
+      "Bash(typst init:*)",
+      "Bash(typst search:*)",
+      "Bash(curl -s \"https://api.crossref.org/works?query=cadnano+rapid+prototyping+DNA+origami+Douglas&rows=3\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"https://api.crossref.org/works?query=autobreak+DNA+origami+Aksel&rows=3\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=DAEDALUS+DNA+origami+Veneziano+Bathe&rows=3\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=vHelix+DNA+origami+Benson+Hogberg&rows=3\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=PERDIX+DNA+origami+Jun+Bathe&rows=3\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=METIS+DNA+origami+Jun+Bathe&rows=3\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=ENSnano+DNA+nanostructures+Levy+Schabanel&rows=3\")",
+      "Bash(curl -s \"https://api.crossref.org/works/10.1126/sciadv.ade4455\")",
+      "Bash(curl -s \"https://api.crossref.org/works/10.1093/nar/gkp436\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=autobreak+DNA+origami+accurate+folding+Aksel&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=DAEDALUS+automatic+design+wireframe+DNA+origami+Veneziano&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=vHelix+DNA+nanostructures+self-assembly+Benson+Hogberg&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=PERDIX+wireframe+DNA+origami+flat+arbitrary+Jun&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=METIS+wireframe+DNA+origami+Jun+Bathe&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=ENSnano+DNA+nanostructure+design+software&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works/10.1073/pnas.2406769121\")",
+      "Bash(curl -s \"https://api.crossref.org/works/10.1021/acsnano.8b08671\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=DNA+rendering+of+polyhedral+meshes+nanoscale+Benson+Hogberg&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=autonomous+design+wireframe+DNA+two-dimensional+Jun+Bathe+PERDIX&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works?query=autonomously+designed+free-form+2D+wireframe+DNA+Jun+Bathe&rows=5\")",
+      "Bash(curl -s \"https://api.crossref.org/works/10.1038/nature14586\")",
+      "WebSearch"
+    ]
+  }
+}

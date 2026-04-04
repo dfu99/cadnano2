@@ -1,0 +1,75 @@
+{
+  "task": "Asymmetric stepped shape",
+  "constraint": "On honeycomb lattice, shapes with 3+ different row widths produce 3+ degree-1 nodes, preventing Hamiltonian path routing.",
+  "tested_configurations": [
+    {
+      "shape": "8+6+4 left-aligned",
+      "helices": 18,
+      "deg1_nodes": 3,
+      "status": "blocked"
+    },
+    {
+      "shape": "8+6+4 center-aligned",
+      "helices": 18,
+      "deg1_nodes": 4,
+      "status": "blocked"
+    },
+    {
+      "shape": "10+8+6",
+      "helices": 24,
+      "deg1_nodes": 4,
+      "status": "blocked"
+    },
+    {
+      "shape": "8+8+4+4 staircase",
+      "helices": 24,
+      "deg1_nodes": 3,
+      "status": "blocked"
+    },
+    {
+      "shape": "6+8+8+6 asymmetric",
+      "helices": 28,
+      "deg1_nodes": 3,
+      "status": "blocked"
+    },
+    {
+      "shape": "2+4+6+8 staircase",
+      "helices": 20,
+      "deg1_nodes": 5,
+      "status": "blocked"
+    },
+    {
+      "shape": "2+2+6+6 wide L",
+      "helices": 16,
+      "deg1_nodes": 3,
+      "status": "blocked"
+    },
+    {
+      "shape": "2+2+8+8 big step",
+      "helices": 20,
+      "deg1_nodes": 3,
+      "status": "blocked"
+    }
+  ],
+  "working_approximations": [
+    {
+      "shape": "T-shape (8+6+6)",
+      "helices": 20,
+      "oligos": 1,
+      "status": "success"
+    },
+    {
+      "shape": "Cross/plus (4+6+6+4)",
+      "helices": 20,
+      "oligos": 1,
+      "status": "success"
+    },
+    {
+      "shape": "L-shape (2+2+4)",
+      "helices": 8,
+      "oligos": 1,
+      "status": "success"
+    }
+  ],
+  "insight": "The maximum degree-1 node count for a Hamiltonian path is 2 (at the endpoints). Each row-width transition that exposes new corners adds degree-1 nodes. Only symmetric narrowing (cross) or single-transition shapes (T, L) keep the count at 2."
+}

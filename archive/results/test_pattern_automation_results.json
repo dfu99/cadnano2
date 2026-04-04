@@ -1,0 +1,19 @@
+{
+  "tests": {
+    "resizeAllStrands": "PASS",
+    "removeCrossoversForPair": "PASS",
+    "removeAllCrossovers": "PASS",
+    "addInsertionPattern": "PASS",
+    "insertion_deletions": "PASS",
+    "addInsertionPatternAll": "PASS",
+    "insertions_skip_crossovers": "PASS",
+    "error_handling": "PASS",
+    "splitStrandAt": "PASS",
+    "listStaples": "PASS",
+    "breakStaplePattern": "PASS",
+    "autoBreakStaples": "PASS"
+  },
+  "passed": 12,
+  "failed": 0,
+  "total": 12
+}

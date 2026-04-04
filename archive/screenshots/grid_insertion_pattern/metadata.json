@@ -1,0 +1,11 @@
+{
+  "operation": "addInsertionPatternAll",
+  "description": "Add insertion pattern across all helices in 2\u00d73 grid",
+  "params": {
+    "length": 1,
+    "spacing": 21,
+    "layout": "2x3_grid"
+  },
+  "result": "{'length': 1, 'spacing': 21, 'total_added': 36, 'per_helix': [{'helix_num': 1, 'added': 6, 'positions': [0, 21, 42, 63, 84, 105]}, {'helix_num': 0, 'added': 6, 'positions': [0, 21, 42, 63, 84, 105]}, {'helix_num': 3, 'added': 6, 'positions': [0, 21, 42, 63, 84, 105]}, {'helix_num': 2, 'added': 6, 'positions': [0, 21, 42, 63, 84, 105]}, {'helix_num': 5, 'added': 6, 'positions': [0, 21, 42, 63, 84, 105]}, {'helix_num': 4, 'added': 6, 'positions': [0, 21, 42, 63, 84, 105]}], 'message': 'Added 36 1-base insertions across 6 helices'}",
+  "natural_language": "Add single-base insertions every 21 bases across all helices in a 2\u00d73 grid design"
+}

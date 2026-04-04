@@ -1,0 +1,79 @@
+{
+  "description": "Rectilinear prism fit analysis for a 6-helix flat sheet DNA origami. The design was created in cadnano (honeycomb lattice), converted to oxDNA format via tacoxDNA, and the 3D nucleotide positions were analyzed to quantify how well the structure fills a rectangular prism. This metric serves as a continuous geometric reward signal for the training pipeline.",
+  "design": {
+    "n_helices": 6,
+    "length_bp": 126,
+    "lattice": "honeycomb",
+    "converter": "tacoxDNA (cadnano_oxDNA.py, lattice=he)"
+  },
+  "structure": {
+    "n_nucleotides": 1512,
+    "n_strands": 51,
+    "center_of_mass_nm": [
+      42.32441518438819,
+      68.96385749999997,
+      20.749999999999986
+    ]
+  },
+  "pca": {
+    "eigenvalues": [
+      145.91367041694232,
+      10.486755762502733,
+      0.3970889921451779
+    ],
+    "variance_explained_pct": [
+      93.05866247769472,
+      6.688087978324547,
+      0.2532495439807362
+    ],
+    "note": "PC1=length, PC2=width, PC3=thickness (sorted by descending variance)"
+  },
+  "prism": {
+    "dimensions_nm": [
+      41.50000000000006,
+      10.470334901595997,
+      2.3916471495862472
+    ],
+    "volume_nm3": 1039.2158848385434,
+    "flatness_ratio": 0.05763005179725889,
+    "aspect_ratio": 3.9635790440355634
+  },
+  "quality_metrics": {
+    "prism_fit_score": 0.7927496259394591,
+    "uniformity": 0.6666666666666666,
+    "rectangularity": 0.7544123563412279,
+    "slice_width_cv": 0.000802492098586399,
+    "slice_thickness_cv": 0.003159091770896527,
+    "surface_distance_rms_nm": 0.6438514273660491
+  },
+  "interpretation": {
+    "prism_fit_score": "0.793 \u2014 composite score (0-1) combining uniformity (0.667), rectangularity (0.754), and slice consistency (0.999). Higher = better fit to a rectangular prism.",
+    "flatness": "Thickness/length = 0.0576. The structure is 17\u00d7 longer than it is thick, confirming a flat sheet geometry.",
+    "uniformity": "252/378 grid cells occupied. Values near 1.0 indicate nucleotides fill the prism volume evenly rather than clustering at helix positions.",
+    "cross_section": "Width CV = 0.0008, Thickness CV = 0.0032. Low CV means the cross-section shape is consistent along the sheet length \u2014 no tapering or warping at the ends."
+  },
+  "figures": {
+    "fig1_prism_wireframe": {
+      "path": "/home/dan/Documents/code/cadnano2/results/oxdna_flat_sheet/fig1_prism_wireframe.png",
+      "objective": "Visually verify the oriented bounding box captures the structure tightly."
+    },
+    "fig2_cross_sections": {
+      "path": "/home/dan/Documents/code/cadnano2/results/oxdna_flat_sheet/fig2_cross_sections.png",
+      "objective": "Show whether cross-section shape is uniform along the sheet length."
+    },
+    "fig3_density_heatmap": {
+      "path": "/home/dan/Documents/code/cadnano2/results/oxdna_flat_sheet/fig3_density_heatmap.png",
+      "objective": "Identify voids and clusters within the prism volume."
+    }
+  },
+  "training_integration": {
+    "reward_signal": "prism_fit_score can be used directly as a geometric reward (0-1). It complements the existing connectivity-based reward from DesignVerifier. A correct flat sheet should score >0.7; a disconnected or misshapen structure will score lower.",
+    "pipeline": [
+      "1. Agent creates cadnano design via AgentMethods",
+      "2. Design exported as JSON",
+      "3. tacoxDNA converts JSON \u2192 oxDNA (.oxdna + .top)",
+      "4. This script computes prism_fit_score from 3D coordinates",
+      "5. Score fed back as shaped reward for RLVR training"
+    ]
+  }
+}

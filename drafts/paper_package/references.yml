@@ -1,3 +1,20 @@
+babatunde2021:
+  type: article
+  title: "Generating DNA Origami Nanostructures through Shape Annealing"
+  author:
+    - Babatunde, Bolutito
+    - Arias, D. Sebastian
+    - Cagan, Jonathan
+    - Taylor, Rebecca E.
+  date: 2021
+  doi: 10.3390/app11072950
+  parent:
+    type: periodical
+    title: Applied Sciences
+    volume: 11
+    issue: 7
+  page-range: "2950"
+
 rothemund2006:
   type: article
   title: "Folding DNA to create nanoscale shapes and patterns"
@@ -341,7 +358,7 @@ snodin2015:
 
 rovigatti2015:
   type: article
-  title: "A comparison between parallelization approaches in molecular dynamics simulations on GPUs"
+  title: "A comparison between parallelization approaches in molecular dynamics simulations on {GPUs}"
   author:
     - Rovigatti, Lorenzo
     - Šulc, Petr
@@ -379,7 +396,7 @@ suma2019:
 
 deepseek2025:
   type: article
-  title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+  title: "DeepSeek-R1: Incentivizing Reasoning Capability in {LLMs} via Reinforcement Learning"
   author:
     - Guo, Daya
     - Yang, Dejian

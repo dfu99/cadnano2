@@ -1,0 +1,13 @@
+{
+  "operation": "moveCrossover",
+  "description": "Move staple crossover right 1",
+  "params": {
+    "helix1": 1,
+    "helix2": 0,
+    "idx": 63,
+    "strand_type": "staple",
+    "delta": 1
+  },
+  "result": "Error: Moving by 1 would overlap neighboring strand on helix 1 (bound: 83)",
+  "natural_language": "Move the staple crossover at helix 1 index 63 right by 1 bases"
+}
