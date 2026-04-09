@@ -1,0 +1,44 @@
+[
+  {
+    "name": "cavity_40x26nm_2x22_pad6_stapled",
+    "scaffold_bp": 7402,
+    "scaffold_starts": 0,
+    "verified": true,
+    "staple_count": 245
+  },
+  {
+    "name": "cavity_40x31nm_2x22_pad5_stapled",
+    "scaffold_bp": 6482,
+    "scaffold_starts": 0,
+    "verified": true,
+    "staple_count": 218
+  },
+  {
+    "name": "cavity_45x26nm_2x22_pad6_stapled",
+    "scaffold_bp": 7102,
+    "scaffold_starts": 0,
+    "verified": true,
+    "staple_count": 229
+  },
+  {
+    "name": "cavity_45x31nm_2x22_pad5_stapled",
+    "scaffold_bp": 6062,
+    "scaffold_starts": 0,
+    "verified": true,
+    "staple_count": 198
+  },
+  {
+    "name": "cavity_50x26nm_2x22_pad6_stapled",
+    "scaffold_bp": 6882,
+    "scaffold_starts": 0,
+    "verified": true,
+    "staple_count": 225
+  },
+  {
+    "name": "cavity_50x31nm_2x22_pad5_stapled",
+    "scaffold_bp": 5754,
+    "scaffold_starts": 0,
+    "verified": true,
+    "staple_count": 190
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "add_one_crossover",
+    "prompt": "Add a scaffold crossover between helix 0 and helix 1 at index 88"
+  },
+  {
+    "name": "remove_one_rejoin",
+    "prompt": "Remove the scaffold crossover and rejoin strand breaks"
+  },
+  {
+    "name": "move_crossover_right_21",
+    "prompt": "Move the scaffold crossover right by 21 bases (from index 88 to 109)"
+  },
+  {
+    "name": "move_crossover_right_42",
+    "prompt": "Move the scaffold crossover right by 42 bases (from index 88 to 130)"
+  },
+  {
+    "name": "move_crossover_right_63",
+    "prompt": "Move the scaffold crossover right by 63 bases (from index 88 to 151)"
+  },
+  {
+    "name": "move_crossover_left_21",
+    "prompt": "Move the scaffold crossover left by 21 bases (from index 88 to 67)"
+  },
+  {
+    "name": "move_crossover_left_42",
+    "prompt": "Move the scaffold crossover left by 42 bases (from index 88 to 46)"
+  },
+  {
+    "name": "move_crossover_left_63",
+    "prompt": "Move the scaffold crossover left by 63 bases (from index 88 to 25)"
+  },
+  {
+    "name": "autostaple",
+    "prompt": "Add staple crossovers between helix 0 and helix 1"
+  },
+  {
+    "name": "shrink_strands",
+    "prompt": "Shrink the scaffold strand on helix 0 by 42 bases"
+  },
+  {
+    "name": "add_insertions",
+    "prompt": "Add single-base insertions every 21 bases on helix 0"
+  },
+  {
+    "name": "add_deletions",
+    "prompt": "Add single-base deletions every 21 bases on helix 0"
+  }
+]
