@@ -1,14 +1,13 @@
-# Academic Writing Rules — Stub
+# Writing Style — Stub
 
-**Canonical source:** `/home/dan/Documents/code/development/templates/academic-writing-rules.md`
+**Canonical source:** `/home/dan/Documents/code/development/global/writing-style.md`
 
-All rules for paper and manuscript drafting live there. This file is a pointer. **Do not edit it.**
+All writing rules (papers, manuscripts, LaTeX, proposals, pitch decks) live there. This file is a pointer. **Do not edit it.**
 
-When this project discovers a writing rule worth sharing system-wide, edit the canonical file (not this stub). That update propagates to every project on next read.
+When this project discovers a rule worth sharing system-wide, edit the canonical file (not this stub). That update propagates to every project on next read.
 
 ### For cadnano2, apply:
 
-- All **Core Rules**
-- **Project Overlay:** cadnano2 / caDNAgentic (DNA origami) — domain terminology: "cross-sectional dimensions" not "widths", honeycomb/square lattice nomenclature, 2-layer convention.
+- Core Rules apply. **Project Overlay:** DNA origami context. Use "cross-sectional dimensions" not "widths" for 2xN grids, name the lattice type ("honeycomb" or "square"), use "2-layer" not "2-wide" for grid templates, preserve the `cadnano` vs `cadnano2` distinction.
 
-See the canonical file for details and the current changelog.
+See the canonical file for full rule text and the current changelog.
