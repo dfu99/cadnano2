@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Figure 4: Parametric DNA Origami Redesign — Cavity Width Sweep
+Figure 4: Parametric DNA Origami Redesign. Cavity Width Sweep
 
 Demonstrates that changing a single parameter (cavity width) automatically
 recomputes the entire design (staples, polyT extensions, insertions, verification).
