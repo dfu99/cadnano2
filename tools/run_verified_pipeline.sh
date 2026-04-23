@@ -12,7 +12,7 @@
 # Example:
 #   tools/run_verified_pipeline.sh tools/build_tapered_attempt.py results/stress_test/tapered.json 1 10
 
-set -o pipefail
+set -euo pipefail
 cd "$(dirname "$0")/.."
 
 BUILD_SCRIPT="${1:?Usage: $0 <build_script> <output_json> [expected_oligos] [max_attempts]}"
