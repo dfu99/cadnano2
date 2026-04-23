@@ -172,13 +172,13 @@ On a 2-by-22 integrin cavity design, we observed that several scaffold crossover
 
 === Parametric Cavity Variants
 
-With the pipeline fully operational, the agent autonomously generated cavity variants at three widths (20 nm, 30 nm, and 40 nm) without user interaction (@fig5, B--D). For each variant, the agent computed the cavity dimensions from physical specifications, built the caDNAno design, ran autoStaple and autoBreak, converted to oxDNA format via tacoxDNA, and submitted molecular dynamics relaxation on a GPU computing cluster. The resulting oxDNA structures maintained the cavity shape after relaxation, confirming structural validity.
+With the pipeline fully operational, the agent autonomously generated cavity variants at three cross-sectional dimensions (20 nm, 30 nm, and 40 nm) without user interaction (@fig5, B--D). For each variant, the agent computed the cavity dimensions from physical specifications, built the caDNAno design, ran autoStaple and autoBreak, converted to oxDNA format via tacoxDNA, and submitted molecular dynamics relaxation on a GPU computing cluster. The resulting oxDNA structures maintained the cavity shape after relaxation, confirming structural validity.
 
 Each of these tasks required the agent to apply domain knowledge transferred in previous sessions: crossover lattice positions, parity-dependent scaffold direction, cavity boundary half-crossover placement, and honeycomb valid offsets. None were re-taught. The corrections from prior sessions accumulated as reusable code (verifier checks in `cadnano_verifier.py`, pipeline functions in `cavity_variant_sweep.py`, lessons in `tasks/lessons.md`) that the agent applied automatically in new design contexts.
 
 #figure(
   image("figures/fig5_edits.png", width: 100%),
-  caption: [Autonomous targeted edits and end-to-end pipeline execution. (A) Crossover repositioning: the user prompted the agent to move scaffold crossovers away from the cavity edge, followed by autoStaple and autoBreak, producing a complete stapled design. (B--D) Parametric cavity variants at 20 nm, 30 nm, and 40 nm widths, each produced autonomously: caDNAno design (left), tacoxDNA-converted initial 3D structure (center), and oxDNA-relaxed structure (right). The agent computed cavity dimensions from physical specifications, built each design, stapled, converted, and ran molecular dynamics without user interaction.],
+  caption: [Autonomous targeted edits and end-to-end pipeline execution. (A) Crossover repositioning: the user prompted the agent to move scaffold crossovers away from the cavity edge, followed by autoStaple and autoBreak, producing a complete stapled design. (B--D) Parametric cavity variants at 20 nm, 30 nm, and 40 nm cross-sectional dimensions, each produced autonomously: caDNAno design (left), tacoxDNA-converted initial 3D structure (center), and oxDNA-relaxed structure (right). The agent computed cavity dimensions from physical specifications, built each design, stapled, converted, and ran molecular dynamics without user interaction.],
 ) <fig5>
 
 == 8. Discussion
@@ -199,7 +199,7 @@ The agent functions not as a designer but as a substrate for accumulating and di
     table.header[*Artifact*][*Purpose*][*Reusability*],
     [`cadnano_verifier.py`], [Pre-flight design validation], [Run on any caDNAno JSON before committing to synthesis],
     [`failure_analysis.md`], [Documented failure modes], [Read before starting AI-assisted design; avoid known pitfalls],
-    [`cavity_variant_sweep.py`], [Parametric cavity pipeline], [Change gap size/width #sym.arrow design recomputes automatically],
+    [`cavity_variant_sweep.py`], [Parametric cavity pipeline], [Change gap size/cross-sectional dimension #sym.arrow design recomputes automatically],
     [Template extension functions], [Add columns to existing designs], [Extend any 2-by-N template to 2-by-(N+2) with a single contiguous scaffold loop],
     [Crossover move pattern], [Crossover directionality template], [Apply to any targeted crossover edit on any honeycomb design],
     [Renumbering procedure], [JSON helix renumbering], [Essential for any template extension; ensures parity correctness],
